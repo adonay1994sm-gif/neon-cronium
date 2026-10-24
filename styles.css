@@ -1264,3 +1264,24 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
 @media(prefers-reduced-motion:reduce){#menu.menu-gpt .menu-scene{animation:none}}
 #menu.menu-gpt :is(.hero-cta,.menu-hangar-button):focus-visible{background:none}
 #menu.menu-gpt .menu-hangar-button:focus-visible::before{top:4px;bottom:4px;left:auto;right:52px}
+/* Ventanas con los marcos pintados de GPT (encargos art-ui-paneles-v2 y
+   art-ui-marco-principal-v2; scripts/build-ui-frames.py). El #menu queda
+   fuera: tiene su propio marco. */
+.overlay:not(#menu) > .panel{background:none;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;padding:40px 36px;
+  border-image:url("assets/ui_window_v1.webp") 170 fill / 56px stretch}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward){position:relative;min-height:54px;margin-top:10px;padding:10px 22px 10px 40px;line-height:1.25;border:0;border-radius:0;
+  box-shadow:none;background:none;clip-path:none;color:#eafcff;font-weight:800;letter-spacing:.06em;text-align:left;
+  border-image:url("assets/ui_button_secondary_v1.webp") 24 84 fill / 16px 56px stretch}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward)::before{content:none}
+.overlay:not(#menu) .panel .primary{border-image:url("assets/ui_button_main_v1.webp") 30 84 fill / 20px 56px stretch}
+.overlay:not(#menu) .panel .danger{color:#ffd5dc;border-image:url("assets/ui_button_danger_v1.webp") 20 84 fill / 14px 56px stretch}
+.overlay:not(#menu) .panel .reward{color:#ffe7b8;border-image:url("assets/ui_button_ad_v1.webp") 20 84 fill / 14px 56px stretch}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward):active:not(:disabled){transform:translateY(1px);background:none;filter:brightness(1.15)}
+.overlay:not(#menu) .panel .primary:active:not(:disabled){border-image-source:url("assets/ui_button_main_pressed_v1.webp")}
+.overlay:not(#menu) .panel .secondary:not(.danger):active:not(:disabled){border-image:url("assets/ui_button_secondary_pressed_v1.webp") 28 84 fill / 16px 56px stretch}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward):focus-visible{background:none;outline:2px solid #d1ffff;outline-offset:3px}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward):disabled{background:none;filter:grayscale(.8) brightness(.6);color:#9fb3b8}
+.overlay:not(#menu) :is(.final,.summary-grid > div){border:0;border-radius:0;box-shadow:none;background:none;padding:12px 16px;
+  border-image:url("assets/ui_stat_card_v1.webp") 44 60 fill / 16px 22px stretch}
+#menu.menu-gpt .hero-cta{border-image:url("assets/ui_button_main_v1.webp") 30 84 fill / 22px 60px stretch}
+#menu.menu-gpt .hero-cta:active:not(:disabled){border-image-source:url("assets/ui_button_main_pressed_v1.webp")}
