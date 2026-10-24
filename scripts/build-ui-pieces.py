@@ -8,6 +8,10 @@ art-ui-ventanas-piezas-v2) y escribe en assets/:
 - ui_sector_frame_v1.webp: marco de la imagen del sector (centro transparente).
 - ui_beacon_big_v1.webp: la baliza de reaparición de su ventana.
 - ui_defeat_cracks_v1.webp: grietas y chispas de la ventana de derrota.
+- ui_slider_track_v1.webp, ui_slider_fill_v1.webp y ui_slider_thumb_v1.webp,
+  ui_toggle_off_v1.webp, ui_toggle_on_v1.webp, ui_select_v1.webp y
+  ui_separator_v1.webp: los controles de ajustes (encargo
+  art-ui-ajustes-piezas-v2).
 Crea o actualiza sus entradas en ASSET_MANIFEST.json.
 Reproducible: mismas entradas, mismas salidas.
 Uso: python3 scripts/build-ui-pieces.py
@@ -36,6 +40,20 @@ ENTRIES = {
                               'Ventana de la baliza: baliza de reaparición grande.'),
     'ui_defeat_cracks_v1.webp': ('ui-defeat-cracks-v1', 'derrota_grietas_v1.webp', 'art-ui-ventanas-piezas-v2',
                                  'Derrota: grietas y chispas rojas sobre el marco de la ventana.'),
+    'ui_slider_track_v1.webp': ('ui-slider-track-v1', 'ajustes_carril_vacio_v1.webp', 'art-ui-ajustes-piezas-v2',
+                                'Ajustes: carril vacío de las barras deslizantes.'),
+    'ui_slider_fill_v1.webp': ('ui-slider-fill-v1', 'ajustes_carril_lleno_v1.webp', 'art-ui-ajustes-piezas-v2',
+                               'Ajustes: carril lleno (la parte recorrida).'),
+    'ui_slider_thumb_v1.webp': ('ui-slider-thumb-v1', 'ajustes_tirador_v1.webp', 'art-ui-ajustes-piezas-v2',
+                                'Ajustes: tirador de las barras deslizantes.'),
+    'ui_toggle_off_v1.webp': ('ui-toggle-off-v1', 'ajustes_interruptor_apagado_v1.webp', 'art-ui-ajustes-piezas-v2',
+                              'Ajustes: interruptor apagado.'),
+    'ui_toggle_on_v1.webp': ('ui-toggle-on-v1', 'ajustes_interruptor_encendido_v1.webp', 'art-ui-ajustes-piezas-v2',
+                             'Ajustes: interruptor encendido.'),
+    'ui_select_v1.webp': ('ui-select-v1', 'ajustes_selector_v1.webp', 'art-ui-ajustes-piezas-v2',
+                          'Ajustes: casilla de selector con flecha.'),
+    'ui_separator_v1.webp': ('ui-separator-v1', 'ajustes_separador_v1.webp', 'art-ui-ajustes-piezas-v2',
+                             'Ajustes: separador entre filas.'),
 }
 
 
@@ -47,6 +65,14 @@ def fit(image, size):
     image = trimmed(image)
     scale = min(size[0] / image.width, size[1] / image.height)
     return image.resize((round(image.width * scale), round(image.height * scale)), Image.LANCZOS)
+
+
+def boxed(image, size):
+    # Mismo lienzo para los dos estados del interruptor: al cambiar no salta.
+    image = fit(image, size)
+    canvas = Image.new('RGBA', size, (0, 0, 0, 0))
+    canvas.alpha_composite(image, ((size[0] - image.width) // 2, (size[1] - image.height) // 2))
+    return canvas
 
 
 def icon_sheet(sheet):
@@ -69,6 +95,13 @@ def build():
         'ui_sector_frame_v1.webp': fit(load('marco_imagen_sector_v1.webp'), (1000, 1000)),
         'ui_beacon_big_v1.webp': fit(load('baliza_grande_v1.webp'), (384, 384)),
         'ui_defeat_cracks_v1.webp': load('derrota_grietas_v1.webp').resize((720, 1000), Image.LANCZOS),
+        'ui_slider_track_v1.webp': fit(load('ajustes_carril_vacio_v1.webp'), (900, 900)),
+        'ui_slider_fill_v1.webp': fit(load('ajustes_carril_lleno_v1.webp'), (900, 900)),
+        'ui_slider_thumb_v1.webp': fit(load('ajustes_tirador_v1.webp'), (96, 96)),
+        'ui_toggle_off_v1.webp': boxed(load('ajustes_interruptor_apagado_v1.webp'), (192, 56)),
+        'ui_toggle_on_v1.webp': boxed(load('ajustes_interruptor_encendido_v1.webp'), (192, 56)),
+        'ui_select_v1.webp': fit(load('ajustes_selector_v1.webp'), (640, 640)),
+        'ui_separator_v1.webp': fit(load('ajustes_separador_v1.webp'), (900, 900)),
     }
     for name, image in pieces.items():
         image.save(OUT / name, 'WEBP', quality=88, alpha_quality=100, method=6)
