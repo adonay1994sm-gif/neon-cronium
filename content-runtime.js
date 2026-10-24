@@ -43,6 +43,8 @@ var NeonCampaign = (() => {
     SECTOR_SAVE_KEY: () => SECTOR_SAVE_KEY,
     SHIP_FLEET: () => SHIP_FLEET,
     SHIP_FLEET_SAVE_KEY: () => SHIP_FLEET_SAVE_KEY,
+    SHIP_ROSTER: () => SHIP_ROSTER,
+    SHIP_ROSTER_KEY: () => SHIP_ROSTER_KEY,
     VOYAGES: () => VOYAGES,
     advanceAimedMeteorRain: () => advanceAimedMeteorRain,
     advanceCh03Satellite: () => advanceCh03Satellite,
@@ -65,6 +67,7 @@ var NeonCampaign = (() => {
     calculateFlightBounds: () => calculateFlightBounds,
     canTriggerClassicMissile: () => canTriggerClassicMissile,
     ch03HitsShip: () => ch03HitsShip,
+    chooseShip: () => chooseShip,
     classicWeaponSnapshot: () => classicWeaponSnapshot,
     classicWorkshopState: () => classicWorkshopState,
     cometShowerSnapshot: () => cometShowerSnapshot,
@@ -122,7 +125,9 @@ var NeonCampaign = (() => {
     normalizeDifficulty: () => normalizeDifficulty,
     normalizeMenuUnlocks: () => normalizeMenuUnlocks,
     normalizeSectorSave: () => normalizeSectorSave,
+    normalizeShipChoice: () => normalizeShipChoice,
     normalizeShipLoadout: () => normalizeShipLoadout,
+    ownedShips: () => ownedShips,
     prepareClassicTwin: () => prepareClassicTwin,
     releaseAttack: () => releaseAttack,
     releaseCometShowerItem: () => releaseCometShowerItem,
@@ -3494,6 +3499,41 @@ var NeonCampaign = (() => {
     return { version: 1, hangar: unlocks.hangar, seen: { ...unlocks.seen, [button]: true } };
   }
 
+  // src/game/ship/ship-roster.js
+  var SHIP_ROSTER_KEY = "neonCronium.ships.v1";
+  var DEFAULT_SHIP = "aster";
+  var ship = (number, id, name, role, exclusive, cooldown, exclusiveText, ultimate, ultimateText) => Object.freeze({
+    number,
+    id,
+    name,
+    role,
+    unlockedBySector: Number(number) - 1,
+    exclusive: Object.freeze({ name: exclusive, cooldown, text: exclusiveText }),
+    ultimate: Object.freeze({ name: ultimate, text: ultimateText })
+  });
+  var SHIP_ROSTER = Object.freeze([
+    ship("01", "aster", "Ast\xE9r", "Exploradora", "Salto de fase", 8, "Esquiva lateral instant\xE1nea: durante 0,4 s no recibe da\xF1o.", "Lluvia de estrellas", "Caen del cielo 24 dardos de luz que buscan a cada enemigo en pantalla."),
+    ship("02", "bastion", "Basti\xF3n", "Acorazada", "Muralla", 14, "Escudo frontal que detiene los disparos de delante durante 3 s.", "Fortaleza", "Una c\xFApula de 6 s que devuelve cada proyectil enemigo a quien lo dispar\xF3."),
+    ship("03", "vertice", "V\xE9rtice", "Perforadora", "Lanza", 10, "Disparo cargado que atraviesa toda la columna.", "Prisma", "Un rayo que se abre en 5 haces y barre la pantalla durante 4 s."),
+    ship("04", "mantarraya", "Mantarraya", "Guardiana de cola", "Estela", 12, "Deja detr\xE1s una estela que da\xF1a a lo que llega por la retaguardia.", "Marea", "Una onda saca de la pantalla proyectiles y meteoritos y aturde 2 s."),
+    ship("05", "arpon", "Arp\xF3n", "Cazadora", "Arp\xF3n", 12, "Engancha a un enemigo y lo arrastra; suelta el doble de chatarra.", "Riel", "Un ca\xF1\xF3n de riel atraviesa la pantalla con un da\xF1o enorme a los jefes."),
+    ship("06", "orion", "Ori\xF3n", "Comandante", "Alas", 16, "Dos drones disparan contigo durante 8 s.", "Constelaci\xF3n", "Seis drones forman una estrella y disparan en todas las direcciones 6 s."),
+    ship("07", "quimera", "Quimera", "Enga\xF1o", "Se\xF1uelo", 14, "Un holograma de tu nave atrae los disparos durante 4 s.", "Enjambre", "Doce mininaves buscan a los enemigos y estallan al alcanzarlos."),
+    ship("08", "nomada", "N\xF3mada", "Recolectora", "Im\xE1n", 15, "Atrae CRONIUM y chatarra de toda la pantalla y repara 5 de casco.", "Forja m\xF3vil", "Repara el 40 % del casco y llena munici\xF3n y misiles."),
+    ship("09", "eclipse", "Eclipse", "Sombra", "Sombra", 15, "Durante 2 s es invisible: los enemigos pierden el blanco.", "Eclipse total", "La pantalla se oscurece y todo se detiene 3 s, salvo tu nave."),
+    ship("10", "titan", "Tit\xE1n", "Artillera", "Andanada", 16, "Una salva de 8 misiles peque\xF1os que buscan a los enemigos cercanos.", "Supernova", "Carga 1,5 s y estalla en una onda que borra lo peque\xF1o.")
+  ]);
+  function ownedShips(sectorSave) {
+    return SHIP_ROSTER.filter((entry) => entry.unlockedBySector === 0 || sectorSave.sectors[entry.unlockedBySector]?.completed === true).map((entry) => entry.id);
+  }
+  function normalizeShipChoice(raw, sectorSave) {
+    const valid = Boolean(raw) && typeof raw === "object" && raw.version === 1 && ownedShips(sectorSave).includes(raw.selected);
+    return { version: 1, selected: valid ? raw.selected : DEFAULT_SHIP };
+  }
+  function chooseShip(choice, id, sectorSave) {
+    return ownedShips(sectorSave).includes(id) ? { version: 1, selected: id } : null;
+  }
+
   // src/game/progression/sector-map.js
   var freeze3 = Object.freeze;
   var SECTOR_MAPS = freeze3({
@@ -6091,17 +6131,17 @@ var NeonCampaign = (() => {
       if (boss.stateTime >= CH03_RULES.defeatSeconds) boss.resolved = true;
     }
   }
-  function ch03HitsShip(boss, ship) {
+  function ch03HitsShip(boss, ship2) {
     if (boss.state !== "attack") return 0;
     if (boss.attack === "sweep" && boss.beam?.active) {
       const dx = Math.sin(boss.beam.angle), dy = Math.cos(boss.beam.angle);
-      const along = (ship.x - boss.x) * dx + (ship.y - boss.y) * dy;
+      const along = (ship2.x - boss.x) * dx + (ship2.y - boss.y) * dy;
       if (along <= 0) return 0;
-      const across = Math.abs((ship.x - boss.x) * dy - (ship.y - boss.y) * dx);
-      return across <= CH03_RULES.sweep.width / 2 + ship.r ? CH03_RULES.sweep.damage : 0;
+      const across = Math.abs((ship2.x - boss.x) * dy - (ship2.y - boss.y) * dx);
+      return across <= CH03_RULES.sweep.width / 2 + ship2.r ? CH03_RULES.sweep.damage : 0;
     }
     if (boss.attack === "grid" && boss.grid?.active) {
-      const column = Math.floor(ship.x / (boss.width / boss.grid.columns));
+      const column = Math.floor(ship2.x / (boss.width / boss.grid.columns));
       return column === boss.grid.safe ? 0 : CH03_RULES.grid.damage;
     }
     return 0;
