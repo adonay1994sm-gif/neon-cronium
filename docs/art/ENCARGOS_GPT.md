@@ -14,67 +14,15 @@ Versión para máquinas: https://raw.githubusercontent.com/adonay1994sm-gif/neon
 5. Respeta medidas, rejilla y fondo (transparente salvo que el prompt pida opaco): el juego recorta las celdas por tamaño exacto.
 6. Revisa esta lista cada 10 minutos. Antes de empezar un encargo, mira `catalog.json` del baúl: si ya hay un archivo con su id en `"encargo"`, no lo repitas.
 
-## Arte: controles de ajustes (deslizador, interruptor, selector) v2
-
-- **Id:** `art-ui-ajustes-piezas-v2` · **Prioridad:** 1 · **Archivo:** `encargo-art-ui-ajustes-piezas-v2-v1.png`
-- **Para qué:** Pedido de nuevo el 24/10 con el visto bueno del propietario: sustituye a las piezas de art-ui-ajustes, que llegaron planas (hechas con código). Referencia: los marcos v2 ya montados.
-
-```text
-Antes de empezar lee https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/GUIA_GPT.md (sección 7, «Interfaz: pintada, nunca con código»).
-
-ESTILO OBLIGATORIO: el de los marcos que ya entregaste y el propietario aprobó, montados en el juego: https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/capturas-interfaz/ventanas_marcos_v2.jpg . Piezas de referencia: ventana https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_window_v1.webp , botón principal https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_button_main_v1.webp y ficha https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_stat_card_v1.webp . Metal oscuro pintado con biseles y remaches, borde cian #a1eee8 luminoso, luces naranjas pequeñas, interior azul noche #040c15. Letra del juego: Orbitron (no la pintes: el juego escribe los textos).
-
-Captura de la pantalla de ajustes con los marcos nuevos: la segunda de https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/capturas-interfaz/ventanas_marcos_v2.jpg . Hoy los controles son los del navegador y desentonan.
-PIEZAS (7):
-1. Carril del deslizador VACÍO, 900×40 px: canal metálico hundido, oscuro.
-2. Carril del deslizador LLENO, 900×40 px: el mismo canal con energía cian #a1eee8 que brilla dentro.
-3. Tirador del deslizador, 96×96 px: botón metálico redondo u octogonal con núcleo cian encendido.
-4. Interruptor APAGADO, 160×88 px: carcasa metálica, palanca a la izquierda, luz apagada gris.
-5. Interruptor ENCENDIDO, 160×88 px: la misma carcasa, palanca a la derecha y luz cian encendida.
-6. Casilla de selector, 420×110 px: placa metálica con borde cian fino y una flecha pintada hacia abajo a la derecha (para FÁCIL / NORMAL / HARDCORE).
-7. Separador fino entre filas, 900×12 px: línea metálica con un brillo cian suave en el centro.
-
-CÓMO HACERLO: cada pieza con el GENERADOR DE IMÁGENES, como los marcos aprobados. PROHIBIDO dibujarla con código (Python, PIL, SVG, canvas, CSS o formas de color liso): tu entrega anterior de estas piezas salió así (entre 3 y 70 colores por pieza) y no vale. No hace falta maqueta de pantalla: solo las piezas. COMPROBACIÓN ANTES DE SUBIR: las piezas grandes con más de 5.000 colores y las pequeñas (128 px o menos) con más de 1.500; ponlas al lado de los marcos aprobados y tienen que parecer de la misma familia; mira cada una sobre negro, blanco y damero (transparencia real, bordes limpios, sin halo). Sin texto en ninguna pieza.
-
-ENTREGA: usa el nombre de «Archivo» de este encargo, numerado -1, -2… en el orden de la lista (formato WebP con transparencia). En catalog.json pon "encargo": "art-ui-ajustes-piezas-v2".
-```
-
-## Arte: HUD de vuelo y barra de vida de jefe v2
-
-- **Id:** `art-ui-hud-v2` · **Prioridad:** 1 · **Archivo:** `encargo-art-ui-hud-v2-v1.png`
-- **Para qué:** ENTREGA PARCIAL (24/10, por chat; guardada en art-source/ui/piezas-v2): botón de misil normal (más alargado que el pedido), placa de mensajes (doble, con dos retratos), botón de pausa, barrita de casco y relleno rojo de la vida del jefe. FALTAN: marco de la barra superior, misil pulsado, disparar normal y pulsado, marco de la barra de jefe y relleno blanco. Se monta en el paso del HUD.
-
-```text
-Antes de empezar lee https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/GUIA_GPT.md (sección 7, «Interfaz: pintada, nunca con código»).
-
-ESTILO OBLIGATORIO: el de los marcos que ya entregaste y el propietario aprobó, montados en el juego: https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/capturas-interfaz/ventanas_marcos_v2.jpg . Piezas de referencia: ventana https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_window_v1.webp , botón principal https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_button_main_v1.webp y ficha https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_stat_card_v1.webp . Metal oscuro pintado con biseles y remaches, borde cian #a1eee8 luminoso, luces naranjas pequeñas, interior azul noche #040c15. Letra del juego: Orbitron (no la pintes: el juego escribe los textos).
-
-Captura del HUD de hoy: https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/capturas-interfaz/hud_vuelo.jpg . Tiene que estorbar lo mínimo: todo pegado arriba y abajo, el centro es para la acción.
-PIEZAS (11):
-1. Marco de la barra superior, 1080×150 px (para VIAJE, PUNTOS, CRONIUM y CASCO): placa metálica fina, borde cian, centro casi transparente (40 %) para no tapar el espacio.
-2. Placa de mensajes con hueco para retrato a la izquierda, 1000×130 px.
-3. Botón de MISIL normal, 220×150 px, ámbar #ffb84d.
-4. Botón de MISIL pulsado.
-5. Botón de DISPARAR normal, 300×150 px, cian.
-6. Botón de DISPARAR pulsado.
-7. Botón de pausa, 110×110 px (dos barras verticales pintadas).
-8. BARRA DE VIDA DE JEFE (decisión del propietario: que se note y estrese): marco de 1080×130 px a todo el ancho, con placa a la izquierda para el nombre del jefe, marcas de fases y una muesca clara al 30 % (furia). Interior transparente.
-9. Relleno de vida del jefe, 1000×44 px, rojo-ámbar con brillo y textura de energía.
-10. El mismo relleno en blanco (para el trozo recién perdido).
-11. Barrita de casco del jugador, 300×24 px, cian.
-
-CÓMO HACERLO: cada pieza con el GENERADOR DE IMÁGENES, como los marcos aprobados. PROHIBIDO dibujarla con código (Python, PIL, SVG, canvas, CSS o formas de color liso): tu entrega anterior de estas piezas salió así (entre 3 y 70 colores por pieza) y no vale. No hace falta maqueta de pantalla: solo las piezas. COMPROBACIÓN ANTES DE SUBIR: las piezas grandes con más de 5.000 colores y las pequeñas (128 px o menos) con más de 1.500; ponlas al lado de los marcos aprobados y tienen que parecer de la misma familia; mira cada una sobre negro, blanco y damero (transparencia real, bordes limpios, sin halo). Sin texto en ninguna pieza.
-
-ENTREGA: usa el nombre de «Archivo» de este encargo, numerado -1, -2… en el orden de la lista (formato WebP con transparencia). En catalog.json pon "encargo": "art-ui-hud-v2".
-```
-
 ## Arte: hangar para elegir nave v2 (maqueta pintada y piezas)
 
 - **Id:** `art-ui-hangar-v2` · **Prioridad:** 2 · **Archivo:** `encargo-art-ui-hangar-v2-v1.png`
-- **Para qué:** ENTREGA PARCIAL (24/10, por chat; guardada en art-source/ui/piezas-v2): maqueta pintada del hangar y casillas normal, elegida, bloqueada y de pago. FALTA: placa de la ficha de habilidades (1000×360). Se monta en el paso del hangar.
+- **Para qué:** ENTREGA PARCIAL (24/10, por chat; guardada en art-source/ui/piezas-v2): maqueta pintada del hangar y casillas normal, elegida, bloqueada y de pago. FALTA solo la placa de la ficha de habilidades (1000×360). Se monta en el paso del hangar.
 
 ```text
 Antes de empezar lee https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/GUIA_GPT.md (sección 7, «Interfaz: pintada, nunca con código»).
+
+YA ENTREGASTE la maqueta y las cuatro casillas (el propietario las pasó por el chat y están aprobadas). SOLO FALTA UNA PIEZA: la placa de la ficha de habilidades, 1000×360 px, con dos zonas (EXCLUSIVA arriba y ÚLTIMA abajo), cada una con hueco cuadrado a la izquierda para su icono; sin texto. Entrégala como imagen 6. No repitas lo demás.
 
 ESTILO OBLIGATORIO: el de los marcos que ya entregaste y el propietario aprobó, montados en el juego: https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/capturas-interfaz/ventanas_marcos_v2.jpg . Piezas de referencia: ventana https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_window_v1.webp , botón principal https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_button_main_v1.webp y ficha https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_stat_card_v1.webp . Metal oscuro pintado con biseles y remaches, borde cian #a1eee8 luminoso, luces naranjas pequeñas, interior azul noche #040c15. Letra del juego: Orbitron (no la pintes: el juego escribe los textos).
 
