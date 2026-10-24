@@ -1333,3 +1333,7 @@ body.flight-mode.left-handed .fire-control{right:auto;left:var(--ui-safe-left);b
 body.flight-mode.left-handed .classic-missile{right:auto;left:calc(var(--ui-safe-left) + 118px);border-radius:10px 10px 10px 3px}
 body.flight-mode.left-handed #classicC9{right:auto;left:var(--ui-safe-left)}
 body.flight-mode.left-handed .flight-pilot-hint{left:auto;right:max(14px,env(safe-area-inset-right))}
+/* Auditoría 25/10 (A7, A8): textos de botón en una sola línea. */
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward){letter-spacing:.04em}
+#over #retry{font-size:11px}
+@media(max-width:340px){#menu.menu-gpt :is(.hero-cta,.menu-hangar-button) small{font-size:9px;letter-spacing:.06em;white-space:nowrap}}
