@@ -42,7 +42,7 @@ ENTREGA: usa el nombre de «Archivo» de este encargo, numerado -1, -2… en el 
 ## Arte: HUD de vuelo y barra de vida de jefe v2
 
 - **Id:** `art-ui-hud-v2` · **Prioridad:** 1 · **Archivo:** `encargo-art-ui-hud-v2-v1.png`
-- **Para qué:** Pedido de nuevo el 24/10 con el visto bueno del propietario: sustituye a las piezas de art-ui-hud, que llegaron planas (hechas con código). Referencia: los marcos v2 ya montados.
+- **Para qué:** ENTREGA PARCIAL (24/10, por chat; guardada en art-source/ui/piezas-v2): botón de misil normal (más alargado que el pedido), placa de mensajes (doble, con dos retratos), botón de pausa, barrita de casco y relleno rojo de la vida del jefe. FALTAN: marco de la barra superior, misil pulsado, disparar normal y pulsado, marco de la barra de jefe y relleno blanco. Se monta en el paso del HUD.
 
 ```text
 Antes de empezar lee https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/GUIA_GPT.md (sección 7, «Interfaz: pintada, nunca con código»).
@@ -71,7 +71,7 @@ ENTREGA: usa el nombre de «Archivo» de este encargo, numerado -1, -2… en el 
 ## Arte: hangar para elegir nave v2 (maqueta pintada y piezas)
 
 - **Id:** `art-ui-hangar-v2` · **Prioridad:** 2 · **Archivo:** `encargo-art-ui-hangar-v2-v1.png`
-- **Para qué:** Pedido de nuevo el 24/10 con el visto bueno del propietario: sustituye a las piezas de art-ui-hangar-taller, que llegaron planas (hechas con código). Referencia: los marcos v2 ya montados.
+- **Para qué:** ENTREGA PARCIAL (24/10, por chat; guardada en art-source/ui/piezas-v2): maqueta pintada del hangar y casillas normal, elegida, bloqueada y de pago. FALTA: placa de la ficha de habilidades (1000×360). Se monta en el paso del hangar.
 
 ```text
 Antes de empezar lee https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/GUIA_GPT.md (sección 7, «Interfaz: pintada, nunca con código»).
@@ -86,44 +86,4 @@ PIEZAS (imágenes 2 a 6): casilla de nave normal, elegida (borde cian encendido)
 CÓMO HACERLO: cada pieza con el GENERADOR DE IMÁGENES, como los marcos aprobados. PROHIBIDO dibujarla con código (Python, PIL, SVG, canvas, CSS o formas de color liso): tu entrega anterior de estas piezas salió así (entre 3 y 70 colores por pieza) y no vale. No hace falta maqueta de pantalla: solo las piezas. COMPROBACIÓN ANTES DE SUBIR: las piezas grandes con más de 5.000 colores y las pequeñas (128 px o menos) con más de 1.500; ponlas al lado de los marcos aprobados y tienen que parecer de la misma familia; mira cada una sobre negro, blanco y damero (transparencia real, bordes limpios, sin halo). Sin texto en ninguna pieza.
 
 ENTREGA: usa el nombre de «Archivo» de este encargo, numerado -1, -2… en el orden de la lista (formato WebP con transparencia). En catalog.json pon "encargo": "art-ui-hangar-v2".
-```
-
-## Arte: 11 iconos de «Cómo jugar» v2
-
-- **Id:** `art-ui-iconos-como-jugar-v2` · **Prioridad:** 2 · **Archivo:** `encargo-art-ui-iconos-como-jugar-v2-v1.png`
-- **Para qué:** Pedido de nuevo el 24/10 con el visto bueno del propietario: sustituye a las piezas de art-ui-como-jugar, que llegaron planas (hechas con código). Referencia: los marcos v2 ya montados.
-
-```text
-Antes de empezar lee https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/GUIA_GPT.md (sección 7, «Interfaz: pintada, nunca con código»).
-
-ESTILO OBLIGATORIO: el de los marcos que ya entregaste y el propietario aprobó, montados en el juego: https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/capturas-interfaz/ventanas_marcos_v2.jpg . Piezas de referencia: ventana https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_window_v1.webp , botón principal https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_button_main_v1.webp y ficha https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_stat_card_v1.webp . Metal oscuro pintado con biseles y remaches, borde cian #a1eee8 luminoso, luces naranjas pequeñas, interior azul noche #040c15. Letra del juego: Orbitron (no la pintes: el juego escribe los textos).
-
-La pantalla «Cómo jugar» es la sexta de https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/capturas-interfaz/ventanas_marcos_v2.jpg ; hoy cada apartado lleva un círculo de color.
-PIEZA (1 imagen): hoja de 6×2 celdas de 128×128 px (768×256 px), un icono por celda, en este orden: 1 Pilotaje (dedo sobre una nave), 2 Phaser (disparo cian), 3 CRONIUM (cristal de energía cian), 4 Amenazas (meteorito con borde naranja), 5 Formación de basura espacial (restos en pasillo), 6 Refuerzo de casco (placa de blindaje), 7 Rayo tractor (haz que atrae), 8 Estabilizador (giroscopio), 9 Sobrecarga (rayo con calor), 10 Drone de reparación (dron pequeño con llave), 11 Misil; la celda 12, vacía. Cada icono: placa metálica octogonal pequeña con el símbolo pintado en relieve y luz cian (ámbar o naranja solo en Amenazas y Misil). Mismo tamaño, centro y luz en todas las celdas.
-
-CÓMO HACERLO: cada pieza con el GENERADOR DE IMÁGENES, como los marcos aprobados. PROHIBIDO dibujarla con código (Python, PIL, SVG, canvas, CSS o formas de color liso): tu entrega anterior de estas piezas salió así (entre 3 y 70 colores por pieza) y no vale. No hace falta maqueta de pantalla: solo las piezas. COMPROBACIÓN ANTES DE SUBIR: las piezas grandes con más de 5.000 colores y las pequeñas (128 px o menos) con más de 1.500; ponlas al lado de los marcos aprobados y tienen que parecer de la misma familia; mira cada una sobre negro, blanco y damero (transparencia real, bordes limpios, sin halo). Sin texto en ninguna pieza.
-
-ENTREGA: usa el nombre de «Archivo» de este encargo, numerado -1, -2… en el orden de la lista (formato WebP con transparencia). En catalog.json pon "encargo": "art-ui-iconos-como-jugar-v2".
-```
-
-## Arte: estrellas, marco de imagen, baliza y grietas de derrota v2
-
-- **Id:** `art-ui-ventanas-piezas-v2` · **Prioridad:** 2 · **Archivo:** `encargo-art-ui-ventanas-piezas-v2-v1.png`
-- **Para qué:** Pedido de nuevo el 24/10 con el visto bueno del propietario: sustituye a las piezas de art-ui-fin-sector, art-ui-baliza y art-ui-derrota, que llegaron planas (hechas con código). Referencia: los marcos v2 ya montados.
-
-```text
-Antes de empezar lee https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/GUIA_GPT.md (sección 7, «Interfaz: pintada, nunca con código»).
-
-ESTILO OBLIGATORIO: el de los marcos que ya entregaste y el propietario aprobó, montados en el juego: https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/capturas-interfaz/ventanas_marcos_v2.jpg . Piezas de referencia: ventana https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_window_v1.webp , botón principal https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_button_main_v1.webp y ficha https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/assets/ui_stat_card_v1.webp . Metal oscuro pintado con biseles y remaches, borde cian #a1eee8 luminoso, luces naranjas pequeñas, interior azul noche #040c15. Letra del juego: Orbitron (no la pintes: el juego escribe los textos).
-
-PIEZAS (5):
-1. ESTRELLA LLENA, 128×128 px: estrella metálica de cinco puntas con núcleo dorado cálido #ffcf6b encendido y brillo suave (es la recompensa: puede ser cálida).
-2. ESTRELLA VACÍA, 128×128 px: la misma estrella apagada, metal oscuro con el hueco del núcleo sin luz.
-3. MARCO PARA LA IMAGEN DEL SECTOR, 1000×560 px, con el CENTRO TOTALMENTE TRANSPARENTE: marco metálico de la misma familia que la ventana, esquinas con remaches y luces; el juego pone debajo la imagen del sector (se ve en el fin de sector de https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/capturas-interfaz/ventanas_marcos_v2.jpg).
-4. BALIZA GRANDE, 512×512 px: la baliza de reaparición de C9 (un faro pequeño de metal con anillos de energía cian y un núcleo ámbar que late), para el centro de su ventana.
-5. GRIETAS DE DERROTA, 1080×1500 px, con el centro transparente: solo grietas finas en el cristal y chispas rojas #ff6b8d suaves en los bordes y esquinas; se pone encima del marco de ventana en la pantalla de derrota. Que duela un poco, pero el texto del centro debe leerse.
-
-CÓMO HACERLO: cada pieza con el GENERADOR DE IMÁGENES, como los marcos aprobados. PROHIBIDO dibujarla con código (Python, PIL, SVG, canvas, CSS o formas de color liso): tu entrega anterior de estas piezas salió así (entre 3 y 70 colores por pieza) y no vale. No hace falta maqueta de pantalla: solo las piezas. COMPROBACIÓN ANTES DE SUBIR: las piezas grandes con más de 5.000 colores y las pequeñas (128 px o menos) con más de 1.500; ponlas al lado de los marcos aprobados y tienen que parecer de la misma familia; mira cada una sobre negro, blanco y damero (transparencia real, bordes limpios, sin halo). Sin texto en ninguna pieza.
-
-ENTREGA: usa el nombre de «Archivo» de este encargo, numerado -1, -2… en el orden de la lista (formato WebP con transparencia). En catalog.json pon "encargo": "art-ui-ventanas-piezas-v2".
 ```
