@@ -64,6 +64,7 @@ var NeonCampaign = (() => {
     baseConversation: () => baseConversation,
     beginFlightInput: () => beginFlightInput,
     buyBeacon: () => buyBeacon,
+    buyShipWithScrap: () => buyShipWithScrap,
     calculateFlightBounds: () => calculateFlightBounds,
     canTriggerClassicMissile: () => canTriggerClassicMissile,
     ch03HitsShip: () => ch03HitsShip,
@@ -125,8 +126,8 @@ var NeonCampaign = (() => {
     normalizeDifficulty: () => normalizeDifficulty,
     normalizeMenuUnlocks: () => normalizeMenuUnlocks,
     normalizeSectorSave: () => normalizeSectorSave,
-    normalizeShipChoice: () => normalizeShipChoice,
     normalizeShipLoadout: () => normalizeShipLoadout,
+    normalizeShipSave: () => normalizeShipSave,
     ownedShips: () => ownedShips,
     prepareClassicTwin: () => prepareClassicTwin,
     releaseAttack: () => releaseAttack,
@@ -3502,36 +3503,48 @@ var NeonCampaign = (() => {
   // src/game/ship/ship-roster.js
   var SHIP_ROSTER_KEY = "neonCronium.ships.v1";
   var DEFAULT_SHIP = "aster";
-  var ship = (number, id, name, role, exclusive, cooldown, exclusiveText, ultimate, ultimateText) => Object.freeze({
+  var FREE = (sector) => ({ type: "free", sector });
+  var SCRAP = (price) => ({ type: "scrap", price });
+  var PAID = { type: "paid" };
+  var ship = (number, id, name, role, access, exclusive, cooldown, exclusiveText, ultimate, ultimateText) => Object.freeze({
     number,
     id,
     name,
     role,
-    unlockedBySector: Number(number) - 1,
+    access: Object.freeze({ ...access }),
     exclusive: Object.freeze({ name: exclusive, cooldown, text: exclusiveText }),
     ultimate: Object.freeze({ name: ultimate, text: ultimateText })
   });
   var SHIP_ROSTER = Object.freeze([
-    ship("01", "aster", "Ast\xE9r", "Exploradora", "Salto de fase", 8, "Esquiva lateral instant\xE1nea: durante 0,4 s no recibe da\xF1o.", "Lluvia de estrellas", "Caen del cielo 24 dardos de luz que buscan a cada enemigo en pantalla."),
-    ship("02", "bastion", "Basti\xF3n", "Acorazada", "Muralla", 14, "Escudo frontal que detiene los disparos de delante durante 3 s.", "Fortaleza", "Una c\xFApula de 6 s que devuelve cada proyectil enemigo a quien lo dispar\xF3."),
-    ship("03", "vertice", "V\xE9rtice", "Perforadora", "Lanza", 10, "Disparo cargado que atraviesa toda la columna.", "Prisma", "Un rayo que se abre en 5 haces y barre la pantalla durante 4 s."),
-    ship("04", "mantarraya", "Mantarraya", "Guardiana de cola", "Estela", 12, "Deja detr\xE1s una estela que da\xF1a a lo que llega por la retaguardia.", "Marea", "Una onda saca de la pantalla proyectiles y meteoritos y aturde 2 s."),
-    ship("05", "arpon", "Arp\xF3n", "Cazadora", "Arp\xF3n", 12, "Engancha a un enemigo y lo arrastra; suelta el doble de chatarra.", "Riel", "Un ca\xF1\xF3n de riel atraviesa la pantalla con un da\xF1o enorme a los jefes."),
-    ship("06", "orion", "Ori\xF3n", "Comandante", "Alas", 16, "Dos drones disparan contigo durante 8 s.", "Constelaci\xF3n", "Seis drones forman una estrella y disparan en todas las direcciones 6 s."),
-    ship("07", "quimera", "Quimera", "Enga\xF1o", "Se\xF1uelo", 14, "Un holograma de tu nave atrae los disparos durante 4 s.", "Enjambre", "Doce mininaves buscan a los enemigos y estallan al alcanzarlos."),
-    ship("08", "nomada", "N\xF3mada", "Recolectora", "Im\xE1n", 15, "Atrae CRONIUM y chatarra de toda la pantalla y repara 5 de casco.", "Forja m\xF3vil", "Repara el 40 % del casco y llena munici\xF3n y misiles."),
-    ship("09", "eclipse", "Eclipse", "Sombra", "Sombra", 15, "Durante 2 s es invisible: los enemigos pierden el blanco.", "Eclipse total", "La pantalla se oscurece y todo se detiene 3 s, salvo tu nave."),
-    ship("10", "titan", "Tit\xE1n", "Artillera", "Andanada", 16, "Una salva de 8 misiles peque\xF1os que buscan a los enemigos cercanos.", "Supernova", "Carga 1,5 s y estalla en una onda que borra lo peque\xF1o.")
+    ship("01", "aster", "Ast\xE9r", "Exploradora", FREE(0), "Salto de fase", 8, "Esquiva lateral instant\xE1nea: durante 0,4 s no recibe da\xF1o.", "Lluvia de estrellas", "Caen del cielo 24 dardos de luz que buscan a cada enemigo en pantalla."),
+    ship("02", "bastion", "Basti\xF3n", "Acorazada", FREE(1), "Muralla", 14, "Escudo frontal que detiene los disparos de delante durante 3 s.", "Fortaleza", "Una c\xFApula de 6 s que devuelve cada proyectil enemigo a quien lo dispar\xF3."),
+    ship("03", "vertice", "V\xE9rtice", "Perforadora", SCRAP(1e4), "Lanza", 10, "Disparo cargado que atraviesa toda la columna.", "Prisma", "Un rayo que se abre en 5 haces y barre la pantalla durante 4 s."),
+    ship("04", "mantarraya", "Mantarraya", "Guardiana de cola", SCRAP(5e4), "Estela", 12, "Deja detr\xE1s una estela que da\xF1a a lo que llega por la retaguardia.", "Marea", "Una onda saca de la pantalla proyectiles y meteoritos y aturde 2 s."),
+    ship("05", "arpon", "Arp\xF3n", "Cazadora", SCRAP(15e4), "Arp\xF3n", 12, "Engancha a un enemigo y lo arrastra; suelta el doble de chatarra.", "Riel", "Un ca\xF1\xF3n de riel atraviesa la pantalla con un da\xF1o enorme a los jefes."),
+    ship("06", "orion", "Ori\xF3n", "Comandante", PAID, "Alas", 16, "Dos drones disparan contigo durante 8 s.", "Constelaci\xF3n", "Seis drones forman una estrella y disparan en todas las direcciones 6 s."),
+    ship("07", "quimera", "Quimera", "Enga\xF1o", PAID, "Se\xF1uelo", 14, "Un holograma de tu nave atrae los disparos durante 4 s.", "Enjambre", "Doce mininaves buscan a los enemigos y estallan al alcanzarlos."),
+    ship("08", "nomada", "N\xF3mada", "Recolectora", PAID, "Im\xE1n", 15, "Atrae CRONIUM y chatarra de toda la pantalla y repara 5 de casco.", "Forja m\xF3vil", "Repara el 40 % del casco y llena munici\xF3n y misiles."),
+    ship("09", "eclipse", "Eclipse", "Sombra", PAID, "Sombra", 15, "Durante 2 s es invisible: los enemigos pierden el blanco.", "Eclipse total", "La pantalla se oscurece y todo se detiene 3 s, salvo tu nave."),
+    ship("10", "titan", "Tit\xE1n", "Artillera", PAID, "Andanada", 16, "Una salva de 8 misiles peque\xF1os que buscan a los enemigos cercanos.", "Supernova", "Carga 1,5 s y estalla en una onda que borra lo peque\xF1o.")
   ]);
-  function ownedShips(sectorSave) {
-    return SHIP_ROSTER.filter((entry) => entry.unlockedBySector === 0 || sectorSave.sectors[entry.unlockedBySector]?.completed === true).map((entry) => entry.id);
+  var byId2 = (id) => SHIP_ROSTER.find((entry) => entry.id === id);
+  var isScrapShip = (id) => byId2(id)?.access.type === "scrap";
+  function ownedShips(sectorSave, shipSave) {
+    return SHIP_ROSTER.filter(({ id, access }) => access.type === "free" ? access.sector === 0 || sectorSave.sectors[access.sector]?.completed === true : access.type === "scrap" && shipSave.bought.includes(id)).map((entry) => entry.id);
   }
-  function normalizeShipChoice(raw, sectorSave) {
-    const valid = Boolean(raw) && typeof raw === "object" && raw.version === 1 && ownedShips(sectorSave).includes(raw.selected);
-    return { version: 1, selected: valid ? raw.selected : DEFAULT_SHIP };
+  function normalizeShipSave(raw, sectorSave) {
+    const valid = Boolean(raw) && typeof raw === "object" && raw.version === 1 && Array.isArray(raw.bought);
+    const bought = valid ? [...new Set(raw.bought.filter(isScrapShip))] : [];
+    const selected = valid && ownedShips(sectorSave, { bought }).includes(raw.selected) ? raw.selected : DEFAULT_SHIP;
+    return { version: 1, selected, bought };
   }
-  function chooseShip(choice, id, sectorSave) {
-    return ownedShips(sectorSave).includes(id) ? { version: 1, selected: id } : null;
+  function chooseShip(shipSave, id, sectorSave) {
+    return ownedShips(sectorSave, shipSave).includes(id) ? { version: 1, selected: id, bought: [...shipSave.bought] } : null;
+  }
+  function buyShipWithScrap(shipSave, id, scrap) {
+    const price = isScrapShip(id) ? byId2(id).access.price : null;
+    if (price === null || shipSave.bought.includes(id) || scrap < price) return null;
+    return { save: { version: 1, selected: shipSave.selected, bought: [...shipSave.bought, id] }, price };
   }
 
   // src/game/progression/sector-map.js

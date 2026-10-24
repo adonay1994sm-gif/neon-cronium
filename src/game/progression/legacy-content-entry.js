@@ -10,7 +10,7 @@ export {createVoyageHazardField, advanceVoyageHazardField} from './voyage-hazard
 export {VOYAGES, PLAYABLE_VOYAGES, getVoyageFicha, getVoyageStageRules, getVoyageStageRulesFor} from './voyages/index.js';
 export {DIFFICULTY_MODES, normalizeDifficulty} from './difficulty.js';
 export {MENU_UNLOCKS_KEY, normalizeMenuUnlocks, menuView, markMenuSeen} from './menu-unlocks.js';
-export {SHIP_ROSTER_KEY, SHIP_ROSTER, ownedShips, normalizeShipChoice, chooseShip} from '../ship/ship-roster.js';
+export {SHIP_ROSTER_KEY, SHIP_ROSTER, ownedShips, normalizeShipSave, chooseShip, buyShipWithScrap} from '../ship/ship-roster.js';
 export {createVoyageRoute} from './voyage-engine.js';
 export {SECTOR_MAPS, sectorMapState} from './sector-map.js';
 export {baseConversation} from '../narrative/base-dialogues.js';
