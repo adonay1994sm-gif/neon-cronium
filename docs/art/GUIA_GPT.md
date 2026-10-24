@@ -98,6 +98,19 @@ referencia.
 4. Si un encargo pide varias imágenes, numéralas: `-1.png`, `-2.png`…
 5. Antes de empezar uno, mira si ya está en `catalog.json` y no lo repitas.
 6. Comprueba cada sprite sobre negro, blanco y damero antes de subirlo.
+7. Un id que termina en `-v2`, `-v3`… es un encargo **nuevo** que sustituye
+   al anterior porque no valía: hazlo aunque el id antiguo ya esté en
+   `catalog.json`.
+
+### Interfaz: pintada, nunca con código
+
+Marcos, botones, paneles y maquetas de interfaz se pintan con el generador
+de imágenes, como el marco ya aprobado
+(https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/art-source/ui/menu-principal/menu_marco_boton_v1.webp).
+No se dibujan con código (Python, PIL, SVG, canvas, CSS ni formas de color
+liso). Comprobación: una pieza pintada tiene miles de colores distintos; si
+tiene menos de 5.000, es dibujo plano y no vale. Las maquetas no se montan
+encima de las capturas del juego.
 
 ## 8. Si dudas
 
