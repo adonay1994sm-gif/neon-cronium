@@ -1,0 +1,105 @@
+{
+  "fecha": "2026-10-24",
+  "origen": "GPT, a petición del propietario (encargos v2 del tablero). El propietario las pasó por el chat porque GPT se detuvo antes de subirlas al baúl; PNG originales guardados en WebP de calidad 94 (alfa sin pérdida).",
+  "archivos": [
+    {
+      "archivo": "iconos_como_jugar_v1.webp",
+      "encargo": "art-ui-iconos-como-jugar-v2",
+      "nota": "Hoja de 11 iconos de Cómo jugar en 6×2 (2172×724): pilotaje, phaser, CRONIUM, amenazas, basura espacial, refuerzo de casco, rayo tractor, estabilizador, sobrecarga, dron de reparación y misil."
+    },
+    {
+      "archivo": "hud_boton_misil_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Botón de misil, normal (1520×1034 con márgenes). Más alargado que el 220×150 pedido."
+    },
+    {
+      "archivo": "baliza_grande_v1.webp",
+      "encargo": "art-ui-ventanas-piezas-v2",
+      "nota": "Baliza de reaparición grande (1254×1254)."
+    },
+    {
+      "archivo": "derrota_grietas_v1.webp",
+      "encargo": "art-ui-ventanas-piezas-v2",
+      "nota": "Grietas y chispas rojas para la ventana de derrota (1064×1478), centro transparente."
+    },
+    {
+      "archivo": "estrella_vacia_v1.webp",
+      "encargo": "art-ui-ventanas-piezas-v2",
+      "nota": "Estrella vacía (1254×1254)."
+    },
+    {
+      "archivo": "marco_imagen_sector_v1.webp",
+      "encargo": "art-ui-ventanas-piezas-v2",
+      "nota": "Marco para la imagen del sector (1672×941), centro transparente."
+    },
+    {
+      "archivo": "estrella_llena_v1.webp",
+      "encargo": "art-ui-ventanas-piezas-v2",
+      "nota": "Estrella llena (1254×1254)."
+    },
+    {
+      "archivo": "hud_placa_mensajes_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Placa de mensajes doble con dos huecos de retrato (2089×753). Distinta de la pedida (una sola franja 1000×130)."
+    },
+    {
+      "archivo": "hangar_casilla_pago_v1.webp",
+      "encargo": "art-ui-hangar-v2",
+      "nota": "Casilla de nave de pago, borde dorado (1254×1254)."
+    },
+    {
+      "archivo": "hangar_casilla_normal_v1.webp",
+      "encargo": "art-ui-hangar-v2",
+      "nota": "Casilla de nave normal (1254×1254)."
+    },
+    {
+      "archivo": "hangar_maqueta_v1.webp",
+      "encargo": "art-ui-hangar-v2",
+      "nota": "Maqueta pintada del hangar (853×1844, opaca). Solo referencia."
+    },
+    {
+      "archivo": "hangar_casilla_bloqueada_v1.webp",
+      "encargo": "art-ui-hangar-v2",
+      "nota": "Casilla de nave bloqueada con candado (1254×1254)."
+    },
+    {
+      "archivo": "hangar_casilla_elegida_v1.webp",
+      "encargo": "art-ui-hangar-v2",
+      "nota": "Casilla de nave elegida, borde cian encendido (1254×1254)."
+    },
+    {
+      "archivo": "hud_barra_casco_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Barrita de casco cian (1983×793 con márgenes)."
+    },
+    {
+      "archivo": "hud_relleno_jefe_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Relleno de vida del jefe, rojo-ámbar (2172×724 con márgenes). Falta la versión blanca."
+    },
+    {
+      "archivo": "hud_boton_pausa_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Botón de pausa (1254×1254)."
+    }
+  ],
+  "estado": "Revisadas el 24/10. Integradas: ver scripts/build-ui-pieces.py. El resto espera su paso (HUD, hangar).",
+  "sha256": {
+    "iconos_como_jugar_v1.webp": "c7b242841044bc2c5d3364d362ec2075b10de13a45fd3f832c51d2c00882d94e",
+    "hud_boton_misil_v1.webp": "d70b11fc09729d8b1924313d7dcf5ace384ebb89967f22b3575dee3d4d7c73e1",
+    "baliza_grande_v1.webp": "d7e0c4b1a91192cfd6d7c38d09bb6a8602932779f43248dd23773b93cf5e2767",
+    "derrota_grietas_v1.webp": "c21d543cc22789e5737378c504fcf6e8b653e31f38f462243dee4a92ccde69fd",
+    "estrella_vacia_v1.webp": "92564e0f5a0596b806cbd259ecc95b2e36332b63bfd5d39847c48cedb9d6e991",
+    "marco_imagen_sector_v1.webp": "aaf320685d48d192e27694f685c17625ae65bb7ed689ec17c3de31d1c425b31a",
+    "estrella_llena_v1.webp": "ecba5fa005de785230d995c174bb1b77d68d57bccf68a093483ce1acf6d420af",
+    "hud_placa_mensajes_v1.webp": "dc5712d88839958f82ec7f00ad8395133fe0cb889b358fd99fc7a89420dadfc8",
+    "hangar_casilla_pago_v1.webp": "04f060713c022d18c3994fd4db8c68856d43dba65ac603e7ff17b487fa551610",
+    "hangar_casilla_normal_v1.webp": "93eba2da8f51991985158f3f49374c2a53db08de288a7d32384e7bd3afac6441",
+    "hangar_maqueta_v1.webp": "15d369d701fb091e8b8ee039325d7bffd28fcdc34b4b334e7cf40f0aaa0d8379",
+    "hangar_casilla_bloqueada_v1.webp": "4c08dfc1253d0c980220fe6b164b910380fece47c8ae109c1e1bb6e26ca18ba8",
+    "hangar_casilla_elegida_v1.webp": "25ada85ab477b0c033d38b4c7cfa88488273b1ac2150d9948053fbe72a2a75c4",
+    "hud_barra_casco_v1.webp": "1e1c4f0723582dfaf5b8c313c98a037bb643b57f2c07dfe2656bcdc839600399",
+    "hud_relleno_jefe_v1.webp": "3fa228e31bce4dfa46d431332658871a70fe4bffdbfb6fcfd032521197b08177",
+    "hud_boton_pausa_v1.webp": "a8325e21c2ae12aa9ab5740487092464ae47c627e822791d0021309247695504"
+  }
+}
