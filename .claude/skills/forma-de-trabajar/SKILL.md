@@ -143,9 +143,11 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
 - 10 naves (24/10):
   - las paletas y habilidades del concepto
     (https://claude.ai/artifact/6KmCsopxEWoBbrK76jKiKx);
-  - Astér de serie; desde el 24/10 las demás no salen una por sector:
-    2 gratis, varias con chatarra (cada una más cara y mejor) y el resto de
-    pago con skins. Los detalles esperan su respuesta (`dec-naves-pago`);
+  - cómo se consiguen (24/10, sustituye a «una por sector»): Astér de serie
+    y Bastión al vencer a Atlas; Vértice, Mantarraya y Arpón con chatarra,
+    cada una más cara y mejor; las 5 restantes de pago con skins. Lo de pago
+    engancha por lo vistoso (habilidades y skins), nunca por más poder. Los
+    precios esperan la revisión de la economía;
   - la habilidad va con el fuselaje;
   - el hangar es una pestaña del taller de Mira.
 - La intro de Chronos usa un portal dimensional (no estela) y el haz pintado
