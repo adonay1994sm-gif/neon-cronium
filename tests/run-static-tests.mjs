@@ -104,7 +104,7 @@ await test("manifiesto y archivos conservados coinciden exactamente con el disco
   const result = await audit(root);
   assert.equal(result.ok, true, JSON.stringify(result, null, 2));
   assert.equal(result.runtimeCount, assetManifest.assetCount);
-  assert.equal(result.preservedCount, 2);
+  assert.equal(result.preservedCount, 1); // solo assets/.gitkeep: el arte retirado se borra (25/10)
   assert.equal(result.actualBytes, assetManifest.runtimeBytes);
 });
 
@@ -202,7 +202,7 @@ await test("recursos iOS y web sincronizado son coherentes", async () => {
   const splash = await readFile(join(root, "ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png"));
   assert.deepEqual(pngSize(icon), { width: 1024, height: 1024 });
   assert.deepEqual(pngSize(splash), { width: 2732, height: 2732 });
-  for (const path of ["index.html", "game.js", "content-runtime.js", "native-admob.js", "assets/ship_frame_05.webp", "assets/smoke_frame_02.webp"]) {
+  for (const path of ["index.html", "game.js", "content-runtime.js", "native-admob.js", "assets/player_ship_identity_v1.webp", "assets/smoke_frame_02.webp"]) {
     const [web, ios] = await Promise.all([
       readFile(join(root, "www", path)),
       readFile(join(root, "ios/App/App/public", path))

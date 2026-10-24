@@ -454,10 +454,6 @@
   }
 
   const SPRITE_GROUPS = {
-    // Historical poses remain on disk for recovery and the reserved engine's
-    // references, but are not requested by the live modular presentation.
-    ship: [0,1,2,3,4,5].map((index) => loadSprite(`assets/ship_frame_${String(index).padStart(2,"0")}.webp`, false)),
-    core: [0,1,2,3,4,5].map((index) => loadSprite(`assets/core_frame_${String(index).padStart(2,"0")}.webp`, true)),
     phaser: [0,1,2,3,4,5].map((index) => loadSprite(`assets/phaser_frame_${String(index).padStart(2,"0")}.webp`)),
     tractor: [0,1,2,3,4,5].map((index) => loadSprite(`assets/tractor_frame_${String(index).padStart(2,"0")}.webp`)),
     impact: [0,1,2,3].map((index) => loadSprite(`assets/impact_frame_${String(index).padStart(2,"0")}.webp`)),
@@ -477,7 +473,6 @@
     chronosIntroFragments: loadSprite("assets/chronos_intro_fragments_atlas_v1.webp", false),
     // Cronos Prime animado (40 fotogramas del vídeo) y la estación estallando.
     cronosPrimeVideo: loadSprite("assets/cronos_prime_video_atlas_v1.webp", false),
-    cronosPrimeTrail: loadSprite("assets/cronos_prime_trail_v1.webp", false),
     // Haz pintado del disparo (propietario, 24/10/2026: el de degradados se veía hecho por código).
     cronosPrimeBeam: loadSprite("assets/cronos_prime_beam_v1.webp", false),
     chronosStationBurst: loadSprite("assets/chronos_station_burst_atlas_v1.webp", false),
@@ -486,7 +481,6 @@
     flightWeapons: loadSprite("assets/chronos_flight_weapons_v1.webp", false),
     c9Station: loadSprite("assets/c9_station_v1.webp", false),
 
-    shipFallback: SPRITE_GROUPS.ship[0],
     meteorSmall: loadSprite("assets/meteor_small.webp", true),
     meteorSmallAlt: loadSprite("assets/meteor_small_alt.webp"),
     meteorMedium: loadSprite("assets/meteor_medium.webp", true),
@@ -494,7 +488,6 @@
     meteorLarge: loadSprite("assets/meteor_large.webp"),
     ch01: loadSprite("assets/ch01_atlas_v1.webp", false),
     ch02: loadSprite("assets/ch02_interceptor_atlas_v1.webp", false),
-    chronosModule: loadSprite("assets/chronos_detached_module_v1.webp", false),
     modularShip: loadSprite("assets/ship_modular_atlas_v1.webp", true),
     shipIdentity: loadSprite("assets/player_ship_identity_v1.webp", true),
     guardianAtlas: loadSprite("assets/guardian_atlas_states_v2.webp", false),
@@ -530,7 +523,6 @@
     forceShieldAtlas: loadSprite("assets/force_shield_atlas_v1.webp", false),
     shieldIdle: loadSprite("assets/shield_idle.webp"),
     explosionSmall: loadSprite("assets/explosion_small.webp"),
-    croniumFragment: loadSprite("assets/cronium_fragment_v1.webp", true),
     chronosShockwave: loadSprite("assets/chronos_shockwave_atlas_v1.webp", false),
     vulkarOrbitPlanet: loadSprite("assets/vulkar_orbit_planet_v1.webp", false),
     planetVolcanico: loadSprite("assets/planet_volcanico_atlas_v1.webp", false),

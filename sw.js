@@ -45,7 +45,6 @@ const CORE = [
   "assets/mission_sector1_v1.webp",
   "assets/mission_sector2_v1.webp",
   "assets/hull_impact_sparks_v1.webp",
-  "assets/cronos_prime_trail_v1.webp",
   "assets/atlas_explosion_v1.webp",
   "assets/lava_core_mine_atlas_v1.webp",
   "assets/gaia_tracker_atlas_v1.webp",
@@ -86,13 +85,6 @@ const CORE = [
   "assets/planet_violeta_atlas_v1.webp",
   "assets/planet_tormentoso_atlas_v1.webp",
   "assets/force_shield_atlas_v1.webp",
-  "assets/core_frame_00.webp",
-  "assets/core_frame_01.webp",
-  "assets/core_frame_02.webp",
-  "assets/core_frame_03.webp",
-  "assets/core_frame_04.webp",
-  "assets/core_frame_05.webp",
-  "assets/cronium_fragment_v1.webp",
   "assets/phaser_frame_00.webp",
   "assets/phaser_frame_01.webp",
   "assets/phaser_frame_02.webp",
@@ -141,8 +133,7 @@ const CORE = [
   "assets/shield_effect.webp",
   "assets/shield_idle.webp",
   "assets/explosion_small.webp",
-  "assets/chronos_shockwave_atlas_v1.webp",
-  "assets/chronos_detached_module_v1.webp"
+  "assets/chronos_shockwave_atlas_v1.webp"
 ];
 
 // addAll es "todo o nada": si un solo archivo falla, la instalación entera

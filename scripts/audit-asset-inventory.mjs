@@ -10,9 +10,7 @@ import {dirname,join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const ROOT=join(dirname(fileURLToPath(import.meta.url)),'..');
-export const PRESERVED=Object.freeze({
-  'assets/comet_fire.webp': 'bae313a48a12cff61b5aec04ec7a3ec70a5fef997d633598171ad554c27eefd2'
-});
+export const PRESERVED=Object.freeze({});
 const hash=buffer=>createHash('sha256').update(buffer).digest('hex');
 const sorted=values=>[...values].sort();
 

@@ -147,7 +147,7 @@ export async function runAssetQa({root,output,chromiumPath=process.env.CHROMIUM_
     }
     // Historical files are measured, never required to remain broken. The old
     // opaque black crop is evidence, not an invariant for future production.
-    for(const config of [{id:'cronium-fragment-v1',file:'assets/cronium_fragment_v1.webp'},{id:'cronium-core-frame00-v1',file:'assets/core_frame_00.webp'}]) {
+    for(const config of []) {
       const decoded=await decode(config),metrics=inspectFrame(decoded.frames[0],decoded.width,decoded.height);
       const entry={...config,sha256:decoded.sha256,bytes:decoded.bytes,...metrics,compositions:[]};
       for(const [background,bg] of Object.entries(BACKGROUNDS))entry.compositions.push({background,file:await png(config.id+'-'+background+'.png',compositeRgba(decoded.frames[0],bg),decoded.width,decoded.height)});

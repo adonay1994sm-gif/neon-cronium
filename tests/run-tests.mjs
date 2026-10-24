@@ -109,7 +109,7 @@ await test("manifiesto y archivos conservados coinciden exactamente con el disco
   const result = await audit(root);
   assert.equal(result.ok, true, JSON.stringify(result, null, 2));
   assert.equal(result.runtimeCount, assetManifest.assetCount);
-  assert.equal(result.preservedCount, 2);
+  assert.equal(result.preservedCount, 1); // solo assets/.gitkeep: el arte retirado se borra (25/10)
   assert.equal(result.actualBytes, assetManifest.runtimeBytes);
 });
 
@@ -119,8 +119,8 @@ await test("plan de producción conserva los 150 IDs históricos y registra ampl
   assert.equal(new Set(assetProduction.assets.map((item) => item.id)).size, assetProduction.totalAssets);
   assert.equal(Object.values(assetProduction.distribution).reduce((total, count) => total + count, 0), assetProduction.totalAssets);
   assert.equal(await exists("ASSET_PRODUCTION_MAP.md"), true);
-  assert.equal(await exists("art-source/comet_animation_master_v1.png"), true);
-  assert.equal(await exists("assets/comet_animation_sheet_v1.webp"), true);
+  // Propietario (25/10): el arte retirado se borra; el cometa vivo es comet_flight_atlas_v3.
+  assert.equal(await exists("assets/comet_flight_atlas_v3.webp"), true);
 });
 
 await test("todos los assets de juego están documentados y precargados", async () => {
@@ -217,7 +217,7 @@ await test("recursos iOS y web sincronizado son coherentes", async () => {
   const splash = await readFile(join(root, "ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png"));
   assert.deepEqual(pngSize(icon), { width: 1024, height: 1024 });
   assert.deepEqual(pngSize(splash), { width: 2732, height: 2732 });
-  for (const path of ["index.html", "game.js", "content-runtime.js", "native-admob.js", "assets/ship_frame_05.webp", "assets/smoke_frame_02.webp"]) {
+  for (const path of ["index.html", "game.js", "content-runtime.js", "native-admob.js", "assets/player_ship_identity_v1.webp", "assets/smoke_frame_02.webp"]) {
     const [web, ios] = await Promise.all([
       readFile(join(root, "www", path)),
       readFile(join(root, "ios/App/App/public", path))

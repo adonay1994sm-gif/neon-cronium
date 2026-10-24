@@ -58,8 +58,7 @@ await test("PWA precarga código, legales y sprites", async () => {
   const manifest = JSON.parse(await text("ASSET_MANIFEST.json"));
   for (const path of [
     "index.html", "styles.css", "game.js", "core-runtime.js", "manifest.webmanifest",
-    "privacy.html", "terms.html", "analytics-manager.js", "assets/player_ship_identity_v1.webp", "assets/ship_modular_atlas_v1.webp", "assets/comet_flight_atlas_v3.webp", "assets/core_frame_00.webp",
-    "assets/cronium_fragment_v1.webp",
+    "privacy.html", "terms.html", "analytics-manager.js", "assets/player_ship_identity_v1.webp", "assets/ship_modular_atlas_v1.webp", "assets/comet_flight_atlas_v3.webp",
     "assets/chronos_shockwave_atlas_v1.webp",
     "assets/ch02_interceptor_atlas_v1.webp", "assets/guardian_atlas_states_v2.webp", "assets/cronium_energy_atlas_v2.webp",
     "assets/combat_sfx_atlas_v2.m4a", "assets/combat_sfx_atlas_v2.json", "assets/c9_upgrade_icons_v1.webp", "assets/forja_modules_atlas_v1.webp"
@@ -76,15 +75,12 @@ await test("PWA precarga código, legales y sprites", async () => {
     assert.equal(bytes.length, entry.size, `tamaño de inventario: ${active}`);
     if (entry.sha256) assert.equal(sha256(bytes), entry.sha256, `huella de inventario: ${active}`);
   }
+  // Propietario (25/10): el arte retirado se borra (sigue en el historial de git).
   const retiredShip = Array.from({length: 6}, (_, index) => `assets/ship_frame_${String(index).padStart(2, "0")}.webp`);
-  const shipGroup = manifest.groups.find(group => group.id === "ship");
-  assert.ok(shipGroup, "El respaldo histórico debe permanecer inventariado");
-  assert.deepEqual(shipGroup.paths, retiredShip);
-  assert.equal(shipGroup.activeRuntime, false);
-  assert.equal(shipGroup.precache, false);
-  for(const retired of [...retiredShip, 'assets/comet_animation_sheet_v1.webp']) {
+  assert.equal(manifest.groups.some(group => group.id === "ship"), false);
+  for(const retired of [...retiredShip, 'assets/comet_animation_sheet_v1.webp', 'assets/cronos_prime_trail_v1.webp']) {
     assert.equal(paths.has(retired),false,`referencia retirada precargada: ${retired}`);
-    assert.equal(await exists(retired),true,'El respaldo retirado debe seguir recuperable');
+    assert.equal(await exists(retired),false,`arte retirado todavía en el juego: ${retired}`);
   }
 });
 
