@@ -412,7 +412,7 @@
     if (settings.vibration) vibrate(20);
   };
   if (ui.difficulty) ui.difficulty.onchange = (event) => {
-    settings.difficulty = ["facil", "normal", "hardcore"].includes(event.target.value) ? event.target.value : "normal";
+    settings.difficulty = ["facil", "normal", "dificil", "hardcore"].includes(event.target.value) ? event.target.value : "normal";
   };
   ui.effectsQuality.onchange = (event) => {
     settings.effectsQuality = ["low", "normal", "high"].includes(event.target.value) ? event.target.value : "normal";

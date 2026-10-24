@@ -28,12 +28,18 @@ test('the pressure curve never goes down from one voyage to the next, in every m
   assert.deepEqual(VOYAGES.map(voyageNumber), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 });
 
-test('Easy < Normal < Hardcore on every voyage and every stage', () => {
+test('Easy < Normal < Hard < Hardcore on every voyage and every stage', () => {
+  // Propietario (25/10): cuatro modos, con DIFÍCIL entre Normal y Hardcore.
+  assert.deepEqual(Object.keys(DIFFICULTY_MODES), ['facil', 'normal', 'dificil', 'hardcore']);
   for (const ficha of VOYAGES) {
-    const easy = voyageIndex(ficha, 'facil'), normal = voyageIndex(ficha, 'normal'), hard = voyageIndex(ficha, 'hardcore');
-    assert.ok(easy < normal && normal < hard, `${ficha.id}: ${easy.toFixed(2)} < ${normal.toFixed(2)} < ${hard.toFixed(2)}`);
+    const easy = voyageIndex(ficha, 'facil'), normal = voyageIndex(ficha, 'normal'),
+      hard = voyageIndex(ficha, 'dificil'), hardcore = voyageIndex(ficha, 'hardcore');
+    assert.ok(easy < normal && normal < hard && hard < hardcore,
+      `${ficha.id}: ${easy.toFixed(2)} < ${normal.toFixed(2)} < ${hard.toFixed(2)} < ${hardcore.toFixed(2)}`);
   }
-  assert.ok(DIFFICULTY_MODES.facil.damage < 1 && DIFFICULTY_MODES.hardcore.damage > 1);
+  const {facil, dificil, hardcore} = DIFFICULTY_MODES;
+  assert.ok(facil.damage < 1 && dificil.damage > 1 && hardcore.damage > dificil.damage);
+  assert.ok(dificil.bossHealth > 1 && hardcore.bossHealth > dificil.bossHealth);
 });
 
 test('every mode stays fair: patrols, hazard gaps and speeds have hard limits', () => {
@@ -48,4 +54,5 @@ test('every mode stays fair: patrols, hazard gaps and speeds have hard limits', 
   }
   assert.equal(normalizeDifficulty('imposible'), 'normal');
   assert.equal(normalizeDifficulty('hardcore'), 'hardcore');
+  assert.equal(normalizeDifficulty('dificil'), 'dificil');
 });

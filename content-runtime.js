@@ -2441,6 +2441,16 @@ var NeonCampaign = (() => {
       bossHealth: 1,
       repairEarlier: 0
     }),
+    dificil: freeze2({
+      id: "dificil",
+      label: "Dif\xEDcil",
+      note: "M\xE1s presi\xF3n, da\xF1o y jefes m\xE1s duros; para quien ya domina Normal",
+      pressure: 1.09,
+      capDelta: 0,
+      damage: 1.12,
+      bossHealth: 1.15,
+      repairEarlier: -3
+    }),
     hardcore: freeze2({
       id: "hardcore",
       label: "Hardcore",

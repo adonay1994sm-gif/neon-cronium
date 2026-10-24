@@ -606,7 +606,7 @@
       reduceEffects: typeof source.reduceEffects === "boolean" ? source.reduceEffects
         : Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
       effectsQuality: savedQuality,
-      difficulty: ["facil", "normal", "hardcore"].includes(source.difficulty) ? source.difficulty : DEFAULT_SETTINGS.difficulty,
+      difficulty: ["facil", "normal", "dificil", "hardcore"].includes(source.difficulty) ? source.difficulty : DEFAULT_SETTINGS.difficulty,
       flightTutorial: source.flightTutorial&&typeof source.flightTutorial==='object' ? source.flightTutorial : null,
       effects: savedQuality !== "low"
     };
@@ -7170,7 +7170,7 @@
     if (settings.vibration) vibrate(20);
   };
   if (ui.difficulty) ui.difficulty.onchange = (event) => {
-    settings.difficulty = ["facil", "normal", "hardcore"].includes(event.target.value) ? event.target.value : "normal";
+    settings.difficulty = ["facil", "normal", "dificil", "hardcore"].includes(event.target.value) ? event.target.value : "normal";
   };
   ui.effectsQuality.onchange = (event) => {
     settings.effectsQuality = ["low", "normal", "high"].includes(event.target.value) ? event.target.value : "normal";

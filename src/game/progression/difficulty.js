@@ -1,6 +1,7 @@
 /**
  * Dificultad de la campaña (orden del propietario, 21/10/2026): la presión
- * sube siempre de un viaje al siguiente y hay tres modos. Puro: transforma
+ * sube siempre de un viaje al siguiente y hay cuatro modos (DIFÍCIL, orden del
+ * propietario del 25/10, entre Normal y Hardcore). Puro: transforma
  * las reglas de tramo de las fichas; el juego aplica el resultado.
  *
  * - Curva: la presión media del viaje n (1…50) debe ser la de S1-V1 por
@@ -17,6 +18,8 @@ export const DIFFICULTY_MODES = freeze({
     pressure: .72, capDelta: -1, damage: .6, bossHealth: .67, repairEarlier: 4}),
   normal: freeze({id: 'normal', label: 'Normal', note: 'La experiencia prevista',
     pressure: 1, capDelta: 0, damage: 1, bossHealth: 1, repairEarlier: 0}),
+  dificil: freeze({id: 'dificil', label: 'Difícil', note: 'Más presión, daño y jefes más duros; para quien ya domina Normal',
+    pressure: 1.09, capDelta: 0, damage: 1.12, bossHealth: 1.15, repairEarlier: -3}),
   hardcore: freeze({id: 'hardcore', label: 'Hardcore', note: 'Más enemigos, más rápidos y más daño; sin descanso',
     pressure: 1.18, capDelta: 1, damage: 1.25, bossHealth: 1.3, repairEarlier: -6})
 });
