@@ -383,18 +383,21 @@
   ui.musicVolume.oninput = (event) => {
     settings.music = +event.target.value;
     ui.musicValue.textContent = `${settings.music}%`;
+    paintRanges();
     startMusic();
     updateAudioVolumes();
   };
   ui.fxVolume.oninput = (event) => {
     settings.fx = +event.target.value;
     ui.fxValue.textContent = `${settings.fx}%`;
+    paintRanges();
     updateAudioVolumes();
     tone(620, 0.05, "triangle", 0.04);
   };
   ui.sensitivity.oninput = (event) => {
     settings.sensitivity = +event.target.value;
     ui.sensitivityValue.textContent = `${settings.sensitivity}%`;
+    paintRanges();
   };
   ui.autoFire.onchange = (event) => {
     const previous = settings.autoFire;

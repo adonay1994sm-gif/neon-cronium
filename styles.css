@@ -1308,3 +1308,22 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
 #over > .panel{position:relative}
 #over > .panel::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:url("assets/ui_defeat_cracks_v1.webp") center/100% 100% no-repeat;opacity:.8}
 #over > .panel > *{position:relative;z-index:1}
+/* Controles de ajustes pintados (encargo art-ui-ajustes-piezas-v2). La fila
+   pinta el carril y la parte recorrida (--fill, de paintRanges); el input
+   queda encima, transparente salvo el tirador. */
+#settingsPanel .setting-row{position:relative;padding-bottom:30px}
+#settingsPanel .setting-row::before,#settingsPanel .setting-row::after{content:"";position:absolute;left:0;bottom:2px;height:24px;pointer-events:none}
+#settingsPanel .setting-row::before{right:0;background:url("assets/ui_slider_track_v1.webp") center/100% 100% no-repeat}
+#settingsPanel .setting-row::after{width:calc(var(--fill,.5) * 100%);background:url("assets/ui_slider_fill_v1.webp") left center/calc(100% / var(--fill,.5)) 100% no-repeat}
+#settingsPanel .setting-row input[type=range]{position:absolute;z-index:1;left:0;right:0;bottom:0;width:100%;height:28px;margin:0;background:none;-webkit-appearance:none;appearance:none}
+#settingsPanel .setting-row input[type=range]::-webkit-slider-runnable-track{height:28px;background:none}
+#settingsPanel .setting-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;margin-top:-2px;border:0;background:url("assets/ui_slider_thumb_v1.webp") center/contain no-repeat}
+#settingsPanel .setting-row input[type=range]::-moz-range-track{height:28px;background:none}
+#settingsPanel .setting-row input[type=range]::-moz-range-thumb{width:32px;height:32px;border:0;background:url("assets/ui_slider_thumb_v1.webp") center/contain no-repeat}
+#settingsPanel .setting-row input[type=range]:focus-visible{outline:2px solid #d1ffff;outline-offset:4px}
+#settingsPanel :is(.toggle-row,.quality-row){border-top:0;background:url("assets/ui_separator_v1.webp") top center/100% 8px no-repeat}
+#settingsPanel .toggle-row i{flex:0 0 68px;width:68px;height:20px;border:0;border-radius:0;background:url("assets/ui_toggle_off_v1.webp") center/contain no-repeat}
+#settingsPanel .toggle-row i::after{content:none}
+#settingsPanel .toggle-row input:checked + i{background:url("assets/ui_toggle_on_v1.webp") center/contain no-repeat;border:0}
+#settingsPanel .quality-row select{flex:0 0 auto;min-width:150px;min-height:44px;padding:0 40px 0 16px;border:0;border-radius:0;-webkit-appearance:none;appearance:none;color-scheme:dark;
+  background:url("assets/ui_select_v1.webp") center/100% 100% no-repeat;color:#dffbff;font:800 12px/1 var(--font-display);letter-spacing:.06em}

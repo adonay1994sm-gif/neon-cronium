@@ -974,6 +974,14 @@
     ui.musicValue.textContent = `${settings.music}%`;
     ui.fxValue.textContent = `${settings.fx}%`;
     ui.sensitivityValue.textContent = `${settings.sensitivity}%`;
+    paintRanges();
+  }
+
+  // Las barras pintadas leen la parte recorrida de --fill (0…1) en su fila.
+  function paintRanges() {
+    for (const range of [ui.musicVolume, ui.fxVolume, ui.sensitivity]) {
+      range.parentElement.style.setProperty("--fill", Math.max(.001, (range.value - range.min) / (range.max - range.min)));
+    }
   }
 
   function openSettings(from = "menu") {
@@ -7130,18 +7138,21 @@
   ui.musicVolume.oninput = (event) => {
     settings.music = +event.target.value;
     ui.musicValue.textContent = `${settings.music}%`;
+    paintRanges();
     startMusic();
     updateAudioVolumes();
   };
   ui.fxVolume.oninput = (event) => {
     settings.fx = +event.target.value;
     ui.fxValue.textContent = `${settings.fx}%`;
+    paintRanges();
     updateAudioVolumes();
     tone(620, 0.05, "triangle", 0.04);
   };
   ui.sensitivity.oninput = (event) => {
     settings.sensitivity = +event.target.value;
     ui.sensitivityValue.textContent = `${settings.sensitivity}%`;
+    paintRanges();
   };
   ui.autoFire.onchange = (event) => {
     const previous = settings.autoFire;

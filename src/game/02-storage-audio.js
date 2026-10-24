@@ -388,6 +388,14 @@
     ui.musicValue.textContent = `${settings.music}%`;
     ui.fxValue.textContent = `${settings.fx}%`;
     ui.sensitivityValue.textContent = `${settings.sensitivity}%`;
+    paintRanges();
+  }
+
+  // Las barras pintadas leen la parte recorrida de --fill (0…1) en su fila.
+  function paintRanges() {
+    for (const range of [ui.musicVolume, ui.fxVolume, ui.sensitivity]) {
+      range.parentElement.style.setProperty("--fill", Math.max(.001, (range.value - range.min) / (range.max - range.min)));
+    }
   }
 
   function openSettings(from = "menu") {
