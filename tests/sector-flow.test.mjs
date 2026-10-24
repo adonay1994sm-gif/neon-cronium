@@ -773,3 +773,27 @@ test('the sector reaches Atlas with exactly the CRONIUM of the last stage', () =
   T.adv(.5);
   assert.equal(T.ev('Boolean(atlasBoss)'), true);
 });
+
+test('sector 1 never drops the floating Gemelo emitter: the weapon is earned by beating Atlas', () => {
+  // Normas del propietario (24/10): una arma por jefe; C9 no se abre por recoger una pieza.
+  const {w, T} = harness();
+  T.startSector('S1');
+  let seen = false;
+  for (const stage of [2, 3, 4]) {
+    T.toStage(stage);
+    for (let i = 0; i < 40 && !seen; i++) { T.adv(1); seen = T.ev("items.some(item=>item.type==='flightModule')"); }
+  }
+  assert.equal(seen, false);
+  assert.equal(T.ev('classicEquipment.recoveredTwin'), false);
+  assert.equal(w.document.getElementById('openFlightDock').classList.contains('hidden'), true);
+});
+
+test('the C9 workshop stays closed in mid-flight during the sector, even after Atlas', () => {
+  // Decisión «regla-y-menu» (24/10): C9 se abre entre partidas, no en pleno vuelo.
+  const {w, T} = harness();
+  startAt(T, 3);
+  T.ev("classicEquipment={...classicEquipment,recoveredTwin:true,twinPrepared:true,unlocked:['pulse','twin']};syncClassicFlightHud()");
+  T.adv(2);
+  assert.equal(T.st().state, 'playing');
+  assert.equal(w.document.getElementById('classicC9').classList.contains('hidden'), true);
+});

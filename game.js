@@ -1643,7 +1643,8 @@
     $("openFlightDock")?.classList.toggle("hidden",!classicEquipment.recoveredTwin);
     const view=classicFlightView;
     if(ui.classicC9){
-      const c9Recovered=Boolean(classicEquipment.recoveredTwin),c9Blocked=Boolean(atlasBoss);
+      // Decisión del propietario (24/10): en el sector C9 no se abre en pleno vuelo.
+      const c9Recovered=Boolean(classicEquipment.recoveredTwin),c9Blocked=Boolean(atlasBoss)||isSectorRun();
       ui.classicC9.disabled=state!=="playing"||c9Blocked;
       ui.classicC9.classList.toggle("hidden",!c9Recovered||c9Blocked||ui.flightHud.classList.contains("hidden"));
       ui.classicC9.title=!c9Recovered?"Recupera primero el módulo C9":c9Blocked?"C9 no está disponible durante el bloqueo de Atlas":"Taller C9 · pausa el viaje para configurar tu nave";
@@ -1714,7 +1715,7 @@
   function setClassicFlightHudVisible(visible) {
     ui.flightHud?.classList.toggle("hidden",!visible);
     ui.classicMissile?.classList.toggle("hidden",!visible);
-    ui.classicC9?.classList.toggle("hidden",!visible||!classicEquipment.recoveredTwin||Boolean(atlasBoss));
+    ui.classicC9?.classList.toggle("hidden",!visible||!classicEquipment.recoveredTwin||Boolean(atlasBoss)||isSectorRun());
     ui.flightWeapon?.classList.toggle("hidden",!visible||classicEquipment.unlocked.length<2);
     ui.flightPilotHint?.classList.toggle("hidden",!visible||Boolean(classicEquipment.recoveredTwin));
     if(!visible)ui.chapterSkip?.classList.add("hidden");

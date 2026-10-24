@@ -49,7 +49,11 @@ test('the sector opens with the Chronos intro', () => {
   assert.equal(S1_GAIA.intro, true);
   assert.equal(S1_GAIA.recoveryAt, 9);
   assert.equal(S1_GAIA.cinematicDuration, 90);
-  assert.deepEqual(introEvents(S1_GAIA), introEvents(S1_V1_CHRONOS_GAIA));
+  // Normas del propietario (24/10): el Gemelo se gana venciendo a Atlas, así
+  // que el sector no suelta el emisor flotante del viaje antiguo.
+  assert.equal(S1_GAIA.events.some(event => event.type === 'twin-module-marker'), false);
+  assert.deepEqual(introEvents(S1_GAIA),
+    introEvents(S1_V1_CHRONOS_GAIA).filter(event => event.type !== 'twin-module-marker'));
 });
 
 test('the sector ends with Atlas', () => {

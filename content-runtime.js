@@ -3383,7 +3383,6 @@ var NeonCampaign = (() => {
       { id: "sector-1-intruder", type: "attack", at: 2.25, attackerId: "cronium-raider", targetId: "chronos-reactor" },
       { id: "sector-1-breach", type: "rupture", at: 9, resourceId: "cronium", cause: "hostile-reactor-strike" },
       { id: "sector-1-perimeter-exit", type: "departure", at: 108, originId: "chronos-scientific-centre" },
-      { id: "sector-1-recovered-module", type: "twin-module-marker", at: 90, moduleId: "twin-emitter", resourceId: "cronium" },
       { id: "sector-1-gaia-beacon", type: "gaia-beacon", at: 470, destinationId: "gaia-atlas-approach" }
     ].map((event2) => immutable12(event2))),
     service: immutable12({
@@ -3392,7 +3391,7 @@ var NeonCampaign = (() => {
       visibleApproach: 2.4,
       departure: 2.4,
       renamedStage: "Corredor de Gaia",
-      renamedObjective: "Prueba tu nave en el corredor; C9 sigue disponible en la pausa"
+      renamedObjective: "Prueba tu nave en el corredor; C9 vuelve tras vencer a Atlas"
     }),
     encounters: immutable12([
       encounter11(1, [2, ROSTERS11.escape, 8], { attackers: 1 }),

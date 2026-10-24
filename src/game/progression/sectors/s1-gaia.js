@@ -53,11 +53,10 @@ export const S1_GAIA = immutable({
     {id:'sector-1-intruder',type:'attack',at:2.25,attackerId:'cronium-raider',targetId:'chronos-reactor'},
     {id:'sector-1-breach',type:'rupture',at:9,resourceId:'cronium',cause:'hostile-reactor-strike'},
     {id:'sector-1-perimeter-exit',type:'departure',at:108,originId:'chronos-scientific-centre'},
-    {id:'sector-1-recovered-module',type:'twin-module-marker',at:90,moduleId:'twin-emitter',resourceId:'cronium'},
     {id:'sector-1-gaia-beacon',type:'gaia-beacon',at:470,destinationId:'gaia-atlas-approach'}
   ].map(event => immutable(event))),
   service: immutable({stage: 6, approach: 1.2, visibleApproach: 2.4, departure: 2.4,
-    renamedStage: 'Corredor de Gaia', renamedObjective: 'Prueba tu nave en el corredor; C9 sigue disponible en la pausa'}),
+    renamedStage: 'Corredor de Gaia', renamedObjective: 'Prueba tu nave en el corredor; C9 vuelve tras vencer a Atlas'}),
   encounters: immutable([
     encounter(1, [2, ROSTERS.escape, 8], {attackers: 1}),
     encounter(2, [3, ROSTERS.flank, 7], {attackers: 1}),
