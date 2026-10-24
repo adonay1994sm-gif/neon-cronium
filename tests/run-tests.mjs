@@ -427,7 +427,7 @@ await test("guardados corruptos se normalizan sin romper el menú ni el control"
   assert.deepEqual({ ...api.getStars() }, { 1: 3, 3: 2 });
   assert.deepEqual({ ...api.getLevelBest() }, { 2: 900 });
   assert.deepEqual({ ...api.loadSettings() }, {
-    music: 100, fx: 0, sensitivity: 135, autoFire: false, vibration: true, reduceEffects: false, effectsQuality: "normal", difficulty: "normal", flightTutorial: null, effects: true
+    music: 100, fx: 0, sensitivity: 135, sensitivityMigrated: true, autoFire: false, vibration: true, reduceEffects: false, effectsQuality: "normal", difficulty: "normal", flightTutorial: null, effects: true
   });
   // Clave heredada a propósito: comprueba que un dato antiguo no activa el ajuste.
   gameWindow.localStorage.setItem("neonCatcher.atlasAutoFire.v1", "true");
@@ -435,6 +435,17 @@ await test("guardados corruptos se normalizan sin romper el menú ni el control"
   gameWindow.localStorage.setItem(api.keys.settings, JSON.stringify({autoFire: true}));
   assert.equal(api.loadSettings().autoFire, true, "Sólo un opt-in explícito activa el ajuste");
   gameWindow.localStorage.setItem(api.keys.unlocked, "10");
+});
+
+await test("la sensibilidad 135 llega una vez a quien tenía guardado el 100 antiguo", async () => {
+  // Propietario (25/10): también para quien ya guardó ajustes.
+  gameWindow.localStorage.setItem(api.keys.settings, JSON.stringify({sensitivity: 100}));
+  assert.equal(api.loadSettings().sensitivity, 135);
+  gameWindow.localStorage.setItem(api.keys.settings, JSON.stringify({sensitivity: 100, sensitivityMigrated: true}));
+  assert.equal(api.loadSettings().sensitivity, 100, "Un 100 elegido después del cambio se respeta");
+  gameWindow.localStorage.setItem(api.keys.settings, JSON.stringify({sensitivity: 120}));
+  assert.equal(api.loadSettings().sensitivity, 120, "Otro valor elegido se conserva");
+  gameWindow.localStorage.removeItem(api.keys.settings);
 });
 
 await test("silueta clásica al 52 % ajustada al material visible conserva treinta puntos y extremos probados", async () => {

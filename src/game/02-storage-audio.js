@@ -8,10 +8,13 @@
     const savedQuality = ["low", "normal", "high"].includes(source.effectsQuality)
       ? source.effectsQuality
       : source.effects === false ? "low" : DEFAULT_SETTINGS.effectsQuality;
+    // Propietario (25/10): el 100 antiguo pasa una vez a 135; lo elegido después se respeta.
+    const savedSensitivity = Math.round(finite(source.sensitivity, DEFAULT_SETTINGS.sensitivity, 60, 150) / 5) * 5;
     return {
       music: Math.round(finite(source.music, DEFAULT_SETTINGS.music, 0, 100)),
       fx: Math.round(finite(source.fx, DEFAULT_SETTINGS.fx, 0, 100)),
-      sensitivity: Math.round(finite(source.sensitivity, DEFAULT_SETTINGS.sensitivity, 60, 150) / 5) * 5,
+      sensitivity: source.sensitivityMigrated !== true && savedSensitivity === 100 ? DEFAULT_SETTINGS.sensitivity : savedSensitivity,
+      sensitivityMigrated: true,
       autoFire: source.autoFire === true,
       vibration: typeof source.vibration === "boolean" ? source.vibration : DEFAULT_SETTINGS.vibration,
       reduceEffects: typeof source.reduceEffects === "boolean" ? source.reduceEffects
