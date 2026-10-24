@@ -81,6 +81,81 @@
       "archivo": "hud_boton_pausa_v1.webp",
       "encargo": "art-ui-hud-v2",
       "nota": "Botón de pausa (1254×1254)."
+    },
+    {
+      "archivo": "hud_marco_barra_jefe_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Marco de la barra de vida del jefe (2179×722): placa del nombre a la izquierda, marcas de fase y muesca naranja hacia el 70 % del largo."
+    },
+    {
+      "archivo": "hud_relleno_jefe_blanco_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Relleno claro de la barra del jefe, para el trozo recién perdido (2172×724)."
+    },
+    {
+      "archivo": "hud_boton_disparar_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Botón DISPARAR, normal (1774×887)."
+    },
+    {
+      "archivo": "hud_boton_disparar_pulsado_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Botón DISPARAR, pulsado (1774×887)."
+    },
+    {
+      "archivo": "hud_boton_misil_normal_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Botón de misil, normal con el interior oscuro (1520×1034); el de interior ámbar (hud_boton_misil_v1) queda como pulsado."
+    },
+    {
+      "archivo": "hud_placa_misiles_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Placa con icono de misil y barra (1521×1034). No estaba en la lista: posible contador de misiles."
+    },
+    {
+      "archivo": "hud_placa_mensaje_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Placa de mensajes de una línea con hueco octogonal para el retrato (2173×724)."
+    },
+    {
+      "archivo": "hud_barra_superior_v1.webp",
+      "encargo": "art-ui-hud-v2",
+      "nota": "Marco de la barra superior con 4 casillas (2172×724)."
+    },
+    {
+      "archivo": "ajustes_interruptor_encendido_v1.webp",
+      "encargo": "art-ui-ajustes-piezas-v2",
+      "nota": "Interruptor encendido (1673×940)."
+    },
+    {
+      "archivo": "ajustes_interruptor_apagado_v1.webp",
+      "encargo": "art-ui-ajustes-piezas-v2",
+      "nota": "Interruptor apagado (1690×931)."
+    },
+    {
+      "archivo": "ajustes_separador_v1.webp",
+      "encargo": "art-ui-ajustes-piezas-v2",
+      "nota": "Separador fino entre filas (2172×724)."
+    },
+    {
+      "archivo": "ajustes_selector_v1.webp",
+      "encargo": "art-ui-ajustes-piezas-v2",
+      "nota": "Casilla de selector con flecha (2171×724)."
+    },
+    {
+      "archivo": "ajustes_carril_vacio_v1.webp",
+      "encargo": "art-ui-ajustes-piezas-v2",
+      "nota": "Carril del deslizador vacío (2172×724)."
+    },
+    {
+      "archivo": "ajustes_carril_lleno_v1.webp",
+      "encargo": "art-ui-ajustes-piezas-v2",
+      "nota": "Carril del deslizador lleno (2172×724)."
+    },
+    {
+      "archivo": "ajustes_tirador_v1.webp",
+      "encargo": "art-ui-ajustes-piezas-v2",
+      "nota": "Tirador del deslizador (1254×1254)."
     }
   ],
   "estado": "Revisadas el 24/10. Integradas: ver scripts/build-ui-pieces.py. El resto espera su paso (HUD, hangar).",
@@ -100,6 +175,21 @@
     "hangar_casilla_elegida_v1.webp": "25ada85ab477b0c033d38b4c7cfa88488273b1ac2150d9948053fbe72a2a75c4",
     "hud_barra_casco_v1.webp": "1e1c4f0723582dfaf5b8c313c98a037bb643b57f2c07dfe2656bcdc839600399",
     "hud_relleno_jefe_v1.webp": "3fa228e31bce4dfa46d431332658871a70fe4bffdbfb6fcfd032521197b08177",
-    "hud_boton_pausa_v1.webp": "a8325e21c2ae12aa9ab5740487092464ae47c627e822791d0021309247695504"
+    "hud_boton_pausa_v1.webp": "a8325e21c2ae12aa9ab5740487092464ae47c627e822791d0021309247695504",
+    "hud_marco_barra_jefe_v1.webp": "19ae302d80369b1097d463314c17f24c6afcd7c0edfe45a1a53ba01fd6a10fe9",
+    "hud_relleno_jefe_blanco_v1.webp": "0f9f15cb99e1d34902c84f359fd0d5a432ae5428d741bafd2a03110a0de9b93d",
+    "hud_boton_disparar_v1.webp": "cb441346e59dd2bd2d015b0f2a3e8047f36052ad4f58a1662cc528c4c7c54c59",
+    "hud_boton_disparar_pulsado_v1.webp": "7a7215323c439baea654d749c7590c43e78ea3bb343091421fd3a5329d80821b",
+    "hud_boton_misil_normal_v1.webp": "1defea4a8c4d9cc35b32e5fb5ec179ed7aa34d65fb6e524fbf4419984ba6705b",
+    "hud_placa_misiles_v1.webp": "1a75497905720604a78ffcd5ebc2342332638a59bb421b1da36b398bf8512812",
+    "hud_placa_mensaje_v1.webp": "378979af74ec7e4b8f7be34fb60847d01bbaeb6332aae36ceef939422e76d27e",
+    "hud_barra_superior_v1.webp": "5a571084ad81d76333c3c09786f6d43f581e482a177382d12e827aea3244fca1",
+    "ajustes_interruptor_encendido_v1.webp": "2dd5566814b3137cbe4f34ef3ac16c91ffc2a03bd0e4b3c31161ee1167a7f2e1",
+    "ajustes_interruptor_apagado_v1.webp": "a6f3ad45e4cdaa1508a1221952430f0e248bd3add9f35701ad7d178bb7038701",
+    "ajustes_separador_v1.webp": "fb48224a50368c39423195c8d79b1611fb20e06f702cca82e865e67dfdba090b",
+    "ajustes_selector_v1.webp": "81497d445b5e861b12dd822b8d11d5c1ea10dbc2385fcd71b91b83c3daa73d96",
+    "ajustes_carril_vacio_v1.webp": "c972815bb7a9cfeaa068e05b2d09f6105a0ed0ebcd02c6969eb7ab13c53f9c68",
+    "ajustes_carril_lleno_v1.webp": "56e88d334c985349bf62b6fa214428befa5ad323ee1a2b92e40849ef0636baaf",
+    "ajustes_tirador_v1.webp": "40204ac3514f3dd4141f3a025239d46a91448549c3584d04a41997dbf95c2a25"
   }
 }
