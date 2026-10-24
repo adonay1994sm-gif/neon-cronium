@@ -797,3 +797,20 @@ test('the C9 workshop stays closed in mid-flight during the sector, even after A
   assert.equal(T.st().state, 'playing');
   assert.equal(w.document.getElementById('classicC9').classList.contains('hidden'), true);
 });
+
+test('the HUD names the sector, not a voyage', () => {
+  // Auditoría 25/10 (A6): decía «VIAJE S1».
+  const {w, T} = harness();
+  T.startSector('S1'); T.adv(.5);
+  const level = w.document.getElementById('hudLevel');
+  assert.deepEqual([level.previousElementSibling.textContent, level.textContent], ['SECTOR', '1']);
+});
+
+test('settings always open at the top of the list', () => {
+  // Auditoría 25/10 (A2): la segunda vez se abría a mitad y ocultaba el título.
+  const {w, T} = harness();
+  const panel = w.document.querySelector('#settingsPanel .settings-panel');
+  panel.scrollTop = 400;
+  T.ev('openSettings("menu")');
+  assert.equal(panel.scrollTop, 0);
+});

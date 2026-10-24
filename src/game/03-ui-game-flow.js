@@ -1697,9 +1697,12 @@
     reserve.textContent=classicHullReserve>0?`+${Math.ceil(classicHullReserve)}`:"";
     // Los 10 viajes corren en currentLevel 0: la casilla muestra el viaje
     // (ficha del mapa o la de S1-V1), no un «NIVEL 1» que nunca cambia.
-    ui.hudLevel.textContent = classicSideVoyage ? classicSideVoyage.ficha.id
+    // En el sector la casilla dice SECTOR y su número (auditoría 25/10, A6).
+    const sectorRun = isSectorRun();
+    ui.hudLevel.textContent = sectorRun ? String(classicSideVoyage.ficha.sector)
+      : classicSideVoyage ? classicSideVoyage.ficha.id
       : NeonCampaign.PLAYABLE_VOYAGES.find(ficha => ficha.id === "S1-V1").id;
-    ui.hudLevel.previousElementSibling.textContent = "VIAJE";
+    ui.hudLevel.previousElementSibling.textContent = sectorRun ? "SECTOR" : "VIAJE";
     // En espera de CRONIUM la cifra es la cuota del tramo, también en pausa (A2).
     ui.goal.previousElementSibling.textContent=classicFlightView?.waitingFor==="cronium"?"TRAMO":"CRONIUM";
     ui.hullBar.style.width = `${clamp(hull, 0, 100)}%`;
