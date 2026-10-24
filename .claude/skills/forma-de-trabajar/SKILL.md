@@ -143,7 +143,9 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
 - 10 naves (24/10):
   - las paletas y habilidades del concepto
     (https://claude.ai/artifact/6KmCsopxEWoBbrK76jKiKx);
-  - Astér de serie y una nave nueva por sector;
+  - Astér de serie; desde el 24/10 las demás no salen una por sector:
+    2 gratis, varias con chatarra (cada una más cara y mejor) y el resto de
+    pago con skins. Los detalles esperan su respuesta (`dec-naves-pago`);
   - la habilidad va con el fuselaje;
   - el hangar es una pestaña del taller de Mira.
 - La intro de Chronos usa un portal dimensional (no estela) y el haz pintado
@@ -172,6 +174,10 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 24/10/2026: GPT entregó marcos y pantallas hechos con código (planos, 24
+  colores, montados sobre las capturas) y creía haber cumplido. Revisa cada
+  entrega del baúl con tus ojos antes de darla por buena; si no vale, pide
+  un id nuevo (`-v2`) con la referencia aprobada y una comprobación medible.
 - 24/10/2026: cuando propone algo que no es del paso actual (C9 como nave
   taller), quiere pensarlo y dejarlo escrito para tenerlo claro, pero
   aparcado: ni código ni encargos a GPT hasta que llegue su paso. Se guarda en
