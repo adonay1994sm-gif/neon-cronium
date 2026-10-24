@@ -1285,3 +1285,26 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
   border-image:url("assets/ui_stat_card_v1.webp") 44 60 fill / 16px 22px stretch}
 #menu.menu-gpt .hero-cta{border-image:url("assets/ui_button_main_v1.webp") 30 84 fill / 22px 60px stretch}
 #menu.menu-gpt .hero-cta:active:not(:disabled){border-image-source:url("assets/ui_button_main_pressed_v1.webp")}
+/* Piezas pintadas de GPT para las ventanas (encargos art-ui-iconos-como-jugar-v2
+   y art-ui-ventanas-piezas-v2; scripts/build-ui-pieces.py). */
+#instructions :is(.rules,.ability-list) i{position:static;display:block;width:40px;height:40px;flex:0 0 40px;border:0;border-radius:0;box-shadow:none;filter:none;
+  font-size:0;color:transparent;background:url("assets/ui_howto_icons_v1.webp") 0 0/600% 200% no-repeat}
+#instructions :is(.rules,.ability-list) i::before,#instructions :is(.rules,.ability-list) i::after{content:none}
+#instructions i.howto-phaser,#instructions i.phaser-a{background-position:20% 0}
+#instructions i.energy{background-position:40% 0}
+#instructions i.meteor{background-position:60% 0}
+#instructions i.debris-corridor{background-position:80% 0}
+#instructions i.shield-a{background-position:100% 0}
+#instructions i.tractor-a{background-position:0 100%}
+#instructions i.slow-a{background-position:20% 100%}
+#instructions i.double-a{background-position:40% 100%}
+#instructions i.repair-a{background-position:60% 100%}
+.overlay:not(#menu) .stars-awarded span{display:inline-block;width:52px;height:52px;margin:0 3px;color:transparent;text-shadow:none;
+  background:url("assets/ui_star_full_v1.webp") center/contain no-repeat}
+.overlay:not(#menu) .stars-awarded span.off{background-image:url("assets/ui_star_empty_v1.webp");opacity:.85}
+#complete .complete-visual::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:url("assets/ui_sector_frame_v1.webp") center/100% 100% no-repeat}
+.overlay:not(#menu) .beacon-offer-art{width:132px;height:132px;background:url("assets/ui_beacon_big_v1.webp") center/contain no-repeat;filter:drop-shadow(0 0 16px #67ffe544)}
+#over > .panel{position:relative}
+#over > .panel::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:url("assets/ui_defeat_cracks_v1.webp") center/100% 100% no-repeat;opacity:.8}
+#over > .panel > *{position:relative;z-index:1}
