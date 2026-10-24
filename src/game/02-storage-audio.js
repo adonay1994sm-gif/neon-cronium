@@ -407,6 +407,9 @@
   function openSettings(from = "menu") {
     settingsReturn = from;
     syncSettingsUI();
+    // Siempre desde arriba: si no, la segunda vez se abría a mitad (auditoría 25/10, A2).
+    const panel = ui.settingsPanel.querySelector(".settings-panel");
+    if (panel) panel.scrollTop = 0;
     overlay(ui.settingsPanel);
     startMusic();
   }
