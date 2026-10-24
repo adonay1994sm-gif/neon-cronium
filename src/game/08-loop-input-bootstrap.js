@@ -422,6 +422,10 @@
     settings.reduceEffects = event.target.checked;
     document.body.classList.toggle("reduced-effects", settings.reduceEffects);
   };
+  ui.leftHanded.onchange = (event) => {
+    settings.leftHanded = event.target.checked;
+    document.body.classList.toggle("left-handed", settings.leftHanded);
+  };
 
   ui.reward.onclick = async () => {
     ui.reward.disabled = true;

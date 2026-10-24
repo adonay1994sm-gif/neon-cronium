@@ -1327,3 +1327,9 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
 #settingsPanel .toggle-row input:checked + i{background:url("assets/ui_toggle_on_v1.webp") center/contain no-repeat;border:0}
 #settingsPanel .quality-row select{flex:0 0 auto;min-width:150px;min-height:44px;padding:0 40px 0 16px;border:0;border-radius:0;-webkit-appearance:none;appearance:none;color-scheme:dark;
   background:url("assets/ui_select_v1.webp") center/100% 100% no-repeat;color:#dffbff;font:800 12px/1 var(--font-display);letter-spacing:.06em}
+/* Mano izquierda (ajuste, propietario 25/10): disparo, misil y C9 pasan a la
+   izquierda; el aviso de pilotaje, a la derecha. */
+body.flight-mode.left-handed .fire-control{right:auto;left:var(--ui-safe-left);border-radius:10px 10px 10px 3px}
+body.flight-mode.left-handed .classic-missile{right:auto;left:calc(var(--ui-safe-left) + 118px);border-radius:10px 10px 10px 3px}
+body.flight-mode.left-handed #classicC9{right:auto;left:var(--ui-safe-left)}
+body.flight-mode.left-handed .flight-pilot-hint{left:auto;right:max(14px,env(safe-area-inset-right))}

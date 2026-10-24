@@ -121,6 +121,7 @@
     effectsQuality: $("effectsQuality"),
     difficulty: $("difficulty"),
     reduceEffects: $("reduceEffects"),
+    leftHanded: $("leftHanded"),
     autoFire: $("autoFire"),
     musicValue: $("musicValue"),
     fxValue: $("fxValue"),
@@ -605,6 +606,7 @@
       vibration: typeof source.vibration === "boolean" ? source.vibration : DEFAULT_SETTINGS.vibration,
       reduceEffects: typeof source.reduceEffects === "boolean" ? source.reduceEffects
         : Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
+      leftHanded: source.leftHanded === true,
       effectsQuality: savedQuality,
       difficulty: ["facil", "normal", "dificil", "hardcore"].includes(source.difficulty) ? source.difficulty : DEFAULT_SETTINGS.difficulty,
       flightTutorial: source.flightTutorial&&typeof source.flightTutorial==='object' ? source.flightTutorial : null,
@@ -966,6 +968,7 @@
 
   function syncSettingsUI() {
     document.body.classList.toggle("reduced-effects", settings.reduceEffects);
+    document.body.classList.toggle("left-handed", settings.leftHanded);
     ui.musicVolume.value = settings.music;
     ui.fxVolume.value = settings.fx;
     ui.sensitivity.value = settings.sensitivity;
@@ -973,6 +976,7 @@
     ui.effectsQuality.value = settings.effectsQuality;
     if (ui.difficulty) ui.difficulty.value = settings.difficulty;
     ui.reduceEffects.checked = settings.reduceEffects;
+    ui.leftHanded.checked = settings.leftHanded;
     ui.autoFire.checked = settings.autoFire;
     ui.musicValue.textContent = `${settings.music}%`;
     ui.fxValue.textContent = `${settings.fx}%`;
@@ -7179,6 +7183,10 @@
   ui.reduceEffects.onchange = (event) => {
     settings.reduceEffects = event.target.checked;
     document.body.classList.toggle("reduced-effects", settings.reduceEffects);
+  };
+  ui.leftHanded.onchange = (event) => {
+    settings.leftHanded = event.target.checked;
+    document.body.classList.toggle("left-handed", settings.leftHanded);
   };
 
   ui.reward.onclick = async () => {

@@ -121,6 +121,7 @@
     effectsQuality: $("effectsQuality"),
     difficulty: $("difficulty"),
     reduceEffects: $("reduceEffects"),
+    leftHanded: $("leftHanded"),
     autoFire: $("autoFire"),
     musicValue: $("musicValue"),
     fxValue: $("fxValue"),

@@ -427,7 +427,7 @@ await test("guardados corruptos se normalizan sin romper el menú ni el control"
   assert.deepEqual({ ...api.getStars() }, { 1: 3, 3: 2 });
   assert.deepEqual({ ...api.getLevelBest() }, { 2: 900 });
   assert.deepEqual({ ...api.loadSettings() }, {
-    music: 100, fx: 0, sensitivity: 135, sensitivityMigrated: true, autoFire: false, vibration: true, reduceEffects: false, effectsQuality: "normal", difficulty: "normal", flightTutorial: null, effects: true
+    music: 100, fx: 0, sensitivity: 135, sensitivityMigrated: true, autoFire: false, vibration: true, reduceEffects: false, leftHanded: false, effectsQuality: "normal", difficulty: "normal", flightTutorial: null, effects: true
   });
   // Clave heredada a propósito: comprueba que un dato antiguo no activa el ajuste.
   gameWindow.localStorage.setItem("neonCatcher.atlasAutoFire.v1", "true");
@@ -446,6 +446,21 @@ await test("la sensibilidad 135 llega una vez a quien tenía guardado el 100 ant
   gameWindow.localStorage.setItem(api.keys.settings, JSON.stringify({sensitivity: 120}));
   assert.equal(api.loadSettings().sensitivity, 120, "Otro valor elegido se conserva");
   gameWindow.localStorage.removeItem(api.keys.settings);
+});
+
+await test("mano izquierda: se guarda y pasa los controles de vuelo a la izquierda", async () => {
+  // Propietario (25/10): ajuste para zurdos.
+  gameWindow.localStorage.setItem(api.keys.settings, JSON.stringify({leftHanded: "yes"}));
+  assert.equal(api.loadSettings().leftHanded, false, "Solo un true explícito lo activa");
+  gameWindow.localStorage.setItem(api.keys.settings, JSON.stringify({leftHanded: true}));
+  assert.equal(api.loadSettings().leftHanded, true);
+  gameWindow.localStorage.removeItem(api.keys.settings);
+  const toggle = gameWindow.document.getElementById("leftHanded");
+  assert.ok(toggle, "El ajuste está en la pantalla de ajustes");
+  toggle.checked = true; toggle.dispatchEvent(new gameWindow.Event("change"));
+  assert.ok(gameWindow.document.body.classList.contains("left-handed"));
+  toggle.checked = false; toggle.dispatchEvent(new gameWindow.Event("change"));
+  assert.equal(gameWindow.document.body.classList.contains("left-handed"), false);
 });
 
 await test("silueta clásica al 52 % ajustada al material visible conserva treinta puntos y extremos probados", async () => {
