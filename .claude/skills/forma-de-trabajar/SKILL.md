@@ -176,6 +176,16 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 25/10/2026: «hemos puesto unas normas que no se están cumpliendo» (el
+  emisor flotante de la Forja). Antes de dar un paso por cerrado, comprueba
+  en el juego real que cada norma que decidió se cumple; las que faltan van
+  a la tarea «Normas que decidiste y aún no están en el juego».
+- 25/10/2026: quiere el proyecto limpio: el arte y el código que ya no
+  encajan con lo diseñado se borran (con su permiso), no se guardan «por si
+  acaso». El historial de git los conserva.
+- 25/10/2026: «ves terminando tareas que puedes acabar». Mientras espera a
+  GPT o a sus decisiones, cierra lo pequeño que ya está decidido (con prueba
+  y enlace de prueba) en vez de empezar cosas nuevas.
 - 24/10/2026: GPT entregó marcos y pantallas hechos con código (planos, 24
   colores, montados sobre las capturas) y creía haber cumplido. Revisa cada
   entrega del baúl con tus ojos antes de darla por buena; si no vale, pide
