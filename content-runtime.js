@@ -3493,7 +3493,11 @@ var NeonCampaign = (() => {
   var STAGE_COUNT = 10;
   function normalizeMenuUnlocks(raw) {
     const valid = Boolean(raw) && typeof raw === "object" && raw.version === 1 && typeof raw.hangar === "boolean" && raw.seen && typeof raw.seen === "object" && !Array.isArray(raw.seen);
-    return { version: 1, hangar: valid ? raw.hangar : false, seen: { hangar: valid && raw.seen.hangar === true } };
+    return {
+      version: 1,
+      hangar: valid ? raw.hangar : false,
+      seen: { hangar: valid && raw.seen.hangar === true, intro: valid && raw.seen.intro === true }
+    };
   }
   function menuView(sectorSave, unlocks) {
     const run = sectorSave.run, done = sectorSave.sectors[1]?.completed === true;
