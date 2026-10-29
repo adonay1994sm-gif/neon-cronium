@@ -1622,7 +1622,10 @@
       button.querySelector('[data-c9-state]').textContent=owned?'INSTALADO':missing.length
         ?`REQUIERE ${missing.map(id=>NeonCampaign.SCRAP_UPGRADES[id]?.label||id).join(' + ')}`:`${definition.price} CHATARRA`;
     }
-    $("flightDockContinue").textContent=["voyage","hud"].includes(flightDockReturn) ? "VOLVER A PILOTAR →" : "VOLVER AL VIAJE";
+    // Desde el menú las dos salidas llevaban al menú: queda una sola (A4).
+    const fromMenu=!["voyage","hud"].includes(flightDockReturn);
+    $("flightDockContinue").textContent=fromMenu ? "VOLVER AL MENÚ" : "VOLVER A PILOTAR →";
+    $("flightDockHome").classList.toggle("hidden",fromMenu);
   }
 
   function syncClassicFlightHud() {

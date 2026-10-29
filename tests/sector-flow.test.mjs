@@ -850,3 +850,14 @@ test('settings always open at the top of the list', () => {
   T.ev('openSettings("menu")');
   assert.equal(panel.scrollTop, 0);
 });
+
+// Auditoría 25/10 (A4): desde el menú, la Forja tiene un solo botón de salida.
+test('the Forja opened from the menu offers one clear way back to the menu', () => {
+  const {w, T} = harness();
+  T.ev('classicEquipment={...classicEquipment,recoveredTwin:true};syncClassicFlightHud()');
+  click(w, 'openFlightDock');
+  assert.equal(w.document.getElementById('flightDockContinue').textContent, 'VOLVER AL MENÚ');
+  assert.equal(w.document.getElementById('flightDockHome').classList.contains('hidden'), true);
+  click(w, 'flightDockContinue');
+  assert.equal(T.st().state, 'menu');
+});
