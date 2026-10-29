@@ -1384,10 +1384,11 @@ body.flight-mode #flightDock :is(#flightDockContinue,#flightDockHome){border-wid
    textos solo con los colores --ui-* y los seis tamaños 10/12/14/16/20/28.
    Pisa los colores sueltos de las capas antiguas en menú, ventanas, ajustes
    y Forja C9. Cada pantalla nueva se limpia igual al rehacerla. */
-#menu.menu-gpt :is(.menu-topline small,.menu-progress span,#campaignPercent){color:var(--ui-muted)}
+#menu.menu-gpt :is(.menu-topline small,#campaignPercent){color:var(--ui-muted)}
 #menu.menu-gpt .menu-topline strong{font-size:20px}
-#menu.menu-gpt .menu-story p{color:var(--ui-muted);font-size:14px}
-#menu.menu-gpt :is(#how,.menu-links a){color:var(--ui-muted)}
+#menu.menu-gpt .menu-panel > p{color:var(--ui-muted);font-size:14px}
+#menu.menu-gpt .campaign-progress-head span{color:var(--ui-muted)}
+#menu .menu-legal :is(a,button){color:var(--ui-muted)}
 .overlay:not(#menu) > .panel h2,#instructionsTitle{font-size:28px}
 .overlay:not(#menu) .panel :is(p,small,.summary-grid span,.final span,.complete-label){color:var(--ui-muted)}
 .overlay:not(#menu) .panel :is(b,strong,h3){color:var(--ui-paper)}
@@ -1396,7 +1397,11 @@ body.flight-mode #flightDock :is(#flightDockContinue,#flightDockHome){border-wid
 .overlay:not(#menu) #finalScore{font-size:28px}
 .overlay:not(#menu) .summary-grid strong,.overlay:not(#menu) .stars-awarded{font-size:20px}
 #completeLabel{color:var(--ui-cyan)}
-#unlockMessage{color:var(--ui-cyan);font-size:14px}
+/* La regla antigua de .unlock-message lleva !important: solo así se pisa. */
+.overlay:not(#menu) #unlockMessage{color:var(--ui-cyan)!important;font-size:14px}
+.overlay:not(#menu) .summary-grid b,.overlay:not(#menu) #starsAwarded,body.flight-mode #complete .summary-grid b{font-size:20px}
+#menu.menu-gpt .menu-panel h2{font-size:28px}
+#settingsPanel .setting-row label b{font-size:14px}
 #settingsPanel :is(.setting-row span,.toggle-row b,.quality-row b,output){color:var(--ui-paper);font-size:14px}
 #settingsPanel :is(.toggle-row small,.quality-row small){color:var(--ui-muted);font-size:12px}
 #instructions :is(.rules,.ability-list) span{color:var(--ui-muted);font-size:14px}
@@ -1406,7 +1411,12 @@ body.flight-mode #flightDock .c9-upgrade-copy b{color:var(--ui-paper)}
 body.flight-mode #flightDock .c9-upgrade-copy :is(small,em),body.flight-mode #flightDock .c9-navigation button,#replayFlightTutorial{font-size:12px}
 body.flight-mode #flightDock .c9-upgrade-copy em{color:var(--ui-cyan)}
 body.flight-mode #flightDock .c9-section h3{font-size:14px}
-body.flight-mode #flightDock #flightDockStatus{color:var(--ui-muted);font-size:14px}
+body.flight-mode #flightDock .c9-preview #flightDockStatus{color:var(--ui-muted);font-size:14px}
+body.flight-mode #flightDock .flight-loadout-choices small{font-size:12px}
+body.flight-mode #flightDock .flight-loadout-choices em{color:var(--ui-cyan);font-size:10px}
+body.flight-mode #flightDock .flight-loadout-choices button:not([aria-pressed="true"]) em{color:var(--ui-muted)}
+body.flight-mode #flightDock .cockpit-loadout-card[aria-pressed="true"] .cockpit-loadout-copy em{color:var(--ui-cyan)}
+body.flight-mode #flightDock #replayFlightTutorial{font-size:12px}
 body.flight-mode #flightDock #c9Title{font-size:28px}
 body.flight-mode #flightDock #c9Balance{color:var(--ui-amber)}
 @media(max-width:340px){#menu.menu-gpt :is(.hero-cta > span,.menu-button-text){font-size:14px}
