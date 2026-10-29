@@ -42,9 +42,12 @@ npm run test:static    # coherencia de paquete, manifiesto, SW, iOS
 npm run test:content   # suites node:test de contenido
 npm run test:architecture
 npm run test:preview   # paquete de preview y service worker
+npm run test:sistema   # pantallas rehechas: solo colores y tamaños del sistema (Chromium)
 ```
 
 Después de cada commit: `npm run build && npm test && npm run test:static`.
+Si el cambio toca menú, ventanas, ajustes o Forja, también `npm run test:sistema`;
+al rehacer otra pantalla, se añade a esa prueba.
 Si algo falla por el cambio, se deshace ese commit y se anota.
 
 ## Ramas
