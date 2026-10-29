@@ -1225,10 +1225,10 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
    de fondo con la nave sobre la plataforma, marcos pintados que se estiran con
    border-image y el engranaje pintado. La plataforma está al 50 % / 38 % del
    fondo; background-position la deja en ese mismo punto de la pantalla. */
-#menu.menu-gpt{background:#040c15 url("assets/menu_hangar_bg_v1.webp") 50% 38%/cover no-repeat}
+#menu.menu-gpt{background:var(--ui-deep) url("assets/menu_hangar_bg_v1.webp") 50% 38%/cover no-repeat}
 #menu.menu-gpt::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
-  background:linear-gradient(180deg,#040c15c7 0,#040c1500 17%,#040c1500 50%,#040c15d9 66%,#040c15 84%)}
-#menu.menu-gpt .menu-topline{border-bottom-color:#a1eee833}
+  background:linear-gradient(180deg,color-mix(in srgb,var(--ui-deep) 78%,transparent) 0,transparent 17%,transparent 50%,color-mix(in srgb,var(--ui-deep) 85%,transparent) 66%,var(--ui-deep) 84%)}
+#menu.menu-gpt .menu-topline{border-bottom-color:color-mix(in srgb,var(--ui-cyan) 20%,transparent)}
 #menu.menu-gpt .menu-scene{top:38%;bottom:auto;width:min(42%,180px);height:auto;max-height:none;transform:translate(-50%,-86%);animation:menuShipHover 5s ease-in-out infinite}
 #menu.menu-gpt .menu-ship-image{display:block;height:auto;filter:drop-shadow(0 18px 18px #000a)}
 @keyframes menuShipHover{50%{transform:translate(-50%,calc(-86% - 6px))}}
@@ -1239,7 +1239,7 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
 #menu.menu-gpt #settings{display:none}
 #menu.menu-gpt .menu-actions{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 #menu.menu-gpt :is(.hero-cta,.menu-hangar-button){position:relative;display:flex;align-items:center;justify-content:flex-start;gap:0;width:100%;
-  min-height:68px;margin:0;padding:0 64px 0 42px;border:0;border-radius:0;clip-path:none;box-shadow:none;background:none;color:#f2f0e6;text-align:left;
+  min-height:68px;margin:0;padding:0 64px 0 42px;border:0;border-radius:0;clip-path:none;box-shadow:none;background:none;color:var(--ui-paper);text-align:left;
   border-image:url("assets/menu_frame_v1.webp") 40 160 fill / 16px 62px stretch}
 #menu.menu-gpt :is(.hero-cta,.menu-hangar-button)::before{content:none}
 #menu.menu-gpt .hero-cta{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px}
@@ -1247,16 +1247,16 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
   transform:translateY(-50%);background:url("assets/menu_arrow_v1.webp") center/contain no-repeat}
 #menu.menu-gpt :is(.hero-cta,.menu-hangar-button):active:not(:disabled){transform:translateY(1px);background:none;
   border-image-source:url("assets/menu_frame_pressed_v1.webp");filter:brightness(1.25)}
-#menu.menu-gpt :is(.hero-cta,.menu-hangar-button):focus-visible{outline:2px solid #d1ffff;outline-offset:3px}
-#menu.menu-gpt .hero-cta > span{font-size:18px;font-weight:800;letter-spacing:.05em}
-#menu.menu-gpt :is(.hero-cta,.menu-hangar-button) small{font-size:10px;font-weight:700;letter-spacing:.14em;color:#a1eee8;opacity:1}
+#menu.menu-gpt :is(.hero-cta,.menu-hangar-button):focus-visible{outline:2px solid var(--ui-cyan);outline-offset:3px}
+#menu.menu-gpt .hero-cta > span{font-size:16px;font-weight:800;letter-spacing:.05em}
+#menu.menu-gpt :is(.hero-cta,.menu-hangar-button) small{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--ui-cyan);opacity:1}
 #menu.menu-gpt .menu-hangar-button{overflow:hidden}
 #menu.menu-gpt .menu-hangar-button.hidden{display:none}
 /* La nave aparcada ocupa la derecha del botón, por dentro del marco. */
 #menu.menu-gpt .menu-hangar-button::before{content:"";position:absolute;z-index:0;top:4px;bottom:4px;left:auto;right:52px;width:62%;
   background:url("assets/menu_hangar_button_v1.webp") right center/auto 100% no-repeat;clip-path:none;box-shadow:none}
-#menu.menu-gpt .menu-button-text{position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;font-size:15px;font-weight:800;letter-spacing:.05em;text-shadow:0 2px 6px #000}
-#menu.menu-gpt .menu-new{display:none;position:absolute;z-index:2;top:9px;left:42px;padding:1px 6px;font:800 9px/1.4 var(--font-display);letter-spacing:.12em;color:#092028;background:#ffb84d}
+#menu.menu-gpt .menu-button-text{position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;font-size:16px;font-weight:800;letter-spacing:.05em;text-shadow:0 2px 6px #000}
+#menu.menu-gpt .menu-new{display:none;position:absolute;z-index:2;top:9px;left:42px;padding:1px 6px;font:800 10px/1.4 var(--font-display);letter-spacing:.12em;color:var(--ui-on-cyan);background:var(--ui-amber)}
 #menu.menu-gpt .menu-hangar-button.is-new .menu-new{display:block}
 #menu.menu-gpt .menu-hangar-button.is-new .menu-button-text{padding-top:14px}
 /* Revisión tras el PR #56: la regla del menú pesaba más que «reducir movimiento»
@@ -1270,17 +1270,17 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
 .overlay:not(#menu) > .panel{background:none;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;padding:40px 36px;
   border-image:url("assets/ui_window_v1.webp") 170 fill / 56px stretch}
 .overlay:not(#menu) .panel :is(.primary,.secondary,.reward){position:relative;min-height:54px;margin-top:10px;padding:10px 22px 10px 40px;line-height:1.25;border:0;border-radius:0;
-  box-shadow:none;background:none;clip-path:none;color:#eafcff;font-weight:800;letter-spacing:.06em;text-align:left;
+  box-shadow:none;background:none;clip-path:none;color:var(--ui-paper);font-weight:800;letter-spacing:.06em;text-align:left;
   border-image:url("assets/ui_button_secondary_v1.webp") 24 84 fill / 16px 56px stretch}
 .overlay:not(#menu) .panel :is(.primary,.secondary,.reward)::before{content:none}
 .overlay:not(#menu) .panel .primary{border-image:url("assets/ui_button_main_v1.webp") 30 84 fill / 20px 56px stretch}
-.overlay:not(#menu) .panel .danger{color:#ffd5dc;border-image:url("assets/ui_button_danger_v1.webp") 20 84 fill / 14px 56px stretch}
-.overlay:not(#menu) .panel .reward{color:#ffe7b8;border-image:url("assets/ui_button_ad_v1.webp") 20 84 fill / 14px 56px stretch}
+.overlay:not(#menu) .panel .danger{color:var(--ui-red);border-image:url("assets/ui_button_danger_v1.webp") 20 84 fill / 14px 56px stretch}
+.overlay:not(#menu) .panel .reward{color:var(--ui-amber);border-image:url("assets/ui_button_ad_v1.webp") 20 84 fill / 14px 56px stretch}
 .overlay:not(#menu) .panel :is(.primary,.secondary,.reward):active:not(:disabled){transform:translateY(1px);background:none;filter:brightness(1.15)}
 .overlay:not(#menu) .panel .primary:active:not(:disabled){border-image-source:url("assets/ui_button_main_pressed_v1.webp")}
 .overlay:not(#menu) .panel .secondary:not(.danger):active:not(:disabled){border-image:url("assets/ui_button_secondary_pressed_v1.webp") 28 84 fill / 16px 56px stretch}
-.overlay:not(#menu) .panel :is(.primary,.secondary,.reward):focus-visible{background:none;outline:2px solid #d1ffff;outline-offset:3px}
-.overlay:not(#menu) .panel :is(.primary,.secondary,.reward):disabled{background:none;filter:grayscale(.8) brightness(.6);color:#9fb3b8}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward):focus-visible{background:none;outline:2px solid var(--ui-cyan);outline-offset:3px}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward):disabled{background:none;filter:grayscale(.8) brightness(.6);color:var(--ui-muted)}
 .overlay:not(#menu) :is(.final,.summary-grid > div){border:0;border-radius:0;box-shadow:none;background:none;padding:12px 16px;
   border-image:url("assets/ui_stat_card_v1.webp") 44 60 fill / 16px 22px stretch}
 #menu.menu-gpt .hero-cta{border-image:url("assets/ui_button_main_v1.webp") 30 84 fill / 22px 60px stretch}
@@ -1304,7 +1304,7 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
 .overlay:not(#menu) .stars-awarded span.off{background-image:url("assets/ui_star_empty_v1.webp");opacity:.85}
 #complete .complete-visual::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
   background:url("assets/ui_sector_frame_v1.webp") center/100% 100% no-repeat}
-.overlay:not(#menu) .beacon-offer-art{width:132px;height:132px;background:url("assets/ui_beacon_big_v1.webp") center/contain no-repeat;filter:drop-shadow(0 0 16px #67ffe544)}
+.overlay:not(#menu) .beacon-offer-art{width:132px;height:132px;background:url("assets/ui_beacon_big_v1.webp") center/contain no-repeat;filter:drop-shadow(0 0 16px color-mix(in srgb,var(--ui-cyan) 27%,transparent))}
 #over > .panel{position:relative}
 #over > .panel::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:url("assets/ui_defeat_cracks_v1.webp") center/100% 100% no-repeat;opacity:.8}
 #over > .panel > *{position:relative;z-index:1}
@@ -1320,13 +1320,13 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
 #settingsPanel .setting-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;margin-top:-2px;border:0;background:url("assets/ui_slider_thumb_v1.webp") center/contain no-repeat}
 #settingsPanel .setting-row input[type=range]::-moz-range-track{height:28px;background:none}
 #settingsPanel .setting-row input[type=range]::-moz-range-thumb{width:32px;height:32px;border:0;background:url("assets/ui_slider_thumb_v1.webp") center/contain no-repeat}
-#settingsPanel .setting-row input[type=range]:focus-visible{outline:2px solid #d1ffff;outline-offset:4px}
+#settingsPanel .setting-row input[type=range]:focus-visible{outline:2px solid var(--ui-cyan);outline-offset:4px}
 #settingsPanel :is(.toggle-row,.quality-row){border-top:0;background:url("assets/ui_separator_v1.webp") top center/100% 8px no-repeat}
 #settingsPanel .toggle-row i{flex:0 0 68px;width:68px;height:20px;border:0;border-radius:0;background:url("assets/ui_toggle_off_v1.webp") center/contain no-repeat}
 #settingsPanel .toggle-row i::after{content:none}
 #settingsPanel .toggle-row input:checked + i{background:url("assets/ui_toggle_on_v1.webp") center/contain no-repeat;border:0}
 #settingsPanel .quality-row select{flex:0 0 auto;min-width:150px;min-height:44px;padding:0 40px 0 16px;border:0;border-radius:0;-webkit-appearance:none;appearance:none;color-scheme:dark;
-  background:url("assets/ui_select_v1.webp") center/100% 100% no-repeat;color:#dffbff;font:800 12px/1 var(--font-display);letter-spacing:.06em}
+  background:url("assets/ui_select_v1.webp") center/100% 100% no-repeat;color:var(--ui-paper);font:800 12px/1 var(--font-display);letter-spacing:.06em}
 /* Mano izquierda (ajuste, propietario 25/10): disparo, misil y C9 pasan a la
    izquierda; el aviso de pilotaje, a la derecha. */
 body.flight-mode.left-handed .fire-control{right:auto;left:var(--ui-safe-left);border-radius:10px 10px 10px 3px}
@@ -1335,32 +1335,32 @@ body.flight-mode.left-handed #classicC9{right:auto;left:var(--ui-safe-left)}
 body.flight-mode.left-handed .flight-pilot-hint{left:auto;right:max(14px,env(safe-area-inset-right))}
 /* Auditoría 25/10 (A7, A8): textos de botón en una sola línea. */
 .overlay:not(#menu) .panel :is(.primary,.secondary,.reward){letter-spacing:.04em}
-#over #retry{font-size:11px}
-@media(max-width:340px){#menu.menu-gpt :is(.hero-cta,.menu-hangar-button) small{font-size:9px;letter-spacing:.06em;white-space:nowrap}}
+#over #retry{font-size:12px;letter-spacing:0;padding-left:30px;padding-right:16px}
+@media(max-width:340px){#menu.menu-gpt :is(.hero-cta,.menu-hangar-button) small{font-size:10px;letter-spacing:.06em;white-space:nowrap}}
 /* Forja C9 con los marcos pintados de GPT (auditoría del 25/10, A3 y A4):
    sustituye esquinas, placas y pestañas hechas con código. El marco queda
    fijo y el contenido se desplaza por dentro (.c9-scroll). */
 #menu.menu-gpt #openFlightDock{min-height:54px;margin-top:0;padding:10px 22px;border:0;border-radius:0;box-shadow:none;background:none;clip-path:none;
-  color:#eafcff;font:800 13px/1.2 var(--font-display);letter-spacing:.08em;
+  color:var(--ui-paper);font:800 12px/1.2 var(--font-display);letter-spacing:.08em;
   border-image:url("assets/ui_button_secondary_v1.webp") 24 84 fill / 16px 56px stretch}
 #menu.menu-gpt #openFlightDock::before{content:none}
 #menu.menu-gpt #openFlightDock:active:not(:disabled){border-image:url("assets/ui_button_secondary_pressed_v1.webp") 28 84 fill / 16px 56px stretch}
 body.flight-mode #flightDock .flight-dock{display:flex;flex-direction:column;overflow:hidden;padding:34px 24px 30px;border:0;box-shadow:none;background:none;
   border-image:url("assets/ui_window_v1.webp") 170 fill / 48px stretch}
-body.flight-mode #flightDock .c9-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#466472 transparent;scroll-padding-top:64px}
+body.flight-mode #flightDock .c9-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--ui-line) transparent;scroll-padding-top:64px}
 body.flight-mode #flightDock .c9-scroll .c9-navigation{top:0}
 body.flight-mode #flightDock :is(.c9-header,.cockpit-ledger){clip-path:none;border:0;box-shadow:none;background:none;
   border-image:url("assets/ui_stat_card_v1.webp") 44 60 fill / 16px 22px stretch}
 body.flight-mode #flightDock .c9-preview{position:relative;border:0}
 body.flight-mode #flightDock .c9-preview::after{content:"";position:absolute;inset:0;pointer-events:none;background:url("assets/ui_sector_frame_v1.webp") center/100% 100% no-repeat}
-body.flight-mode #flightDock .c9-navigation{border:0;background:#08151ff2}
-body.flight-mode #flightDock .c9-navigation button[aria-current="true"]{clip-path:none;background:none;color:#eafcff;
+body.flight-mode #flightDock .c9-navigation{border:0;background:color-mix(in srgb,var(--ui-ink) 95%,transparent)}
+body.flight-mode #flightDock .c9-navigation button[aria-current="true"]{clip-path:none;background:none;color:var(--ui-paper);
   border-image:url("assets/ui_button_main_v1.webp") 30 84 fill / 14px 34px stretch}
 body.flight-mode #flightDock :is(.c9-upgrades,.flight-loadout-choices) button{clip-path:none;border:0;box-shadow:none;background:none;
   border-image:url("assets/ui_stat_card_v1.webp") 44 60 fill / 16px 22px stretch}
 body.flight-mode #flightDock :is(.c9-upgrades button[data-node-state="installed"],.flight-loadout-choices button[aria-pressed="true"]){background:none;box-shadow:none;filter:brightness(1.25) saturate(1.3)}
 body.flight-mode #flightDock .c9-actions{position:static;margin:10px 0 0;padding:12px 0 0;border:0;box-shadow:none;background:url("assets/ui_separator_v1.webp") top center/100% 8px no-repeat}
-body.flight-mode #flightDock :is(#flightDockContinue,#flightDockHome){clip-path:none;box-shadow:none;background:none;color:#eafcff;font-size:12px;letter-spacing:.06em}
+body.flight-mode #flightDock :is(#flightDockContinue,#flightDockHome){clip-path:none;box-shadow:none;background:none;color:var(--ui-paper);font-size:12px;letter-spacing:.06em}
 body.flight-mode #flightDock #flightDockContinue{border-image:url("assets/ui_button_main_v1.webp") 30 84 fill / 20px 56px stretch}
 body.flight-mode #flightDock #flightDockHome{border-image:url("assets/ui_button_secondary_v1.webp") 24 84 fill / 16px 56px stretch}
 body.flight-mode #flightDock #flightDockHome:active:not(:disabled){border-image:url("assets/ui_button_secondary_pressed_v1.webp") 28 84 fill / 16px 56px stretch}
@@ -1377,6 +1377,37 @@ body.flight-mode #flightDock :is(#flightDockContinue,#flightDockHome){border-wid
   body.flight-mode #flightDock .c9-branch h4{min-height:auto}
 }
 @media(max-width:340px){body.flight-mode #flightDock #flightDockHome{font-size:10px;letter-spacing:.02em;white-space:nowrap}
-  body.flight-mode #flightDock .c9-header h2{font-size:22px;letter-spacing:.08em;white-space:nowrap}
-  body.flight-mode #flightDock .c9-header small{font-size:9px;letter-spacing:.08em}
-  body.flight-mode #flightDock .c9-navigation button{font-size:9px;letter-spacing:.06em}}
+  body.flight-mode #flightDock .c9-header h2{font-size:20px;letter-spacing:.08em;white-space:nowrap}
+  body.flight-mode #flightDock .c9-header small{font-size:10px;letter-spacing:.08em}
+  body.flight-mode #flightDock .c9-navigation button{font-size:10px;letter-spacing:.06em}}
+/* Sistema de diseño en las pantallas ya rehechas (ds-tokens, 29/10/2026):
+   textos solo con los colores --ui-* y los seis tamaños 10/12/14/16/20/28.
+   Pisa los colores sueltos de las capas antiguas en menú, ventanas, ajustes
+   y Forja C9. Cada pantalla nueva se limpia igual al rehacerla. */
+#menu.menu-gpt :is(.menu-topline small,.menu-progress span,#campaignPercent){color:var(--ui-muted)}
+#menu.menu-gpt .menu-topline strong{font-size:20px}
+#menu.menu-gpt .menu-story p{color:var(--ui-muted);font-size:14px}
+#menu.menu-gpt :is(#how,.menu-links a){color:var(--ui-muted)}
+.overlay:not(#menu) > .panel h2,#instructionsTitle{font-size:28px}
+.overlay:not(#menu) .panel :is(p,small,.summary-grid span,.final span,.complete-label){color:var(--ui-muted)}
+.overlay:not(#menu) .panel :is(b,strong,h3){color:var(--ui-paper)}
+.overlay:not(#menu) .panel p{font-size:14px}
+.overlay:not(#menu) .panel small{font-size:12px}
+.overlay:not(#menu) #finalScore{font-size:28px}
+.overlay:not(#menu) .summary-grid strong,.overlay:not(#menu) .stars-awarded{font-size:20px}
+#completeLabel{color:var(--ui-cyan)}
+#unlockMessage{color:var(--ui-cyan);font-size:14px}
+#settingsPanel :is(.setting-row span,.toggle-row b,.quality-row b,output){color:var(--ui-paper);font-size:14px}
+#settingsPanel :is(.toggle-row small,.quality-row small){color:var(--ui-muted);font-size:12px}
+#instructions :is(.rules,.ability-list) span{color:var(--ui-muted);font-size:14px}
+#instructions :is(.rules,.ability-list) b{color:var(--ui-paper);font-size:14px}
+body.flight-mode #flightDock :is(.c9-upgrade-copy small,.c9-section-help,.c9-branch h4,.c9-navigation button){color:var(--ui-muted)}
+body.flight-mode #flightDock .c9-upgrade-copy b{color:var(--ui-paper)}
+body.flight-mode #flightDock .c9-upgrade-copy :is(small,em),body.flight-mode #flightDock .c9-navigation button,#replayFlightTutorial{font-size:12px}
+body.flight-mode #flightDock .c9-upgrade-copy em{color:var(--ui-cyan)}
+body.flight-mode #flightDock .c9-section h3{font-size:14px}
+body.flight-mode #flightDock #flightDockStatus{color:var(--ui-muted);font-size:14px}
+body.flight-mode #flightDock #c9Title{font-size:28px}
+body.flight-mode #flightDock #c9Balance{color:var(--ui-amber)}
+@media(max-width:340px){#menu.menu-gpt :is(.hero-cta > span,.menu-button-text){font-size:14px}
+  body.flight-mode #flightDock .c9-navigation button{font-size:10px;letter-spacing:.02em}}
