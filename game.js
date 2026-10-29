@@ -1022,7 +1022,7 @@
     document.body.classList.toggle("chapter-opening",active&&opening.controlsLocked);
     // Al acabar (o saltar) la animación del inicio, la nave entra desde abajo.
     const locked=classicChapterControlsLocked();
-    if(classicFilmLocked&&!locked)classicShipEntry=.9;
+    if(classicFilmLocked&&!locked){classicShipEntry=.9;if(classicChapterView&&isSectorRun())rememberIntroSeen();}
     classicFilmLocked=locked;
     ui.chapterSkip?.classList.toggle("hidden",!active||!opening.canSkip);
     if(ui.chapterSkip)ui.chapterSkip.disabled=state!=="playing";
@@ -1221,20 +1221,7 @@
     canvas.parentElement.append(chapterControls);
     ui.classicC9=$("classicC9");ui.classicC9.onclick=()=>openClassicDock("hud");
     ui.chapterSkip=$("chapterSkip");ui.classicMissile=$("classicMissile");ui.classicMissileCount=$("classicMissileCount");
-    ui.chapterSkip.onclick=()=>{
-      if(!classicChapterStory?.skipIntro())return;
-      // Omitir lleva el mundo al estado posterior a la ruptura (revisión B1):
-      // la cinemática se dibuja con el reloj de la ruta, así que se adelanta
-      // hasta que Cronos Prime se ha ido, en vez de seguir bajo el HUD.
-      const gone=NeonCampaign.CHRONOS_INTRO_TIMELINE?.gone||0;
-      for(let i=0;i<2000&&classicFlight&&classicFlightView.elapsed<gone;i++)
-        classicFlightView=classicFlight.advance(.034,collected,classicFlightEvent);
-      classicChapterView=classicChapterStory.snapshot();syncClassicChapterPresentation();
-      // Fuera la línea de LIRA de antes de la ruptura (revisión R8).
-      flightTransmission=null;
-      showStoryTransmission("N-7","Los atacantes nos siguen. Saca el CRONIUM de este campo de restos.",4);
-      classicPursuitAnnounced.add("raider"); // ya dicho: el primer perseguidor no lo repite (C1)
-    };
+    ui.chapterSkip.onclick=skipChapterIntro;
     // Missile pointer/touch ownership is installed with the other flight
     // controls in 08-loop-input-bootstrap, including accessible click fallback.
     for (const id of ["flightHud","flightRoute","flightDestination","flightStage","flightWeapon","flightWeaponName","flightWeaponDamage","flightDistance","flightObjective","flightPilotHint","flightPilotStick","flightPilotKnob","flightDock","flightDockCanvas","flightDockStatus","flightInstallTwin","c9Balance","c9BuyShield","c9BuyMissiles","c9BuyCoolant","c9PurchaseStatus"]) ui[id] = $(id);
@@ -2228,6 +2215,20 @@
     saveSector(NeonCampaign.dieInSector(save));
     sectorDeathRecorded=true;
   }
+  function skipChapterIntro() {
+    if(!classicChapterStory?.skipIntro())return;
+    // Omitir lleva el mundo al estado posterior a la ruptura (revisión B1):
+    // la cinemática se dibuja con el reloj de la ruta, así que se adelanta
+    // hasta que Cronos Prime se ha ido, en vez de seguir bajo el HUD.
+    const gone=NeonCampaign.CHRONOS_INTRO_TIMELINE?.gone||0;
+    for(let i=0;i<2000&&classicFlight&&classicFlightView.elapsed<gone;i++)
+      classicFlightView=classicFlight.advance(.034,collected,classicFlightEvent);
+    classicChapterView=classicChapterStory.snapshot();syncClassicChapterPresentation();
+    // Fuera la línea de LIRA de antes de la ruptura (revisión R8).
+    flightTransmission=null;
+    showStoryTransmission("N-7","Los atacantes nos siguen. Saca el CRONIUM de este campo de restos.",4);
+    classicPursuitAnnounced.add("raider"); // ya dicho: el primer perseguidor no lo repite (C1)
+  }
   function isSectorRun() {
     const ficha=classicSideVoyage?.ficha;
     return Boolean(ficha)&&NeonCampaign.getSectorFicha(ficha.id)===ficha;
@@ -2241,6 +2242,10 @@
   function rememberMenuUnlocks(unlocks) {
     const stored=loadMenuUnlocks();
     if(unlocks.hangar!==stored.hangar||unlocks.seen.hangar!==stored.seen.hangar)storage.setJSON(NeonCampaign.MENU_UNLOCKS_KEY,unlocks);
+  }
+  function rememberIntroSeen() {
+    const unlocks=loadMenuUnlocks();
+    if(!unlocks.seen.intro)storage.setJSON(NeonCampaign.MENU_UNLOCKS_KEY,NeonCampaign.markMenuSeen(unlocks,"intro"));
   }
   // Al abrir el hangar por primera vez desaparece el aviso NUEVO.
   function markHangarSeen() {
@@ -3192,6 +3197,8 @@
     updateEncounterHud();
     tone(540 + currentLevel * 22, 0.11, "triangle", 0.07);
     if(classicFlightView?.waitingFor==="service")beginClassicVoyageService();
+    // A1: quien ya vio la intro de Chronos empieza cada intento tras ella.
+    if(isSectorRun()&&classicChapterView?.opening.canSkip&&loadMenuUnlocks().seen.intro)skipChapterIntro();
     window.AnalyticsManager?.track("game_start", { level: currentLevel + 1 });
     window.AnalyticsManager?.track("level_start", { level: currentLevel + 1, continued: false });
   }

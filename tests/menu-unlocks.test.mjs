@@ -8,9 +8,10 @@ const atStage = stage => enterStage(startSectorRun(createSectorSave(), 1), stage
 
 test('the menu memory has its own key and tolerates broken data', () => {
   assert.equal(MENU_UNLOCKS_KEY, 'neonCronium.menu.v1');
-  assert.deepEqual(fresh(), {version: 1, hangar: false, seen: {hangar: false}});
+  assert.deepEqual(fresh(), {version: 1, hangar: false, seen: {hangar: false, intro: false}});
   assert.deepEqual(normalizeMenuUnlocks({version: 1, hangar: 'yes', seen: []}), fresh());
-  assert.deepEqual(normalizeMenuUnlocks({version: 1, hangar: true, seen: {hangar: true}}), {version: 1, hangar: true, seen: {hangar: true}});
+  assert.deepEqual(normalizeMenuUnlocks({version: 1, hangar: true, seen: {hangar: true}}), {version: 1, hangar: true, seen: {hangar: true, intro: false}});
+  assert.deepEqual(normalizeMenuUnlocks({version: 1, hangar: false, seen: {hangar: false, intro: true}}), {version: 1, hangar: false, seen: {hangar: false, intro: true}});
 });
 
 test('a new player only sees JUGAR', () => {
@@ -53,4 +54,11 @@ test('beating the sector keeps the hangar and offers to repeat it', () => {
   assert.equal(view.play.label, 'REPETIR SECTOR');
   assert.equal(view.play.detail, 'SECTOR 1 COMPLETADO');
   assert.equal(view.hangar.visible, true);
+});
+
+test('the Chronos opening is remembered once seen, without touching the hangar', () => {
+  const seen = markMenuSeen(fresh(), 'intro');
+  assert.equal(seen.seen.intro, true);
+  assert.equal(seen.seen.hangar, false);
+  assert.equal(menuView(atStage(1), seen).unlocks.seen.intro, true, 'the menu keeps the mark');
 });

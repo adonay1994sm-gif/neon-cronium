@@ -131,6 +131,42 @@ test('a fresh sector plays the Chronos opening and the tutorial', () => {
   assert.ok(drawnTexts.some(text => /^image:.*chronos_intro_station_atlas/.test(text)), 'the Chronos station is drawn');
 });
 
+// A1 (auditoría 25/10): la intro de Chronos no se repite en cada intento.
+const opening = T => T.ev('classicChapterView?.opening.film===true');
+const menuMemory = w => JSON.parse(w.localStorage.getItem('neonCronium.menu.v1') || 'null');
+
+test('once skipped, a retry of the sector starts after the Chronos opening', () => {
+  const {w, T} = harness();
+  T.startSector('S1');
+  T.adv(1);
+  assert.equal(opening(T), true, 'the first attempt plays the opening');
+  click(w, 'chapterSkip');
+  assert.equal(menuMemory(w).seen.intro, true);
+  T.finishGame('hull');
+  click(w, 'retry');
+  T.adv(.1);
+  assert.equal(T.stage(), 1);
+  assert.equal(story(T), true, 'the chapter keeps its later lines');
+  assert.equal(opening(T), false, 'the retry skips the opening');
+  assert.ok(T.ev('classicFlightView.elapsed') >= T.ev('NeonCampaign.CHRONOS_INTRO_TIMELINE.gone'));
+  assert.equal(w.document.getElementById('chapterSkip').classList.contains('hidden'), true);
+});
+
+test('watching the whole opening also counts as seen', () => {
+  const {w, T} = harness();
+  T.startSector('S1');
+  T.adv(1);
+  assert.equal(menuMemory(w)?.seen?.intro ?? false, false, 'not seen while it plays');
+  T.adv(15);
+  assert.equal(opening(T), false);
+  assert.equal(menuMemory(w).seen.intro, true);
+  const next = harness();
+  next.w.localStorage.setItem('neonCronium.menu.v1', w.localStorage.getItem('neonCronium.menu.v1'));
+  next.T.startSector('S1');
+  next.T.adv(.1);
+  assert.equal(opening(next.T), false, 'a new session remembers it too');
+});
+
 test('no patrol spawns before recoveryAt', () => {
   const {T} = harness();
   T.startSector('S1');
