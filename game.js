@@ -1348,6 +1348,11 @@
       const node=tree.querySelector(`[data-c9-sku="${next}"]`);if(node)branch.append(node);
       tree.append(branch);
     }
+    // El marco pintado no se desplaza: todo menos los botones finales va en una
+    // zona interior con su propia barra (auditoría del 25/10, A4).
+    const scroll=document.createElement('div');scroll.className='c9-scroll';
+    scroll.append(...[...panel.children].filter(node=>!node.classList.contains('c9-actions')));
+    panel.prepend(scroll);
   }
 
   function normalizeClassicVoyageRecord(value) {
@@ -1538,7 +1543,7 @@
     } else if(state!=="menu")return false;
     flightDockReturn=from; updateClassicDock(); overlay(ui.flightDock);
     $("flightDockContinue").focus({preventScroll:true});
-    ui.flightDock.querySelector(".flight-dock").scrollTop=0;
+    ui.flightDock.querySelector(".c9-scroll").scrollTop=0;
     // Se abre arriba, en ARSENAL: la pestaña marcada tiene que ser esa (revisión tras el PR #56).
     for(const tab of ui.flightDock.querySelectorAll(".c9-navigation button"))
       tab.getAttribute("aria-controls")==="c9-arsenal"?tab.setAttribute("aria-current","true"):tab.removeAttribute("aria-current");
