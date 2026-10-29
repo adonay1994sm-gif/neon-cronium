@@ -26,6 +26,7 @@
     "test:sim": "node --test tests/sim-voyage.test.mjs",
     "build:preview": "npm run build && node scripts/build-preview.mjs",
     "test:preview": "node --test tests/preview-build.test.mjs tests/service-worker-generation.test.mjs",
+    "test:sistema": "node --test tests/design-system-browser.test.mjs",
     "audit:repository": "node scripts/repository-hygiene.mjs"
   },
   "dependencies": {
