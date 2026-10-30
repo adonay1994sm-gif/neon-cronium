@@ -327,22 +327,47 @@
     return true;
   }
 
+  // Las naves del hangar que no son Astér vuelan con sus 5 poses de GPT
+  // (scripts/build-hangar-assets.py): 0 neutral, 1 y 2 alabeo con el morro a la
+  // izquierda y a la derecha, 3 aceleración, 4 frenado. Los choques no cambian.
+  function drawPosedShip(target, pose, size, reinforcement = 0) {
+    if (flownShip === "aster" || !spriteReady(SPRITES.flightPoses)) return false;
+    const row = NeonCampaign.SHIP_ROSTER.findIndex(ship => ship.id === flownShip);
+    if (row < 0) return false;
+    const image = SPRITES.flightPoses, cell = image.naturalWidth / 5;
+    target.drawImage(image, pose * cell, row * cell, cell, cell, -size / 2, -size / 2, size, size);
+    if (reinforcement > 0) {
+      target.save(); target.globalCompositeOperation = "screen";
+      target.globalAlpha *= Math.min(.5, reinforcement);
+      target.drawImage(image, pose * cell, row * cell, cell, cell, -size / 2, -size / 2, size, size);
+      target.restore();
+    }
+    return true;
+  }
+
   function syncShipPresentation() {
     const twin = hasClassicTwinMounts();
     if (shipPresentationSignature?.mode === shipRenderMode && shipPresentationSignature?.loadout === shipLoadout &&
-      shipPresentationSignature?.twin === twin) return;
+      shipPresentationSignature?.twin === twin && shipPresentationSignature?.ship === flownShip) return;
     if (twin && !spriteReady(SPRITES.flightWeapons)) return;
+    // Mientras cargan las poses se queda la imagen que hubiera.
+    const posed = flownShip !== "aster";
+    if (posed && !spriteReady(SPRITES.flightPoses)) return;
     let source = "assets/player_ship_identity_v1.webp";
-    if (spriteReady(SPRITES.modularShip)) {
+    if (posed || spriteReady(SPRITES.modularShip)) {
       const preview = document.createElement("canvas"); preview.width = preview.height = 384;
       const previewContext = preview.getContext("2d");
-      previewContext.translate(192, 170);
-      drawModularShip(previewContext, shipLoadout, 330, 0, 0, 100, 0, twin ? 0 : null);
+      if (posed) {
+        previewContext.translate(192, 192); drawPosedShip(previewContext, 0, 384);
+      } else {
+        previewContext.translate(192, 170);
+        drawModularShip(previewContext, shipLoadout, 330, 0, 0, 100, 0, twin ? 0 : null);
+      }
       source = preview.toDataURL("image/png");
     }
     document.querySelectorAll(".menu-ship-image, .briefing-ship").forEach(image => { image.src = source; });
     // A missing atlas must remain retryable; the portrait is only degradation.
-    if (spriteReady(SPRITES.modularShip)) shipPresentationSignature = {mode: shipRenderMode, loadout: shipLoadout, twin};
+    if (posed || spriteReady(SPRITES.modularShip)) shipPresentationSignature = {mode: shipRenderMode, loadout: shipLoadout, twin, ship: flownShip};
   }
 
   function drawShipIdentityFallback(target, size) {
@@ -367,7 +392,8 @@
     const size=servicing?165:270;
     target.save(); target.translate(preview.width / 2, servicing?218:preview.height * .49);
     const twin = hasClassicTwinMounts();
-    const assembled = drawModularShip(target, shipLoadout, size, t / 1000, 0, 100, 0, twin ? 0 : null);
+    const assembled = drawPosedShip(target, 0, size * 1.05) ||
+      drawModularShip(target, shipLoadout, size, t / 1000, 0, 100, 0, twin ? 0 : null);
     if (!assembled) {
       target.save(); target.scale(size / 512, size / 512);
       if (twin) drawClassicTwinMounts(target, 0);
@@ -444,7 +470,10 @@
     const steering=Number.isFinite(player.visualBank)?player.visualBank:clamp((player.target+player.drift-player.x)/95,-1,1);
     const reserve=typeof classicHullReserve==="number"&&classicHullReserve>0
       ?.08+(typeof classicShieldImpact==="number"?classicShieldImpact:0):0;
-    const assembled = drawModularShip(ctx, shipLoadout, assemblySize, elapsed,
+    const climb=player.targetY-player.y,calm=hull<34||state==="destroying";
+    const pose=calm?0:steering<-.35?1:steering>.35?2:climb<-24?3:climb>24?4:0;
+    const assembled = drawPosedShip(ctx,pose,assemblySize*1.05,reserve) ||
+      drawModularShip(ctx, shipLoadout, assemblySize, elapsed,
       steering, hull, impactReactionTimer,hasClassicTwinMounts()?classicTwinFrame():null,
       SHIP_VISUAL.bankStrength??1,reserve);
     ctx.restore();

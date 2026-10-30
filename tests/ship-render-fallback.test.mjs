@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
 import * as shipModel from '../src/game/ship/modular-ship.js';
+import {SHIP_ROSTER} from '../src/game/ship/ship-roster.js';
 
 const root=new URL('..',import.meta.url);
 const [html,uiSource,renderSource]=await Promise.all([
@@ -22,8 +23,9 @@ function harness(t){
   const {window}=dom,contexts=new WeakMap(),draws=[];
   let rafRequests=0,dataUrls=0;
   window.requestAnimationFrame=()=>++rafRequests;
-  window.NeonCampaign=shipModel;
+  window.NeonCampaign={...shipModel,SHIP_ROSTER};
   window.__ATLAS__={complete:false,naturalWidth:0,naturalHeight:0,_assetPath:'assets/ship_modular_atlas_v1.webp'};
+  window.__POSES__={complete:false,naturalWidth:0,naturalHeight:0,_assetPath:'assets/ship_flight_poses_v1.webp'};
   window.HTMLCanvasElement.prototype.getContext=function(){
     if(!contexts.has(this)){
       const canvas=this;
@@ -38,9 +40,9 @@ function harness(t){
   window.HTMLCanvasElement.prototype.toDataURL=()=>`data:image/png;base64,fixture-${++dataUrls}`;
   window.eval(`
     const $=id=>document.getElementById(id),canvas=$('canvas');
-    const ui={menu:$('menu'),briefing:$('briefing')},SPRITES={modularShip:window.__ATLAS__,shipIdentity:{complete:true,naturalWidth:512,naturalHeight:640,_assetPath:'assets/player_ship_identity_v1.webp'}};
+    const ui={menu:$('menu'),briefing:$('briefing')},SPRITES={modularShip:window.__ATLAS__,flightPoses:window.__POSES__,shipIdentity:{complete:true,naturalWidth:512,naturalHeight:640,_assetPath:'assets/player_ship_identity_v1.webp'}};
     let state='menu',shipRenderMode='modular',shipLoadout=NeonCampaign.normalizeShipLoadout();
-    let shipHangarDraft=null,shipPresentationSignature='',writes=[];
+    let shipHangarDraft=null,shipPresentationSignature='',writes=[],flownShip='aster';
     const originals=[0,1,2].map(index=>({complete:true,naturalWidth:320,naturalHeight:320,_assetPath:'assets/ship_frame_0'+index+'.webp'}));
     const spriteReady=image=>Boolean(image&&image.complete&&image.naturalWidth>0);
     const frameFrom=(name,index)=>name==='ship'?originals[index]:null;
@@ -55,6 +57,9 @@ function harness(t){
       drawModular(loadout){const preview=document.createElement('canvas');preview.id='modularPreview';
         const target=preview.getContext('2d');drawModularShip(target,NeonCampaign.normalizeShipLoadout(loadout),380,0,0);},
       active(mode,loadout){shipRenderMode=mode;shipLoadout=NeonCampaign.normalizeShipLoadout(loadout);},
+      fly(id){flownShip=id;},
+      drawPosed(pose){const preview=document.createElement('canvas');preview.id='posedPreview';
+        return drawPosedShip(preview.getContext('2d'),pose,100);},
       snapshot(){return {mode:shipRenderMode,loadout:shipLoadout,draft:shipHangarDraft,signature:shipPresentationSignature,writes};}
     };
   `);
@@ -108,4 +113,35 @@ test('the real renderer draws independent proportional jets at either engine fam
     assert.ok(first[0]+first[2]<second[0],'the contaminated center stays excluded');
     assert.equal(h.draws.some(draw=>/ship_frame_/.test(draw.path)),false);
   }
+});
+
+test('a ship chosen in the hangar shows its GPT pose in the menu once the pose atlas is ready',t=>{
+  const h=harness(t);h.ready();h.api.sync();
+  const images=()=>[...h.window.document.querySelectorAll('.menu-ship-image,.briefing-ship')].map(image=>image.getAttribute('src'));
+  const astér=images();
+  h.api.fly('bastion');h.draws.length=0;h.api.sync();
+  assert.deepEqual(images(),astér,'while the poses load the previous ship stays');
+  assert.equal(h.stats().dataUrls,1);
+  Object.assign(h.window.__POSES__,{complete:true,naturalWidth:960,naturalHeight:1920});
+  h.api.sync();
+  assert.equal(h.stats().dataUrls,2);
+  assert.notDeepEqual(images(),astér);
+  const pose=h.draws.find(draw=>draw.path==='assets/ship_flight_poses_v1.webp');
+  assert.deepEqual(pose.args.slice(0,4),[0,192,192,192],'neutral pose, Bastión row');
+  assert.equal(h.draws.some(draw=>draw.path==='assets/ship_modular_atlas_v1.webp'),false);
+  assert.equal(h.snapshot().signature.ship,'bastion');
+  h.api.sync();
+  assert.equal(h.stats().dataUrls,2,'nothing is redrawn until something changes');
+});
+
+test('Astér keeps the modular ship and the other ships pick their row and pose',t=>{
+  const h=harness(t);h.ready();
+  Object.assign(h.window.__POSES__,{complete:true,naturalWidth:960,naturalHeight:1920});
+  assert.equal(h.api.drawPosed(0),false,'Astér flies the modular ship');
+  h.api.fly('titan');
+  assert.equal(h.api.drawPosed(2),true);
+  const draw=h.draws.at(-1);
+  assert.deepEqual(draw.args,[384,1728,192,192,-50,-50,100,100]);
+  h.api.fly('nave-que-no-existe');
+  assert.equal(h.api.drawPosed(0),false);
 });

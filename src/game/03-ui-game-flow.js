@@ -1639,6 +1639,11 @@
       $("shipApply").disabled = !mine || ship.id === save.selected;
     }
 
+    function fly(id) {
+      flownShip = id;
+      if (id !== "aster") ensureSprite(SPRITES.flightPoses);
+      shipPresentationSignature = "";
+    }
     function closeHangar() {
       hangar.classList.remove("show");
       hangar.classList.add("hidden");
@@ -1669,6 +1674,7 @@
         $("shipHangarStatus").textContent = "No se pudo guardar. Tu nave anterior sigue elegida.";
         return;
       }
+      fly(chosen.selected);
       toast(`Nave elegida: ${roster.find(ship => ship.id === chosen.selected).name}`);
       closeHangar();
     };
@@ -1689,6 +1695,7 @@
         }
       }
     });
+    fly(shipState().save.selected);
   }
 
   function updateMenu() {

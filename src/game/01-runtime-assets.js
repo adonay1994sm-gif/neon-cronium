@@ -28,6 +28,9 @@
   let shipLoadout = NeonCampaign.normalizeShipLoadout(savedShipFleet?.loadout);
   let shipHangarDraft = null;
   let shipPresentationSignature = "";
+  // Nave elegida en el hangar (neonCronium.ships.v1). Astér vuela con la nave
+  // modular; las demás, con sus poses de GPT. La fija setupShipHangar.
+  let flownShip = "aster";
 
   const stateMachine = NeonCore.createGameState(NeonCore.GAME_STATES.MENU);
   let state = stateMachine.value;
@@ -266,6 +269,8 @@
     ch02: loadSprite("assets/ch02_interceptor_atlas_v1.webp", false),
     modularShip: loadSprite("assets/ship_modular_atlas_v1.webp", true),
     shipIdentity: loadSprite("assets/player_ship_identity_v1.webp", true),
+    // 5 poses de vuelo por nave del hangar, filas en el orden de SHIP_ROSTER.
+    flightPoses: loadSprite("assets/ship_flight_poses_v1.webp", false),
     guardianAtlas: loadSprite("assets/guardian_atlas_states_v2.webp", false),
     atlasVfx: loadSprite("assets/atlas_combat_vfx_v1.webp", false),
     arcadePulse: loadSprite("assets/arcade_pulse_atlas_v2.webp", false),

@@ -31,7 +31,9 @@ function harness(t,{sector=fresh,ships=null}={}){
   window.eval(`
     const $=id=>document.getElementById(id);
     const canvas=$('canvas'),ui={menu:$('menu'),briefing:$('briefing')};
-    let state='menu',shipHangarDraft=null,allowSave=true;
+    let state='menu',shipHangarDraft=null,allowSave=true,flownShip='aster',shipPresentationSignature='old';
+    const SPRITES={flightPoses:{}},ensured=[];
+    const ensureSprite=image=>ensured.push(image===SPRITES.flightPoses?'poses':'other');
     const stored={[NeonCampaign.SHIP_ROSTER_KEY]:window.__HANGAR_INITIAL__.ships};
     const writes=[],messages=[];
     const loadSectorSave=()=>window.__HANGAR_INITIAL__.sector;
@@ -52,7 +54,7 @@ function harness(t,{sector=fresh,ships=null}={}){
       allowSave(value){allowSave=value;},
       showBriefing(){overlay(ui.briefing);},
       hideOverlays(){overlay();},
-      snapshot(){return {state,draft:shipHangarDraft,writes,messages};}
+      snapshot(){return {state,draft:shipHangarDraft,writes,messages,flownShip,signature:shipPresentationSignature,ensured};}
     };
   `);
   const document=window.document;
@@ -125,6 +127,9 @@ test('after beating Atlas, Bastión can be chosen and the choice is saved',t=>{
   h.apply();
   assert.deepEqual(h.snapshot().writes,[{key:roster.SHIP_ROSTER_KEY,value:{version:1,selected:'bastion',bought:[]}}]);
   assert.deepEqual(h.snapshot().messages,['Nave elegida: Bastión']);
+  assert.equal(h.snapshot().flownShip,'bastion','the next flight uses the chosen ship');
+  assert.deepEqual(h.snapshot().ensured,['poses']);
+  assert.equal(h.snapshot().signature,'','the menu ship is redrawn');
   assert.equal(h.node('shipHangar').classList.contains('hidden'),true);
   h.open();
   assert.equal(h.snapshot().draft,'bastion');
@@ -180,4 +185,13 @@ test('keyboard focus stays in the dialog; Escape closes without saving or reachi
   assert.equal(h.snapshot().writes.length,0);
   assert.equal(gameplayKeys,0,'hangar keys cannot steer or pause the game');
   assert.equal(h.raf(),0);
+});
+
+test('the saved ship is the one that flies from the start, and Astér needs no pose atlas',t=>{
+  const h=harness(t,{sector:afterAtlas,ships:{version:1,selected:'bastion',bought:[]}});
+  assert.equal(h.snapshot().flownShip,'bastion');
+  assert.deepEqual(h.snapshot().ensured,['poses']);
+  const plainStart=harness(t);
+  assert.equal(plainStart.snapshot().flownShip,'aster');
+  assert.deepEqual(plainStart.snapshot().ensured,[]);
 });

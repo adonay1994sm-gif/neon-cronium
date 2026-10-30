@@ -30,6 +30,7 @@ function harness({reserve=0,atlasGradient=false}={}) {
     classicEquipment:{selected:'pulse'},hasClassicTwinMounts:()=>false,
     spriteReady:sprite=>!!sprite?.naturalWidth,SPRITES:{croniumEnergy:image('cronium-energy',512,512),croniumFragment:image('crystal'),shieldEffect:image('legacy-shield'),shieldIdle:image('legacy-shield'),forceShieldAtlas:image('force-field',1536,384)},
     drawModularShip:(...args)=>{calls.push({method:'assembly',args});return true;},
+    drawPosedShip:()=>false,
     frameFrom:(_name,frame)=>image(`core-${frame}`),
     drawImageCentered:(...args)=>calls.push({method:'centered',args}),
     clamp:(value,min,max)=>Math.max(min,Math.min(max,value)),
