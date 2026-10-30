@@ -365,9 +365,9 @@
   $("pauseSettings").onclick = () => openSettings("paused");
   $("restart").onclick = () => startLevel(currentLevel);
   $("quit").onclick = goHome;
-  $("home").onclick = goHome;
+  $("home").onclick = () => hardcoreWiped ? reloadGame() : goHome();
   $("completeHome").onclick = goHome;
-  $("retry").onclick = () => startLevel(currentLevel);
+  $("retry").onclick = () => hardcoreWiped ? reloadGame() : startLevel(currentLevel);
   $("replayLevel").onclick = () => startLevel(currentLevel);
   // Tras cualquier viaje: el siguiente viaje del mapa o, si no queda
   // ninguno, el mapa. Nunca un nivel clásico (ya no forman parte del juego).
@@ -421,9 +421,26 @@
     settings.vibration = event.target.checked;
     if (settings.vibration) vibrate(20);
   };
+  // HARDCORE se elige con aviso y juega su propia partida: entrar o salir de él
+  // guarda los ajustes y recarga el juego con la otra partida.
+  const hardcoreConfirm = $("hardcoreConfirm");
+  const switchDifficulty = value => { settings.difficulty = value; saveSettings(); reloadGame(); };
   if (ui.difficulty) ui.difficulty.onchange = (event) => {
-    settings.difficulty = ["facil", "normal", "dificil", "hardcore"].includes(event.target.value) ? event.target.value : "normal";
+    const value = ["facil", "normal", "dificil", "hardcore"].includes(event.target.value) ? event.target.value : "normal";
+    if (value === "hardcore" && !HARDCORE) {
+      event.target.value = settings.difficulty;
+      hardcoreConfirm?.classList.remove("hidden");
+      return;
+    }
+    hardcoreConfirm?.classList.add("hidden");
+    if (HARDCORE && value !== "hardcore") { switchDifficulty(value); return; }
+    settings.difficulty = value;
   };
+  if (hardcoreConfirm) {
+    $("hardcoreYes").onclick = () => switchDifficulty("hardcore");
+    $("hardcoreNo").onclick = () => hardcoreConfirm.classList.add("hidden");
+  }
+  document.body.classList.toggle("hardcore-mode", Boolean(HARDCORE));
   ui.effectsQuality.onchange = (event) => {
     settings.effectsQuality = ["low", "normal", "high"].includes(event.target.value) ? event.target.value : "normal";
     settings.effects = settings.effectsQuality !== "low";

@@ -1,4 +1,4 @@
-  const storage = NeonCore.createStorageService(window.NeonDev?.storage);
+  const storage = NeonCore.createStorageService(HARDCORE?.storage ?? window.NeonDev?.storage);
 
   function migrateLegacyStorage() {
     // A denied read is not an absent score: do not overwrite an unreadable

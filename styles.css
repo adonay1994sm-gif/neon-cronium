@@ -1421,3 +1421,10 @@ body.flight-mode #flightDock #c9Title{font-size:28px}
 body.flight-mode #flightDock #c9Balance{color:var(--ui-amber)}
 @media(max-width:340px){#menu.menu-gpt :is(.hero-cta > span,.menu-button-text){font-size:14px}
   body.flight-mode #flightDock .c9-navigation button{font-size:10px;letter-spacing:.02em}}
+/* HARDCORE (propietario 24/10 y 30/10): aviso al elegirlo y distintivo en el
+   menú y en el HUD, con los colores del sistema. */
+#settingsPanel .hardcore-confirm{display:grid;gap:8px;padding:12px 0 4px}
+#settingsPanel .hardcore-confirm p{margin:0;color:var(--ui-muted);font-size:14px}
+#settingsPanel .settings-panel .hardcore-confirm b{color:var(--ui-red)}
+body.hardcore-mode #menu .menu-topline small::after{content:" · HARDCORE";color:var(--ui-red)}
+body.hardcore-mode .metric-sector small::after{content:" · HC";color:var(--ui-red)}

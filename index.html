@@ -166,6 +166,11 @@
             <option value="hardcore">HARDCORE</option>
           </select>
         </label>
+        <div id="hardcoreConfirm" class="hardcore-confirm hidden" role="alert">
+          <p><b>HARDCORE es una partida aparte.</b> Sin revivir ni baliza: si caes, se borra entera y empiezas de cero. Tu partida normal no se toca y vuelves a ella al cambiar de modo.</p>
+          <button id="hardcoreYes" class="secondary danger" type="button">SÍ, HARDCORE</button>
+          <button id="hardcoreNo" class="secondary" type="button">CANCELAR</button>
+        </div>
         <label class="quality-row" for="effectsQuality">
           <span><b>Calidad visual</b><small>Solo cambia efectos; nunca dificultad ni colisiones</small></span>
           <select id="effectsQuality" aria-label="Calidad visual">

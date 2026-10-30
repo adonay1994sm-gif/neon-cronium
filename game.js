@@ -221,8 +221,23 @@
     settings: "neon-settings-v5"
   };
   const LEGACY_KEYS = { best: "neon-best-v1" };
+  // HARDCORE (propietario 24/10 y 30/10): partida aparte que se borra entera al
+  // morir. Todo se guarda con su prefijo salvo los ajustes, que son comunes;
+  // cambiar de modo en Ajustes recarga el juego con la otra partida.
+  const HARDCORE = (() => {
+    const base = window.NeonDev?.storage ?? window.localStorage, prefix = "neon-hardcore-v1:";
+    let enabled = false;
+    try { enabled = JSON.parse(base.getItem(KEYS.settings) || "{}")?.difficulty === "hardcore"; } catch {}
+    if (!enabled) return null;
+    const key = name => name === KEYS.settings ? name : prefix + name;
+    return Object.freeze({prefix: (window.NeonDev?.prefix || "") + prefix, storage: Object.freeze({
+      getItem: name => base.getItem(key(name)),
+      setItem: (name, value) => base.setItem(key(name), value),
+      removeItem: name => base.removeItem(key(name))
+    })});
+  })();
   const DEFAULT_SETTINGS = { music: 35, fx: 70, sensitivity: 135, vibration: true, autoFire: false, effectsQuality: "normal", effects: true, difficulty: "normal" };
-  const storage = NeonCore.createStorageService(window.NeonDev?.storage);
+  const storage = NeonCore.createStorageService(HARDCORE?.storage ?? window.NeonDev?.storage);
 
   function migrateLegacyStorage() {
     // A denied read is not an absent score: do not overwrite an unreadable
@@ -1528,7 +1543,7 @@
   // El recibo lleva el id de la partida de chatarra: reintentar no cobra dos veces.
   let sectorBeaconOffered=false;
   function offerSectorBeacon() {
-    if(!isSectorRun()||!ch03Beaten||sectorBeaconOffered||state!=="playing")return false;
+    if(HARDCORE||!isSectorRun()||!ch03Beaten||sectorBeaconOffered||state!=="playing")return false;
     if(loadSectorSave().sectors[classicSideVoyage.ficha.sector]?.beacon)return false;
     sectorBeaconOffered=true;
     if(typeof resetGameInput==="function")resetGameInput();
@@ -3461,19 +3476,37 @@
       const after=loadSectorSave();
       $("retry").textContent=`REINTENTAR SECTOR · TRAMO ${NeonCampaign.continuePoint(after)?.stageNumber||1}`;
       if(after.sectors[classicSideVoyage.ficha.sector]?.beacon)ui.supplyStatus.textContent="Con baliza: vuelves al tramo 6.";
+      if(HARDCORE) {
+        ui.reward.classList.add("hidden");
+        $("retry").textContent="EMPEZAR DE CERO";
+        ui.supplyStatus.textContent="HARDCORE: la partida se ha borrado entera. Tu partida normal sigue intacta.";
+      }
     }
     overlay(ui.over);
     // Tras continuar con un anuncio con recompensa, otra muerte no cuenta de nuevo.
     if(!continued)registerRun();
     uiSound("defeat");
     updateMenu();
+    // Lo último: nada vuelve a escribir la partida HARDCORE tras borrarla.
+    if(HARDCORE&&isSectorRun())wipeHardcoreRun();
     if (!scoreSaved) toast("No se pudo guardar el récord en este dispositivo");
     window.AnalyticsManager?.track("death", { level: currentLevel + 1, score, elapsed: Math.round(elapsed) });
     window.AnalyticsManager?.track("death_reason", { level: currentLevel + 1, reason });
   }
 
+  // Borra todo lo de la partida HARDCORE (los ajustes son comunes y quedan).
+  // Lo que hay en memoria también: reintentar o salir recarga el juego.
+  let hardcoreWiped=false;
+  function wipeHardcoreRun() {
+    try {
+      for(const key of Object.keys(window.localStorage))if(key.startsWith(HARDCORE.prefix))window.localStorage.removeItem(key);
+    } catch { /* almacenamiento bloqueado: no queda nada que borrar */ }
+    hardcoreWiped=true;
+  }
+  function reloadGame() { window.location.reload(); }
+
   function resumeReward() {
-    if (continued || state !== "gameover" || supplyFailed || (isSectorRun() && !sectorRevive)) return false;
+    if (HARDCORE || continued || state !== "gameover" || supplyFailed || (isSectorRun() && !sectorRevive)) return false;
     runToken += 1;
     cancelSupplyFailureTimer();
     // Restaura por completo el estado visual y lógico tras la destrucción.
@@ -7201,9 +7234,9 @@
   $("pauseSettings").onclick = () => openSettings("paused");
   $("restart").onclick = () => startLevel(currentLevel);
   $("quit").onclick = goHome;
-  $("home").onclick = goHome;
+  $("home").onclick = () => hardcoreWiped ? reloadGame() : goHome();
   $("completeHome").onclick = goHome;
-  $("retry").onclick = () => startLevel(currentLevel);
+  $("retry").onclick = () => hardcoreWiped ? reloadGame() : startLevel(currentLevel);
   $("replayLevel").onclick = () => startLevel(currentLevel);
   // Tras cualquier viaje: el siguiente viaje del mapa o, si no queda
   // ninguno, el mapa. Nunca un nivel clásico (ya no forman parte del juego).
@@ -7257,9 +7290,26 @@
     settings.vibration = event.target.checked;
     if (settings.vibration) vibrate(20);
   };
+  // HARDCORE se elige con aviso y juega su propia partida: entrar o salir de él
+  // guarda los ajustes y recarga el juego con la otra partida.
+  const hardcoreConfirm = $("hardcoreConfirm");
+  const switchDifficulty = value => { settings.difficulty = value; saveSettings(); reloadGame(); };
   if (ui.difficulty) ui.difficulty.onchange = (event) => {
-    settings.difficulty = ["facil", "normal", "dificil", "hardcore"].includes(event.target.value) ? event.target.value : "normal";
+    const value = ["facil", "normal", "dificil", "hardcore"].includes(event.target.value) ? event.target.value : "normal";
+    if (value === "hardcore" && !HARDCORE) {
+      event.target.value = settings.difficulty;
+      hardcoreConfirm?.classList.remove("hidden");
+      return;
+    }
+    hardcoreConfirm?.classList.add("hidden");
+    if (HARDCORE && value !== "hardcore") { switchDifficulty(value); return; }
+    settings.difficulty = value;
   };
+  if (hardcoreConfirm) {
+    $("hardcoreYes").onclick = () => switchDifficulty("hardcore");
+    $("hardcoreNo").onclick = () => hardcoreConfirm.classList.add("hidden");
+  }
+  document.body.classList.toggle("hardcore-mode", Boolean(HARDCORE));
   ui.effectsQuality.onchange = (event) => {
     settings.effectsQuality = ["low", "normal", "high"].includes(event.target.value) ? event.target.value : "normal";
     settings.effects = settings.effectsQuality !== "low";

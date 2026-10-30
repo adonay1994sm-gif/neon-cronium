@@ -25,9 +25,10 @@ function context() {
   }, set(target, key, value) { target[key] = value; return true; }});
 }
 
-function harness({unlocked = '2', query = ''} = {}) {
+function harness({unlocked = '2', query = '', storage = {}} = {}) {
   const dom = new JSDOM(html, {url: `https://neon.test/${query}`, runScripts: 'outside-only', pretendToBeVisual: true});
   const w = dom.window;
+  for (const [key, value] of Object.entries(storage)) w.localStorage.setItem(key, value);
   w.HTMLCanvasElement.prototype.getContext = () => context();
   w.HTMLCanvasElement.prototype.getBoundingClientRect = () => ({x: 0, y: 0, left: 0, top: 0, right: 390, bottom: 844, width: 390, height: 844});
   w.requestAnimationFrame = () => 1; w.cancelAnimationFrame = () => {}; w.navigator.vibrate = () => true;
@@ -860,4 +861,58 @@ test('the Forja opened from the menu offers one clear way back to the menu', () 
   assert.equal(w.document.getElementById('flightDockHome').classList.contains('hidden'), true);
   click(w, 'flightDockContinue');
   assert.equal(T.st().state, 'menu');
+});
+
+// HARDCORE (propietario 24/10 y 30/10): partida aparte que se borra entera al
+// morir, sin revivir ni baliza; se elige en Ajustes con aviso.
+const HC = 'neon-hardcore-v1:';
+const hardcoreSettings = JSON.stringify({difficulty: 'hardcore'});
+const runAt = stageNumber => JSON.stringify({version: 1, unlocked: 1, sectors: {}, run: {sector: 1, stageNumber, stageHull: 90, reviveUsed: false}});
+
+test('HARDCORE plays its own save and leaves the normal one alone', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, [KEY]: runAt(7), [HC + KEY]: runAt(3)}});
+  assert.equal(w.document.body.classList.contains('hardcore-mode'), true);
+  click(w, 'play');
+  assert.equal(T.stage(), 3, 'the HARDCORE run, not the normal one');
+  assert.equal(JSON.parse(w.localStorage.getItem(KEY)).run.stageNumber, 7);
+});
+
+test('dying in HARDCORE erases the whole HARDCORE save, with no revive and no beacon', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, [KEY]: runAt(7), [HC + KEY]: runAt(3),
+    [HC + 'neonCronium.menu.v1']: JSON.stringify({version: 1, hangar: true, seen: {hangar: true}})}});
+  click(w, 'play');
+  T.ev('ch03Beaten=true');
+  assert.equal(T.ev('offerSectorBeacon()'), false, 'no beacon in HARDCORE');
+  T.finishGame('hull');
+  assert.equal(rewardShown(w), false, 'no rewarded revive');
+  assert.equal(T.ev('resumeReward()'), false);
+  assert.deepEqual(Object.keys(w.localStorage).filter(key => key.startsWith(HC)), [], 'nothing of HARDCORE is left');
+  assert.equal(JSON.parse(w.localStorage.getItem(KEY)).run.stageNumber, 7, 'the normal save is intact');
+  assert.equal(JSON.parse(w.localStorage.getItem('neon-settings-v5')).difficulty, 'hardcore', 'settings are shared and kept');
+  assert.match(w.document.getElementById('retry').textContent, /EMPEZAR DE CERO/);
+});
+
+test('choosing HARDCORE in Ajustes asks first and only switches after confirming', () => {
+  const {w, T} = harness();
+  T.ev('reloadGame=()=>{window.__reloaded=(window.__reloaded||0)+1}');
+  const select = w.document.getElementById('difficulty'), confirm = w.document.getElementById('hardcoreConfirm');
+  select.value = 'hardcore'; select.dispatchEvent(new w.Event('change'));
+  assert.equal(confirm.classList.contains('hidden'), false, 'the warning shows');
+  assert.equal(T.ev('settings.difficulty'), 'normal', 'nothing changes yet');
+  click(w, 'hardcoreNo');
+  assert.equal(confirm.classList.contains('hidden'), true);
+  assert.equal(select.value, 'normal');
+  select.value = 'hardcore'; select.dispatchEvent(new w.Event('change'));
+  click(w, 'hardcoreYes');
+  assert.equal(JSON.parse(w.localStorage.getItem('neon-settings-v5')).difficulty, 'hardcore');
+  assert.equal(w.__reloaded, 1, 'the game restarts on the HARDCORE save');
+});
+
+test('leaving HARDCORE in Ajustes goes back to the normal save', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings}});
+  T.ev('reloadGame=()=>{window.__reloaded=(window.__reloaded||0)+1}');
+  const select = w.document.getElementById('difficulty');
+  select.value = 'normal'; select.dispatchEvent(new w.Event('change'));
+  assert.equal(JSON.parse(w.localStorage.getItem('neon-settings-v5')).difficulty, 'normal');
+  assert.equal(w.__reloaded, 1);
 });

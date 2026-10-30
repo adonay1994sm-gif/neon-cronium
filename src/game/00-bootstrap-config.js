@@ -221,4 +221,19 @@
     settings: "neon-settings-v5"
   };
   const LEGACY_KEYS = { best: "neon-best-v1" };
+  // HARDCORE (propietario 24/10 y 30/10): partida aparte que se borra entera al
+  // morir. Todo se guarda con su prefijo salvo los ajustes, que son comunes;
+  // cambiar de modo en Ajustes recarga el juego con la otra partida.
+  const HARDCORE = (() => {
+    const base = window.NeonDev?.storage ?? window.localStorage, prefix = "neon-hardcore-v1:";
+    let enabled = false;
+    try { enabled = JSON.parse(base.getItem(KEYS.settings) || "{}")?.difficulty === "hardcore"; } catch {}
+    if (!enabled) return null;
+    const key = name => name === KEYS.settings ? name : prefix + name;
+    return Object.freeze({prefix: (window.NeonDev?.prefix || "") + prefix, storage: Object.freeze({
+      getItem: name => base.getItem(key(name)),
+      setItem: (name, value) => base.setItem(key(name), value),
+      removeItem: name => base.removeItem(key(name))
+    })});
+  })();
   const DEFAULT_SETTINGS = { music: 35, fx: 70, sensitivity: 135, vibration: true, autoFire: false, effectsQuality: "normal", effects: true, difficulty: "normal" };

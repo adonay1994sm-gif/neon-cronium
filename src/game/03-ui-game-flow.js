@@ -468,7 +468,7 @@
   // El recibo lleva el id de la partida de chatarra: reintentar no cobra dos veces.
   let sectorBeaconOffered=false;
   function offerSectorBeacon() {
-    if(!isSectorRun()||!ch03Beaten||sectorBeaconOffered||state!=="playing")return false;
+    if(HARDCORE||!isSectorRun()||!ch03Beaten||sectorBeaconOffered||state!=="playing")return false;
     if(loadSectorSave().sectors[classicSideVoyage.ficha.sector]?.beacon)return false;
     sectorBeaconOffered=true;
     if(typeof resetGameInput==="function")resetGameInput();
@@ -2401,19 +2401,37 @@
       const after=loadSectorSave();
       $("retry").textContent=`REINTENTAR SECTOR · TRAMO ${NeonCampaign.continuePoint(after)?.stageNumber||1}`;
       if(after.sectors[classicSideVoyage.ficha.sector]?.beacon)ui.supplyStatus.textContent="Con baliza: vuelves al tramo 6.";
+      if(HARDCORE) {
+        ui.reward.classList.add("hidden");
+        $("retry").textContent="EMPEZAR DE CERO";
+        ui.supplyStatus.textContent="HARDCORE: la partida se ha borrado entera. Tu partida normal sigue intacta.";
+      }
     }
     overlay(ui.over);
     // Tras continuar con un anuncio con recompensa, otra muerte no cuenta de nuevo.
     if(!continued)registerRun();
     uiSound("defeat");
     updateMenu();
+    // Lo último: nada vuelve a escribir la partida HARDCORE tras borrarla.
+    if(HARDCORE&&isSectorRun())wipeHardcoreRun();
     if (!scoreSaved) toast("No se pudo guardar el récord en este dispositivo");
     window.AnalyticsManager?.track("death", { level: currentLevel + 1, score, elapsed: Math.round(elapsed) });
     window.AnalyticsManager?.track("death_reason", { level: currentLevel + 1, reason });
   }
 
+  // Borra todo lo de la partida HARDCORE (los ajustes son comunes y quedan).
+  // Lo que hay en memoria también: reintentar o salir recarga el juego.
+  let hardcoreWiped=false;
+  function wipeHardcoreRun() {
+    try {
+      for(const key of Object.keys(window.localStorage))if(key.startsWith(HARDCORE.prefix))window.localStorage.removeItem(key);
+    } catch { /* almacenamiento bloqueado: no queda nada que borrar */ }
+    hardcoreWiped=true;
+  }
+  function reloadGame() { window.location.reload(); }
+
   function resumeReward() {
-    if (continued || state !== "gameover" || supplyFailed || (isSectorRun() && !sectorRevive)) return false;
+    if (HARDCORE || continued || state !== "gameover" || supplyFailed || (isSectorRun() && !sectorRevive)) return false;
     runToken += 1;
     cancelSupplyFailureTimer();
     // Restaura por completo el estado visual y lógico tras la destrucción.
