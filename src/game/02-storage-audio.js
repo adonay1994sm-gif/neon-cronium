@@ -229,6 +229,7 @@
   let chapterScore = null;
   let masterBus = null;
   let combatSfx = null;
+  let uiSfx = null;
   let voyageScoreContext = "transit";
   let scoreSuspended = false;
   const activeToneVoices = new Set();
@@ -307,6 +308,7 @@
     scoreSuspended = true;
     chapterScore?.suspend();
     combatSfx?.setPaused(true);
+    uiSfx?.setPaused(true);
     voyageScore?.setPaused(true);
     stopToneVoices();
     if (audioCtx?.state === "running") await audioCtx.suspend().catch(() => {});
@@ -325,6 +327,8 @@
     combatSfx?.setEnabled(settings.fx>0);
     combatSfx?.setVolume(settings.fx/100);
     combatSfx?.setPaused(scoreSuspended||state!=="playing");
+    uiSfx?.setEnabled(settings.fx>0);
+    uiSfx?.setVolume(settings.fx/100);
     if (settings.fx <= 0) stopToneVoices();
     if(settings.music<=0)chapterScore?.suspend();
     if (musicGain && audioCtx) {
@@ -345,6 +349,29 @@
       "hull-hit":[95,.22,"sawtooth",.08],"enemy-break":[920,.05,"triangle",.04],
       "atlas-charge":[135,.28,"triangle",.065],"atlas-collapse":[640,.28,"sine",.06]};
     if(fallback[cue])tone(...fallback[cue]);
+  }
+
+  // Sonidos de interfaz y avisos (Kenney CC0, ui-sfx.js): suenan también en
+  // menús y pausa. Mientras el banco carga, o si falla, queda el pitido de antes.
+  const UI_FALLBACK_TONES={"ui-tick":[620,.05,"triangle",.04],confirm:[720,.10,"triangle",.035],
+    "weapon-switch":[650,.12,"triangle",.045],"pickup-scrap":[760,.045,"sine",.025],"pickup-cronium":[560,.06,"triangle",.055],
+    "ammo-ready":[520,.035,"sine",.025],"power-up":[780,.15,"triangle",.075],repair:[690,.18,"sine",.08],
+    transmission:[315,.06,"sine",.035],"stage-start":[540,.11,"triangle",.07],"stage-complete":[760,.12,"triangle",.08],
+    unlock:[900,.18,"triangle",.06],"gate-warning":[180,.12,"square",.045],"gate-clear":[760,.08,"triangle",.055],
+    defeat:[110,.30,"sawtooth",.06],"ship-destroyed":[70,.48,"sawtooth",.095],rupture:[72,.5,"sawtooth",.05],
+    "boss-alert":[135,.28,"triangle",.065]};
+  function uiSound(cue,x=W/2) {
+    if(settings.fx<=0||scoreSuspended)return;
+    const ac=ensureAudio();
+    if(!ac)return;
+    if(ac.state==="suspended")ac.resume().catch(()=>{});
+    if(!uiSfx&&typeof NeonCampaign.createUiSfx==="function") {
+      uiSfx=NeonCampaign.createUiSfx({context:ac,output:masterBus||ac.destination});
+      uiSfx?.setVolume(settings.fx/100);uiSfx?.load();
+    }
+    else if(uiSfx?.snapshot().failed)uiSfx.load();
+    if(uiSfx?.snapshot().ready){uiSfx.setPaused(false);uiSfx.play(cue,{pan:clamp(x/W*2-1,-.75,.75)});return;}
+    if(UI_FALLBACK_TONES[cue])tone(...UI_FALLBACK_TONES[cue]);
   }
 
   function tone(frequency = 440, duration = 0.06, type = "sine", base = 0.06) {

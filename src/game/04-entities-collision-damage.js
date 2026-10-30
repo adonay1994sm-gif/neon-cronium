@@ -479,7 +479,7 @@
       burst(item.x, item.y, 24, "green");
       pulseRing(item.x, item.y, "#78ff9c", 105, 0.62);
       toast(`Drone de reparación: +${Math.round(restored)}%`);
-      tone(690, 0.18, "sine", 0.08);
+      uiSound("repair",item.x);
       vibrate(30);
       hud();
       window.AnalyticsManager?.track("ability_used", { level: currentLevel + 1, ability: "repair" });
@@ -503,7 +503,7 @@
       phaser: "Phaser automático activo"
     };
     toast(names[type]);
-    tone(type === "phaser" ? 920 : 780, 0.15, "triangle", 0.075);
+    uiSound("power-up");
     vibrate(22);
     updatePowerHud();
     window.AnalyticsManager?.track("ability_used", { level: currentLevel + 1, ability: type });
@@ -587,7 +587,7 @@
       addImpactEffect(player.x - 34 * SHIP_VISUAL.scale, player.y - 8 * SHIP_VISUAL.scale, 1.15, -0.5);
       addImpactEffect(player.x + 36 * SHIP_VISUAL.scale, player.y + 4 * SHIP_VISUAL.scale, 1.15, 0.5);
       burst(player.x, player.y - 20 * SHIP_VISUAL.scale, 42, "red");
-      tone(70, 0.48, "sawtooth", 0.095);
+      uiSound("ship-destroyed",player.x);
       vibrate([70, 35, 90, 40, 120]);
     }
   }
@@ -597,7 +597,7 @@
     if(item.type==="flightModule") {
       if(!classicEquipment.recoveredTwin) {
         if(!persistClassicEquipment({...classicEquipment,recoveredTwin:true}))return false;
-        toast("Emisor gemelo recuperado · C9 disponible en el panel");tone(900,.18,"triangle",.06);
+        toast("Emisor gemelo recuperado · C9 disponible en el panel");uiSound("unlock");
         pulseRing(item.x,item.y,"#ffc874",90,.45);
         if(classicChapterStory)signalClassicChapter("module-recovered");
         else showStoryTransmission("MIRA · C9","Pieza asegurada. La montamos antes de entrar en la red Atlas.",4.5);
@@ -613,7 +613,7 @@
       burst(item.x, item.y, 9, "cyan");
       pulseRing(item.x, item.y, "#55f6ff", 76, 0.38, "capture");
       stormPulse = Math.max(stormPulse, 0.08);
-      tone(500 + combo * 28, 0.06, "triangle", 0.055);
+      uiSound("pickup-cronium",item.x);
       if (collected >= level().goal) completeLevel();
     } else if (isThreat(item)) {
       // Guardian weapons have authored tier damage (13/15/22). Only patrol
@@ -731,7 +731,7 @@
         const targetIndex = items.indexOf(target);
         if (targetIndex >= 0) items.splice(targetIndex, 1);
       }
-      tone(destroyed ? 980 : 760, 0.07, "sawtooth", 0.045);
+      combatSound(destroyed ? "enemy-break" : "impact-metal", target.x);
     } else {
       if (shots.length >= EFFECT_LIMITS.shots) shots.shift();
       shots.push({ x1: player.x, y1: player.y - SHIP_VISUAL.phaserMuzzleOffset, x2: player.x, y2: 90, life: 0.18, duration: 0.18, hit: false, kind: "phaser" });

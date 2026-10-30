@@ -29,6 +29,7 @@ export {sectorPlanetPose} from '../presentation/sector-planets.js';
 export {createGuardianAtlas, advanceGuardianAtlas, hitGuardianAtlas, GUARDIAN_ATLAS_RULES} from '../combat/guardian-atlas.js';
 export {guardianAtlasAnimation} from '../animation/guardian-atlas-animator.js';
 export {createCombatSfx} from '../audio/combat-sfx.js';
+export {createUiSfx} from '../audio/ui-sfx.js';
 export {SHIP_FLEET, SHIP_FLEET_SAVE_KEY, normalizeShipLoadout, shipPartFrame, shipAssemblyPose,
   shipNozzleAnchors, advanceShipBank} from '../ship/modular-ship.js';
 

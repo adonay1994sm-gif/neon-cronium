@@ -110,7 +110,7 @@
     const formation = createDebrisFormation();
     gates.push(formation);
     clearProtectedCorridors(formation);
-    tone(180, 0.12, "square", 0.045);
+    uiSound("gate-warning");
   }
 
   function updateGateSystem(dt, scale) {
@@ -148,7 +148,7 @@
         if (safe) {
           score += 25;
           pulseRing(player.x, player.y, level().accent, 120, 0.48);
-          tone(760, 0.08, "triangle", 0.055);
+          uiSound("gate-clear");
           toast("Paso orbital limpio: +25");
         } else {
           damageShip(38, player.x, player.y - 15);

@@ -808,6 +808,7 @@
   let chapterScore = null;
   let masterBus = null;
   let combatSfx = null;
+  let uiSfx = null;
   let voyageScoreContext = "transit";
   let scoreSuspended = false;
   const activeToneVoices = new Set();
@@ -886,6 +887,7 @@
     scoreSuspended = true;
     chapterScore?.suspend();
     combatSfx?.setPaused(true);
+    uiSfx?.setPaused(true);
     voyageScore?.setPaused(true);
     stopToneVoices();
     if (audioCtx?.state === "running") await audioCtx.suspend().catch(() => {});
@@ -904,6 +906,8 @@
     combatSfx?.setEnabled(settings.fx>0);
     combatSfx?.setVolume(settings.fx/100);
     combatSfx?.setPaused(scoreSuspended||state!=="playing");
+    uiSfx?.setEnabled(settings.fx>0);
+    uiSfx?.setVolume(settings.fx/100);
     if (settings.fx <= 0) stopToneVoices();
     if(settings.music<=0)chapterScore?.suspend();
     if (musicGain && audioCtx) {
@@ -924,6 +928,29 @@
       "hull-hit":[95,.22,"sawtooth",.08],"enemy-break":[920,.05,"triangle",.04],
       "atlas-charge":[135,.28,"triangle",.065],"atlas-collapse":[640,.28,"sine",.06]};
     if(fallback[cue])tone(...fallback[cue]);
+  }
+
+  // Sonidos de interfaz y avisos (Kenney CC0, ui-sfx.js): suenan también en
+  // menús y pausa. Mientras el banco carga, o si falla, queda el pitido de antes.
+  const UI_FALLBACK_TONES={"ui-tick":[620,.05,"triangle",.04],confirm:[720,.10,"triangle",.035],
+    "weapon-switch":[650,.12,"triangle",.045],"pickup-scrap":[760,.045,"sine",.025],"pickup-cronium":[560,.06,"triangle",.055],
+    "ammo-ready":[520,.035,"sine",.025],"power-up":[780,.15,"triangle",.075],repair:[690,.18,"sine",.08],
+    transmission:[315,.06,"sine",.035],"stage-start":[540,.11,"triangle",.07],"stage-complete":[760,.12,"triangle",.08],
+    unlock:[900,.18,"triangle",.06],"gate-warning":[180,.12,"square",.045],"gate-clear":[760,.08,"triangle",.055],
+    defeat:[110,.30,"sawtooth",.06],"ship-destroyed":[70,.48,"sawtooth",.095],rupture:[72,.5,"sawtooth",.05],
+    "boss-alert":[135,.28,"triangle",.065]};
+  function uiSound(cue,x=W/2) {
+    if(settings.fx<=0||scoreSuspended)return;
+    const ac=ensureAudio();
+    if(!ac)return;
+    if(ac.state==="suspended")ac.resume().catch(()=>{});
+    if(!uiSfx&&typeof NeonCampaign.createUiSfx==="function") {
+      uiSfx=NeonCampaign.createUiSfx({context:ac,output:masterBus||ac.destination});
+      uiSfx?.setVolume(settings.fx/100);uiSfx?.load();
+    }
+    else if(uiSfx?.snapshot().failed)uiSfx.load();
+    if(uiSfx?.snapshot().ready){uiSfx.setPaused(false);uiSfx.play(cue,{pan:clamp(x/W*2-1,-.75,.75)});return;}
+    if(UI_FALLBACK_TONES[cue])tone(...UI_FALLBACK_TONES[cue]);
   }
 
   function tone(frequency = 440, duration = 0.06, type = "sine", base = 0.06) {
@@ -1112,7 +1139,7 @@
       : NeonCampaign.SCRAP_UPGRADES[sku] ? `${NeonCampaign.SCRAP_UPGRADES[sku].label}: ${NeonCampaign.SCRAP_UPGRADES[sku].description}`
       : "Mejora instalada y guardada.";
     shipPresentationSignature="";flightHudSignature="";updateClassicDock();updateAmmoHud();hud();
-    if(projected)tone(720,.10,"triangle",.035);
+    if(projected)uiSound("confirm");
     return projected;
   }
 
@@ -1148,7 +1175,7 @@
       return false;
     }
     classicSalvageState=result.state;
-    if(!result.duplicate){tone(760,.045,"sine",.025);toast(`+${result.amount} chatarra`);}
+    if(!result.duplicate){uiSound("pickup-scrap",item.x);toast(`+${result.amount} chatarra`);}
     return true;
   }
 
@@ -1241,7 +1268,7 @@
       button.onclick=()=>{
         if(!classicEquipment.unlocked.includes(type))return;
         if(persistClassicEquipment({...classicEquipment,selected:type})) {
-          updateClassicDock();syncClassicFlightHud();tone(720,.08,"triangle",.035);
+          updateClassicDock();syncClassicFlightHud();uiSound("weapon-switch");
         }
       };
       loadout.append(button);
@@ -1249,7 +1276,7 @@
     ui.flightWeapon.onclick = () => {
       if (classicEquipment.unlocked.length < 2) { toast("El segundo cañón se desbloquea al vencer a Atlas"); return; }
       const selected = classicEquipment.unlocked[(classicEquipment.unlocked.indexOf(classicEquipment.selected)+1)%classicEquipment.unlocked.length];
-      if (persistClassicEquipment({...classicEquipment, selected})) { tone(selected === "twin" ? 860 : 650, .12, "triangle", .045); syncClassicFlightHud(); }
+      if (persistClassicEquipment({...classicEquipment, selected})) { uiSound("weapon-switch"); syncClassicFlightHud(); }
     };
     $("beaconBuy").onclick=()=>buySectorBeacon();$("beaconSkip").onclick=()=>closeSectorBeacon();
     ui.flightInstallTwin.onclick = () => buyClassicC9Upgrade("twin-preparation");
@@ -1495,7 +1522,7 @@
       $("beaconStatus").textContent="Pago guardado. Pulsa otra vez para activar la baliza sin volver a cobrar.";
       return false;
     }
-    tone(720,.10,"triangle",.035);updateAmmoHud();
+    uiSound("confirm");updateAmmoHud();
     closeSectorBeacon();return true;
   }
   function closeSectorBeacon() {
@@ -1732,12 +1759,12 @@
       hud();
     }
     if(event.type==="service") { classicFlightView=classicFlight.snapshot();beginClassicVoyageService(); }
-    if(event.type==="attack"&&!classicChapterStory) { showStoryTransmission("CONTROL CHRONOS","Nave sin identificación. Está cargando sus armas contra el reactor.",5); tone(180,.25,"sawtooth",.045); }
+    if(event.type==="attack"&&!classicChapterStory) { showStoryTransmission("CONTROL CHRONOS","Nave sin identificación. Está cargando sus armas contra el reactor.",5); uiSound("boss-alert"); }
     if(event.type==="rupture") {
       // The authored reactor/wave layers own this blue temporal rupture. A
       // generic orange/pink combat explosion used to obscure its structure.
       levelOneShockwaveTriggered=true;
-      shake=8;stormPulse=.18;tone(72,.5,"sawtooth",.05);
+      shake=8;stormPulse=.18;uiSound("rupture");
       if(!classicChapterStory)showStoryTransmission("N-7","¡Chronos ha sido alcanzado! Recupera el CRONIUM. Los atacantes siguen en la zona.",6);
     }
     if(event.type==="departure") { if(!classicChapterStory)showStoryTransmission("N-7","Chronos queda atrás. La primera señal conduce a Gaia Nova.",4.6); classicPatrolTimer=.6; }
@@ -2136,7 +2163,7 @@
         if(NeonCampaign.hitCh03Satellite(ch03Boss,contact.damage).accepted){addImpactEffect(shot.x,shot.y,.8);combatSound("impact-metal",ch03Boss.x);}
       }
     }
-    if(events.some(event=>event.type==="recharged")){tone(520,.035,"sine",.025);updateAmmoHud();}
+    if(events.some(event=>event.type==="recharged")){uiSound("ammo-ready");updateAmmoHud();}
   }
 
   function interceptClassicProjectile(item) {
@@ -2344,7 +2371,7 @@
     ui.nextLevel.classList.remove("hidden");
     ui.nextLevel.textContent=sector?"VOLVER AL MENÚ":next?`SIGUIENTE VIAJE: ${next.voyage} →`:"VER EL MAPA →";
     overlay(ui.complete);
-    tone(760,.12,"triangle",.08);setTimeout(()=>tone(980,.18,"sine",.07),120);vibrate([30,40,70]);
+    uiSound("stage-complete");vibrate([30,40,70]);
     updateMenu();
   }
 
@@ -2405,7 +2432,7 @@
     ui.goal.previousElementSibling.textContent = "CRONIUM";
     ui.goal.textContent = `${collected}/${level().goal}`;
     syncAtlasHud(); refreshClassicFlightBounds(); updateAmmoHud();
-    tone(135, .28, "triangle", .065);
+    uiSound("boss-alert");
     return true;
   }
 
@@ -2482,7 +2509,7 @@
     if (event.type === "drones") spawnAtlasDrones(event);
     if (event.type === "fury") { atlasFuryScene=true;ensureSprite(SPRITES.atlasFury);ensureSprite(SPRITES.atlasEscorts);spawnAtlasEscorts(event.escorts); }
     if (event.type === "volley" && event.fulminant) { shake=Math.max(shake,6);cameraKickY=Math.max(cameraKickY,4); }
-    if (event.type === "phase") { cameraKickY = Math.max(cameraKickY, 3); tone(180, .3, "triangle", .055); }
+    if (event.type === "phase") { cameraKickY = Math.max(cameraKickY, 3); uiSound("boss-alert"); }
     if (event.type === "shutdown") {
       atlasBeam=atlasBeamWarning=null;
       // Las escoltas caen con Atlas.
@@ -3001,7 +3028,7 @@
     ui.storyText.textContent = text;
     ui.storyTransmission.classList.add("show");
     storyTimer = duration;
-    tone(315, 0.06, "sine", 0.035);
+    uiSound("transmission");
   }
 
   function updateLevelStory(dt) {
@@ -3032,7 +3059,7 @@
       cameraKickY = 8;
       pulseRing(player.x, player.y + SHIP_VISUAL.centerYOffset, "#a5faff", 245, 0.56, "pulse");
       burst(player.x, player.y + SHIP_VISUAL.centerYOffset, 38, "cyan");
-      tone(78, 0.8, "sawtooth", 0.055);
+      uiSound("rupture");
       showStoryTransmission("IA N-7", "Onda expansiva. Mantén el rumbo.", 3.2);
     }
   }
@@ -3203,7 +3230,7 @@
     setClassicFlightHudVisible(true);refreshClassicFlightBounds(true);
     hud();
     updateEncounterHud();
-    tone(540 + currentLevel * 22, 0.11, "triangle", 0.07);
+    uiSound("stage-start");
     if(classicFlightView?.waitingFor==="service")beginClassicVoyageService();
     // A1: quien ya vio la intro de Chronos empieza cada intento tras ella.
     if(isSectorRun()&&classicChapterView?.opening.canSkip&&loadMenuUnlocks().seen.intro)skipChapterIntro();
@@ -3357,8 +3384,7 @@
       ui.nextLevel.textContent=nextVoyage&&nextVoyage.voyage!=="S1-V1"?`SIGUIENTE VIAJE: ${nextVoyage.voyage} →`:"VER EL MAPA →";
     }
     overlay(ui.complete);
-    tone(760, 0.12, "triangle", 0.08);
-    setTimeout(() => tone(980, 0.18, "sine", 0.07), 120);
+    uiSound("stage-complete");
     vibrate([30, 40, 70]);
     updateMenu();
     if (!progressSaved) toast("No se pudo guardar el progreso en este dispositivo");
@@ -3405,7 +3431,7 @@
     overlay(ui.over);
     // Tras continuar con un anuncio con recompensa, otra muerte no cuenta de nuevo.
     if(!continued)registerRun();
-    tone(110, 0.30, "sawtooth", 0.06);
+    uiSound("defeat");
     updateMenu();
     if (!scoreSaved) toast("No se pudo guardar el récord en este dispositivo");
     window.AnalyticsManager?.track("death", { level: currentLevel + 1, score, elapsed: Math.round(elapsed) });
@@ -3958,7 +3984,7 @@
       burst(item.x, item.y, 24, "green");
       pulseRing(item.x, item.y, "#78ff9c", 105, 0.62);
       toast(`Drone de reparación: +${Math.round(restored)}%`);
-      tone(690, 0.18, "sine", 0.08);
+      uiSound("repair",item.x);
       vibrate(30);
       hud();
       window.AnalyticsManager?.track("ability_used", { level: currentLevel + 1, ability: "repair" });
@@ -3982,7 +4008,7 @@
       phaser: "Phaser automático activo"
     };
     toast(names[type]);
-    tone(type === "phaser" ? 920 : 780, 0.15, "triangle", 0.075);
+    uiSound("power-up");
     vibrate(22);
     updatePowerHud();
     window.AnalyticsManager?.track("ability_used", { level: currentLevel + 1, ability: type });
@@ -4066,7 +4092,7 @@
       addImpactEffect(player.x - 34 * SHIP_VISUAL.scale, player.y - 8 * SHIP_VISUAL.scale, 1.15, -0.5);
       addImpactEffect(player.x + 36 * SHIP_VISUAL.scale, player.y + 4 * SHIP_VISUAL.scale, 1.15, 0.5);
       burst(player.x, player.y - 20 * SHIP_VISUAL.scale, 42, "red");
-      tone(70, 0.48, "sawtooth", 0.095);
+      uiSound("ship-destroyed",player.x);
       vibrate([70, 35, 90, 40, 120]);
     }
   }
@@ -4076,7 +4102,7 @@
     if(item.type==="flightModule") {
       if(!classicEquipment.recoveredTwin) {
         if(!persistClassicEquipment({...classicEquipment,recoveredTwin:true}))return false;
-        toast("Emisor gemelo recuperado · C9 disponible en el panel");tone(900,.18,"triangle",.06);
+        toast("Emisor gemelo recuperado · C9 disponible en el panel");uiSound("unlock");
         pulseRing(item.x,item.y,"#ffc874",90,.45);
         if(classicChapterStory)signalClassicChapter("module-recovered");
         else showStoryTransmission("MIRA · C9","Pieza asegurada. La montamos antes de entrar en la red Atlas.",4.5);
@@ -4092,7 +4118,7 @@
       burst(item.x, item.y, 9, "cyan");
       pulseRing(item.x, item.y, "#55f6ff", 76, 0.38, "capture");
       stormPulse = Math.max(stormPulse, 0.08);
-      tone(500 + combo * 28, 0.06, "triangle", 0.055);
+      uiSound("pickup-cronium",item.x);
       if (collected >= level().goal) completeLevel();
     } else if (isThreat(item)) {
       // Guardian weapons have authored tier damage (13/15/22). Only patrol
@@ -4210,7 +4236,7 @@
         const targetIndex = items.indexOf(target);
         if (targetIndex >= 0) items.splice(targetIndex, 1);
       }
-      tone(destroyed ? 980 : 760, 0.07, "sawtooth", 0.045);
+      combatSound(destroyed ? "enemy-break" : "impact-metal", target.x);
     } else {
       if (shots.length >= EFFECT_LIMITS.shots) shots.shift();
       shots.push({ x1: player.x, y1: player.y - SHIP_VISUAL.phaserMuzzleOffset, x2: player.x, y2: 90, life: 0.18, duration: 0.18, hit: false, kind: "phaser" });
@@ -4353,7 +4379,7 @@
     const formation = createDebrisFormation();
     gates.push(formation);
     clearProtectedCorridors(formation);
-    tone(180, 0.12, "square", 0.045);
+    uiSound("gate-warning");
   }
 
   function updateGateSystem(dt, scale) {
@@ -4391,7 +4417,7 @@
         if (safe) {
           score += 25;
           pulseRing(player.x, player.y, level().accent, 120, 0.48);
-          tone(760, 0.08, "triangle", 0.055);
+          uiSound("gate-clear");
           toast("Paso orbital limpio: +25");
         } else {
           damageShip(38, player.x, player.y - 15);
@@ -7156,6 +7182,16 @@
     goHome();sectorMapShown=sector;buildLevelGrid();overlay(ui.levelSelect);
   };
 
+  // Botones e interruptores de menús y ventanas suenan (Kenney CC0). Los mandos
+  // de vuelo no están en un .overlay y tienen su propio sonido de combate.
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest?.("button");
+    if (button && !button.disabled && button.closest(".overlay")) uiSound("ui-press");
+  });
+  document.addEventListener("change", (event) => {
+    if (event.target.matches?.('.overlay input[type="checkbox"]')) uiSound("ui-toggle");
+  });
+
   ui.musicVolume.oninput = (event) => {
     settings.music = +event.target.value;
     ui.musicValue.textContent = `${settings.music}%`;
@@ -7168,7 +7204,7 @@
     ui.fxValue.textContent = `${settings.fx}%`;
     paintRanges();
     updateAudioVolumes();
-    tone(620, 0.05, "triangle", 0.04);
+    uiSound("ui-tick");
   };
   ui.sensitivity.oninput = (event) => {
     settings.sensitivity = +event.target.value;

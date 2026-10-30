@@ -70,7 +70,7 @@ function runtime(){
   const sandbox=vm.createContext({hull:100,classicHullReserve:30,classicHullReserveCapacity:30,
     player:{x:360,y:1000},state:'playing',powers:{shield:0},score:0,classicShieldAge:0,classicShieldImpact:0,
     NeonCampaign:{resolveHullReinforcement},
-    burst:no,pulseRing:no,addImpactEffect:no,tone:no,combatSound:no,vibrate:no,toast:no,ensureSprite:no,updatePowerHud:no,
+    burst:no,pulseRing:no,addImpactEffect:no,tone:no,uiSound:no,combatSound:no,vibrate:no,toast:no,ensureSprite:no,updatePowerHud:no,
     hud:()=>{calls.hud++;},SPRITES:{forceShieldAtlas:{}},window:{},currentLevel:0,
     impactReactionTimer:0,impactReactionSide:0,damageSmokeLocked:false,damageSmokeSide:0,
     combo:3,comboTimer:2,shake:0,flash:0});

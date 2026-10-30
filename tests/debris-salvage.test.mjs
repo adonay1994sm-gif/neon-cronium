@@ -32,7 +32,7 @@ function harness() {
     cameraKickY:0,shake:0,SHIP_VISUAL:{phaserMuzzleOffset:65},
     clamp:(value,min,max)=>Math.max(min,Math.min(max,value)),
     isThreat:item=>['meteor','debris','satellite','scout'].includes(item.type),
-    fireAtlasPulse:()=>false,hud(){},tone(){},toast(){},vibrate(){},combatSound(){},
+    fireAtlasPulse:()=>false,hud(){},tone(){},uiSound(){},toast(){},vibrate(){},combatSound(){},
     window:{AnalyticsManager:{track(){}}}
   });
   vm.runInContext(source,game);

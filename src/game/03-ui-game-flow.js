@@ -112,7 +112,7 @@
       : NeonCampaign.SCRAP_UPGRADES[sku] ? `${NeonCampaign.SCRAP_UPGRADES[sku].label}: ${NeonCampaign.SCRAP_UPGRADES[sku].description}`
       : "Mejora instalada y guardada.";
     shipPresentationSignature="";flightHudSignature="";updateClassicDock();updateAmmoHud();hud();
-    if(projected)tone(720,.10,"triangle",.035);
+    if(projected)uiSound("confirm");
     return projected;
   }
 
@@ -148,7 +148,7 @@
       return false;
     }
     classicSalvageState=result.state;
-    if(!result.duplicate){tone(760,.045,"sine",.025);toast(`+${result.amount} chatarra`);}
+    if(!result.duplicate){uiSound("pickup-scrap",item.x);toast(`+${result.amount} chatarra`);}
     return true;
   }
 
@@ -241,7 +241,7 @@
       button.onclick=()=>{
         if(!classicEquipment.unlocked.includes(type))return;
         if(persistClassicEquipment({...classicEquipment,selected:type})) {
-          updateClassicDock();syncClassicFlightHud();tone(720,.08,"triangle",.035);
+          updateClassicDock();syncClassicFlightHud();uiSound("weapon-switch");
         }
       };
       loadout.append(button);
@@ -249,7 +249,7 @@
     ui.flightWeapon.onclick = () => {
       if (classicEquipment.unlocked.length < 2) { toast("El segundo cañón se desbloquea al vencer a Atlas"); return; }
       const selected = classicEquipment.unlocked[(classicEquipment.unlocked.indexOf(classicEquipment.selected)+1)%classicEquipment.unlocked.length];
-      if (persistClassicEquipment({...classicEquipment, selected})) { tone(selected === "twin" ? 860 : 650, .12, "triangle", .045); syncClassicFlightHud(); }
+      if (persistClassicEquipment({...classicEquipment, selected})) { uiSound("weapon-switch"); syncClassicFlightHud(); }
     };
     $("beaconBuy").onclick=()=>buySectorBeacon();$("beaconSkip").onclick=()=>closeSectorBeacon();
     ui.flightInstallTwin.onclick = () => buyClassicC9Upgrade("twin-preparation");
@@ -495,7 +495,7 @@
       $("beaconStatus").textContent="Pago guardado. Pulsa otra vez para activar la baliza sin volver a cobrar.";
       return false;
     }
-    tone(720,.10,"triangle",.035);updateAmmoHud();
+    uiSound("confirm");updateAmmoHud();
     closeSectorBeacon();return true;
   }
   function closeSectorBeacon() {
@@ -732,12 +732,12 @@
       hud();
     }
     if(event.type==="service") { classicFlightView=classicFlight.snapshot();beginClassicVoyageService(); }
-    if(event.type==="attack"&&!classicChapterStory) { showStoryTransmission("CONTROL CHRONOS","Nave sin identificación. Está cargando sus armas contra el reactor.",5); tone(180,.25,"sawtooth",.045); }
+    if(event.type==="attack"&&!classicChapterStory) { showStoryTransmission("CONTROL CHRONOS","Nave sin identificación. Está cargando sus armas contra el reactor.",5); uiSound("boss-alert"); }
     if(event.type==="rupture") {
       // The authored reactor/wave layers own this blue temporal rupture. A
       // generic orange/pink combat explosion used to obscure its structure.
       levelOneShockwaveTriggered=true;
-      shake=8;stormPulse=.18;tone(72,.5,"sawtooth",.05);
+      shake=8;stormPulse=.18;uiSound("rupture");
       if(!classicChapterStory)showStoryTransmission("N-7","¡Chronos ha sido alcanzado! Recupera el CRONIUM. Los atacantes siguen en la zona.",6);
     }
     if(event.type==="departure") { if(!classicChapterStory)showStoryTransmission("N-7","Chronos queda atrás. La primera señal conduce a Gaia Nova.",4.6); classicPatrolTimer=.6; }
@@ -1136,7 +1136,7 @@
         if(NeonCampaign.hitCh03Satellite(ch03Boss,contact.damage).accepted){addImpactEffect(shot.x,shot.y,.8);combatSound("impact-metal",ch03Boss.x);}
       }
     }
-    if(events.some(event=>event.type==="recharged")){tone(520,.035,"sine",.025);updateAmmoHud();}
+    if(events.some(event=>event.type==="recharged")){uiSound("ammo-ready");updateAmmoHud();}
   }
 
   function interceptClassicProjectile(item) {
@@ -1344,7 +1344,7 @@
     ui.nextLevel.classList.remove("hidden");
     ui.nextLevel.textContent=sector?"VOLVER AL MENÚ":next?`SIGUIENTE VIAJE: ${next.voyage} →`:"VER EL MAPA →";
     overlay(ui.complete);
-    tone(760,.12,"triangle",.08);setTimeout(()=>tone(980,.18,"sine",.07),120);vibrate([30,40,70]);
+    uiSound("stage-complete");vibrate([30,40,70]);
     updateMenu();
   }
 
@@ -1405,7 +1405,7 @@
     ui.goal.previousElementSibling.textContent = "CRONIUM";
     ui.goal.textContent = `${collected}/${level().goal}`;
     syncAtlasHud(); refreshClassicFlightBounds(); updateAmmoHud();
-    tone(135, .28, "triangle", .065);
+    uiSound("boss-alert");
     return true;
   }
 
@@ -1482,7 +1482,7 @@
     if (event.type === "drones") spawnAtlasDrones(event);
     if (event.type === "fury") { atlasFuryScene=true;ensureSprite(SPRITES.atlasFury);ensureSprite(SPRITES.atlasEscorts);spawnAtlasEscorts(event.escorts); }
     if (event.type === "volley" && event.fulminant) { shake=Math.max(shake,6);cameraKickY=Math.max(cameraKickY,4); }
-    if (event.type === "phase") { cameraKickY = Math.max(cameraKickY, 3); tone(180, .3, "triangle", .055); }
+    if (event.type === "phase") { cameraKickY = Math.max(cameraKickY, 3); uiSound("boss-alert"); }
     if (event.type === "shutdown") {
       atlasBeam=atlasBeamWarning=null;
       // Las escoltas caen con Atlas.
@@ -2001,7 +2001,7 @@
     ui.storyText.textContent = text;
     ui.storyTransmission.classList.add("show");
     storyTimer = duration;
-    tone(315, 0.06, "sine", 0.035);
+    uiSound("transmission");
   }
 
   function updateLevelStory(dt) {
@@ -2032,7 +2032,7 @@
       cameraKickY = 8;
       pulseRing(player.x, player.y + SHIP_VISUAL.centerYOffset, "#a5faff", 245, 0.56, "pulse");
       burst(player.x, player.y + SHIP_VISUAL.centerYOffset, 38, "cyan");
-      tone(78, 0.8, "sawtooth", 0.055);
+      uiSound("rupture");
       showStoryTransmission("IA N-7", "Onda expansiva. Mantén el rumbo.", 3.2);
     }
   }
@@ -2203,7 +2203,7 @@
     setClassicFlightHudVisible(true);refreshClassicFlightBounds(true);
     hud();
     updateEncounterHud();
-    tone(540 + currentLevel * 22, 0.11, "triangle", 0.07);
+    uiSound("stage-start");
     if(classicFlightView?.waitingFor==="service")beginClassicVoyageService();
     // A1: quien ya vio la intro de Chronos empieza cada intento tras ella.
     if(isSectorRun()&&classicChapterView?.opening.canSkip&&loadMenuUnlocks().seen.intro)skipChapterIntro();
@@ -2357,8 +2357,7 @@
       ui.nextLevel.textContent=nextVoyage&&nextVoyage.voyage!=="S1-V1"?`SIGUIENTE VIAJE: ${nextVoyage.voyage} →`:"VER EL MAPA →";
     }
     overlay(ui.complete);
-    tone(760, 0.12, "triangle", 0.08);
-    setTimeout(() => tone(980, 0.18, "sine", 0.07), 120);
+    uiSound("stage-complete");
     vibrate([30, 40, 70]);
     updateMenu();
     if (!progressSaved) toast("No se pudo guardar el progreso en este dispositivo");
@@ -2405,7 +2404,7 @@
     overlay(ui.over);
     // Tras continuar con un anuncio con recompensa, otra muerte no cuenta de nuevo.
     if(!continued)registerRun();
-    tone(110, 0.30, "sawtooth", 0.06);
+    uiSound("defeat");
     updateMenu();
     if (!scoreSaved) toast("No se pudo guardar el récord en este dispositivo");
     window.AnalyticsManager?.track("death", { level: currentLevel + 1, score, elapsed: Math.round(elapsed) });

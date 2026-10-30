@@ -96,6 +96,7 @@ var NeonCampaign = (() => {
     createRelativeFlightInput: () => createRelativeFlightInput,
     createScrapLedger: () => createScrapLedger,
     createSectorSave: () => createSectorSave,
+    createUiSfx: () => createUiSfx,
     createVoyageHazardField: () => createVoyageHazardField,
     createVoyageRoute: () => createVoyageRoute,
     createVoyageScore: () => createVoyageScore,
@@ -202,7 +203,7 @@ var NeonCampaign = (() => {
   var validTime = (value) => Number.isFinite(value) && value >= 0;
   var validCount = (value) => Number.isSafeInteger(value) && value >= 0;
   var names = ["pilot", "fire", "recovery", "missile", "workshop"];
-  var cueById = new Map(FLIGHT_TUTORIAL_CUES.map((cue2) => [cue2.id, cue2]));
+  var cueById = new Map(FLIGHT_TUTORIAL_CUES.map((cue3) => [cue3.id, cue3]));
   var cueFor = (name) => FLIGHT_TUTORIAL_CUES[names.indexOf(name)];
   var listIsValid = (value) => Array.isArray(value) && new Set(value).size === value.length && value.every((id) => cueById.has(id));
   var clamp = (value) => Math.max(0, Math.min(1, value));
@@ -243,9 +244,9 @@ var NeonCampaign = (() => {
     };
     const offset = replay ? routeElapsed : 0;
     if (routeElapsed > 0 && !restored && !replay) {
-      for (const cue2 of FLIGHT_TUTORIAL_CUES) if (cue2.at <= routeElapsed) skipped.add(cue2.id);
+      for (const cue3 of FLIGHT_TUTORIAL_CUES) if (cue3.at <= routeElapsed) skipped.add(cue3.id);
     }
-    const done = (cue2) => completed.has(cue2.id) || skipped.has(cue2.id);
+    const done = (cue3) => completed.has(cue3.id) || skipped.has(cue3.id);
     function reconcile() {
       const successes = [
         stats.pilotDistance >= cueFor("pilot").target,
@@ -255,24 +256,24 @@ var NeonCampaign = (() => {
         stats.workshopOpened
       ];
       for (let index = 0; index < successes.length; index++) {
-        const cue2 = FLIGHT_TUTORIAL_CUES[index];
-        if (successes[index] && !done(cue2)) completed.add(cue2.id);
+        const cue3 = FLIGHT_TUTORIAL_CUES[index];
+        if (successes[index] && !done(cue3)) completed.add(cue3.id);
       }
     }
-    function progress(cue2) {
-      if (completed.has(cue2.id)) return 1;
-      if (cue2 === cueFor("pilot")) return clamp(stats.pilotDistance / cue2.target);
+    function progress(cue3) {
+      if (completed.has(cue3.id)) return 1;
+      if (cue3 === cueFor("pilot")) return clamp(stats.pilotDistance / cue3.target);
       return 0;
     }
     function currentCue() {
       if (!enabled || !context.playing || context.bossActive) return null;
-      for (const cue2 of FLIGHT_TUTORIAL_CUES) {
-        if (done(cue2)) continue;
-        if (cue2.optional && !(context.missileReady && context.missileOpportunity)) continue;
-        if (cue2.optional && stats.moduleRecovered && !stats.workshopOpened) continue;
-        if (cue2 === cueFor("workshop") && !stats.moduleRecovered) return null;
-        if (elapsed < cue2.at + offset) return null;
-        return cue2;
+      for (const cue3 of FLIGHT_TUTORIAL_CUES) {
+        if (done(cue3)) continue;
+        if (cue3.optional && !(context.missileReady && context.missileOpportunity)) continue;
+        if (cue3.optional && stats.moduleRecovered && !stats.workshopOpened) continue;
+        if (cue3 === cueFor("workshop") && !stats.moduleRecovered) return null;
+        if (elapsed < cue3.at + offset) return null;
+        return cue3;
       }
       return null;
     }
@@ -286,7 +287,7 @@ var NeonCampaign = (() => {
       });
     }
     function snapshot() {
-      const cue2 = currentCue();
+      const cue3 = currentCue();
       return Object.freeze({
         version: FLIGHT_TUTORIAL_VERSION,
         elapsed,
@@ -295,7 +296,7 @@ var NeonCampaign = (() => {
         completed: Object.freeze([...completed]),
         skipped: Object.freeze([...skipped]),
         pending: Object.freeze(FLIGHT_TUTORIAL_CUES.filter((item) => !done(item)).map((item) => item.id)),
-        active: cue2 ? Object.freeze({ ...cue2, progress: progress(cue2) }) : null,
+        active: cue3 ? Object.freeze({ ...cue3, progress: progress(cue3) }) : null,
         complete: FLIGHT_TUTORIAL_CUES.filter((item) => !item.optional).every((item) => completed.has(item.id)),
         finished: FLIGHT_TUTORIAL_CUES.every(done)
       });
@@ -362,19 +363,19 @@ var NeonCampaign = (() => {
       stats.workshopOpened ||= workshopOpened;
       stats.moduleRecovered ||= moduleRecovered;
       reconcile();
-      for (const cue3 of FLIGHT_TUTORIAL_CUES) {
-        if (!done(cue3) && elapsed >= cue3.until + offset) skipped.add(cue3.id);
+      for (const cue4 of FLIGHT_TUTORIAL_CUES) {
+        if (!done(cue4) && elapsed >= cue4.until + offset) skipped.add(cue4.id);
       }
-      const cue2 = currentCue();
-      if (!cue2 || context.channelBusy || emitted.has(cue2.id)) return [];
+      const cue3 = currentCue();
+      if (!cue3 || context.channelBusy || emitted.has(cue3.id)) return [];
       const event2 = Object.freeze({
         type: "tutorial",
-        ...cue2,
+        ...cue3,
         routeElapsed: elapsed,
-        expiresAt: cue2.until + offset,
-        progress: progress(cue2)
+        expiresAt: cue3.until + offset,
+        progress: progress(cue3)
       });
-      emitted.add(cue2.id);
+      emitted.add(cue3.id);
       emit(event2);
       return [event2];
     }
@@ -838,7 +839,7 @@ var NeonCampaign = (() => {
     ...CHRONOS_CHAPTER_AFTERMATH
   ]);
   var TIMED_DIALOGUES = [...CHRONOS_CHAPTER_OPENING, ...ROUTE_DIALOGUES];
-  var dialogueById = new Map(CHRONOS_CHAPTER_DIALOGUES.map((cue2) => [cue2.id, cue2]));
+  var dialogueById = new Map(CHRONOS_CHAPTER_DIALOGUES.map((cue3) => [cue3.id, cue3]));
   var signalNames = /* @__PURE__ */ new Set([...Object.keys(SIGNAL_DIALOGUES), "atlas-disabled"]);
   var minimumRouteTime = freeze({
     "module-recovered": 72,
@@ -848,17 +849,17 @@ var NeonCampaign = (() => {
     "atlas-phase-two": 359,
     "atlas-disabled": 359
   });
-  var signalForCue = new Map(Object.entries(SIGNAL_DIALOGUES).map(([name, cue2]) => [cue2.id, name]));
+  var signalForCue = new Map(Object.entries(SIGNAL_DIALOGUES).map(([name, cue3]) => [cue3.id, name]));
   var uniqueStrings = (value) => Array.isArray(value) && value.every((id) => typeof id === "string") && new Set(value).size === value.length;
   function normalizeChronosChapterCheckpoint(value) {
     if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1 || value.contentVersion !== CHRONOS_CHAPTER_VERSION || value.routeId !== ROUTE_ID || !finiteTime(value.routeElapsed) || value.routeElapsed > CHRONOS_CHAPTER_ROUTE_SECONDS || !finiteTime(value.aftermathElapsed) || value.aftermathElapsed > CHRONOS_CHAPTER_AFTERMATH_SECONDS || typeof value.introSeen !== "boolean" || typeof value.introSkipped !== "boolean" || value.introSkipped && !value.introSeen || !uniqueStrings(value.eventIds) || value.eventIds.length > CHRONOS_CHAPTER_DIALOGUES.length || !uniqueStrings(value.signalIds) || value.signalIds.some((name) => !signalNames.has(name) || minimumRouteTime[name] > value.routeElapsed + 0.05) || value.signalIds.includes("c9-departure") && !value.signalIds.includes("c9-arrival") || value.signalIds.some((name) => ["atlas-phase-two", "atlas-disabled"].includes(name)) && !value.signalIds.includes("atlas-entry") || value.aftermathElapsed > 0 && !value.signalIds.includes("atlas-disabled")) return null;
     for (const id of value.eventIds) {
-      const cue2 = dialogueById.get(id);
-      if (!cue2) return null;
-      if (cue2.phase === "opening" && cue2.at > value.routeElapsed + 0.05 && !value.introSeen) return null;
-      if (cue2.phase === "route" && cue2.at > value.routeElapsed + 0.05) return null;
-      if (cue2.phase === "event" && !value.signalIds.includes(signalForCue.get(id))) return null;
-      if (cue2.phase === "aftermath" && (!value.signalIds.includes("atlas-disabled") || cue2.at > value.aftermathElapsed + 0.05)) return null;
+      const cue3 = dialogueById.get(id);
+      if (!cue3) return null;
+      if (cue3.phase === "opening" && cue3.at > value.routeElapsed + 0.05 && !value.introSeen) return null;
+      if (cue3.phase === "route" && cue3.at > value.routeElapsed + 0.05) return null;
+      if (cue3.phase === "event" && !value.signalIds.includes(signalForCue.get(id))) return null;
+      if (cue3.phase === "aftermath" && (!value.signalIds.includes("atlas-disabled") || cue3.at > value.aftermathElapsed + 0.05)) return null;
     }
     return freeze({
       version: 1,
@@ -894,23 +895,23 @@ var NeonCampaign = (() => {
     for (const name of restored?.signalIds || []) if (minimumRouteTime[name] <= routeElapsed + 0.05) signals.add(name);
     if (signals.has("atlas-disabled")) aftermathElapsed = restored.aftermathElapsed;
     for (const id of restored?.eventIds || []) {
-      const cue2 = dialogueById.get(id);
-      if (cue2.phase === "opening") {
-        if (!replayIntro || cue2.at < routeElapsed) fired.add(id);
-      } else if (cue2.phase === "route" && cue2.at <= routeElapsed) fired.add(id);
-      else if (cue2.phase === "event" && signals.has(signalForCue.get(id))) fired.add(id);
-      else if (cue2.phase === "aftermath" && signals.has("atlas-disabled") && cue2.at <= aftermathElapsed) fired.add(id);
+      const cue3 = dialogueById.get(id);
+      if (cue3.phase === "opening") {
+        if (!replayIntro || cue3.at < routeElapsed) fired.add(id);
+      } else if (cue3.phase === "route" && cue3.at <= routeElapsed) fired.add(id);
+      else if (cue3.phase === "event" && signals.has(signalForCue.get(id))) fired.add(id);
+      else if (cue3.phase === "aftermath" && signals.has("atlas-disabled") && cue3.at <= aftermathElapsed) fired.add(id);
     }
-    for (const cue2 of TIMED_DIALOGUES) {
-      if (cue2.at < routeElapsed) fired.add(cue2.id);
+    for (const cue3 of TIMED_DIALOGUES) {
+      if (cue3.at < routeElapsed) fired.add(cue3.id);
     }
     if (routeElapsed >= CHRONOS_CHAPTER_OPENING_SECONDS) introSeen = true;
     function snapshot() {
       const active = openingEnabled && elapsed < CHRONOS_CHAPTER_OPENING_SECONDS;
-      const shot = [...CHRONOS_CHAPTER_OPENING].reverse().find((cue2) => elapsed >= cue2.at) || CHRONOS_CHAPTER_OPENING[0];
+      const shot = [...CHRONOS_CHAPTER_OPENING].reverse().find((cue3) => elapsed >= cue3.at) || CHRONOS_CHAPTER_OPENING[0];
       const film = active && presentation === "in-world" && elapsed < CHRONOS_CHAPTER_CINEMATIC_SECONDS;
       const aftermathActive = signals.has("atlas-disabled") && aftermathElapsed < CHRONOS_CHAPTER_AFTERMATH_SECONDS;
-      const line2 = aftermathActive ? [...CHRONOS_CHAPTER_AFTERMATH].reverse().find((cue2) => aftermathElapsed >= cue2.at) : null;
+      const line2 = aftermathActive ? [...CHRONOS_CHAPTER_AFTERMATH].reverse().find((cue3) => aftermathElapsed >= cue3.at) : null;
       return freeze({
         version: CHRONOS_CHAPTER_VERSION,
         routeId: ROUTE_ID,
@@ -937,15 +938,15 @@ var NeonCampaign = (() => {
         signalIds: freeze([...signals])
       });
     }
-    function emitOnce(cue2, emit) {
-      if (fired.has(cue2.id)) return false;
-      fired.add(cue2.id);
+    function emitOnce(cue3, emit) {
+      if (fired.has(cue3.id)) return false;
+      fired.add(cue3.id);
       emit(freeze({
-        ...cue2,
+        ...cue3,
         chapter: 1,
         storyVersion: CHRONOS_CHAPTER_VERSION,
         routeElapsed: elapsed,
-        ...cue2.phase === "aftermath" ? { aftermathElapsed } : {}
+        ...cue3.phase === "aftermath" ? { aftermathElapsed } : {}
       }));
       return true;
     }
@@ -955,10 +956,10 @@ var NeonCampaign = (() => {
       const next = Math.min(view.elapsed, CHRONOS_CHAPTER_ROUTE_SECONDS);
       if (next + 1e-9 < elapsed) throw new RangeError("Create a new story controller when restoring an earlier route checkpoint");
       elapsed = Math.max(elapsed, next);
-      for (const cue2 of TIMED_DIALOGUES) {
-        if (cue2.at > elapsed + 1e-9 || fired.has(cue2.id)) continue;
-        if (cue2.phase === "opening" && !openingEnabled || elapsed >= cue2.at + cue2.duration) fired.add(cue2.id);
-        else emitOnce(cue2, emit);
+      for (const cue3 of TIMED_DIALOGUES) {
+        if (cue3.at > elapsed + 1e-9 || fired.has(cue3.id)) continue;
+        if (cue3.phase === "opening" && !openingEnabled || elapsed >= cue3.at + cue3.duration) fired.add(cue3.id);
+        else emitOnce(cue3, emit);
       }
       if (elapsed >= CHRONOS_CHAPTER_OPENING_SECONDS) {
         introSeen = true;
@@ -968,10 +969,10 @@ var NeonCampaign = (() => {
         const nextAftermath = Math.min(view.aftermathElapsed, CHRONOS_CHAPTER_AFTERMATH_SECONDS);
         if (nextAftermath + 1e-9 < aftermathElapsed) throw new RangeError("Aftermath clock must be monotonic");
         aftermathElapsed = Math.max(aftermathElapsed, nextAftermath);
-        for (const cue2 of CHRONOS_CHAPTER_AFTERMATH) {
-          if (cue2.at > aftermathElapsed + 1e-9 || fired.has(cue2.id)) continue;
-          if (aftermathElapsed >= cue2.at + cue2.duration) fired.add(cue2.id);
-          else emitOnce(cue2, emit);
+        for (const cue3 of CHRONOS_CHAPTER_AFTERMATH) {
+          if (cue3.at > aftermathElapsed + 1e-9 || fired.has(cue3.id)) continue;
+          if (aftermathElapsed >= cue3.at + cue3.duration) fired.add(cue3.id);
+          else emitOnce(cue3, emit);
         }
       }
       return snapshot();
@@ -991,7 +992,7 @@ var NeonCampaign = (() => {
       introSeen = true;
       introSkipped = true;
       openingEnabled = false;
-      for (const cue2 of CHRONOS_CHAPTER_OPENING) fired.add(cue2.id);
+      for (const cue3 of CHRONOS_CHAPTER_OPENING) fired.add(cue3.id);
       return true;
     }
     function checkpointRecord() {
@@ -6241,7 +6242,7 @@ var NeonCampaign = (() => {
     const cueAllowed = boundary !== null && boundary !== 5 && boundary !== 6 && !reducedEffects;
     const side = boundary % 2 ? 1 : -1;
     const depth = clamp9(progress, 0, 1);
-    const cue2 = cueAllowed ? Object.freeze({
+    const cue3 = cueAllowed ? Object.freeze({
       kind: boundary <= 3 ? "chronos-remnant" : "navigation-beacon",
       side,
       x: 0.5 + side * (0.19 + 0.52 * Math.pow(depth, 1.9)),
@@ -6253,7 +6254,7 @@ var NeonCampaign = (() => {
       active: boundary !== null,
       boundary,
       progress: depth,
-      cue: cue2,
+      cue: cue3,
       environment,
       // Navigation stars are secondary presentation; comfort mode retains the
       // same route/environment but removes this brief acceleration embellishment.
@@ -6881,6 +6882,14 @@ var NeonCampaign = (() => {
     "enemy-phaser": cue([13.68, 14.08], 0.28, 0.19, 2, 0.055, 3),
     "enemy-heavy": cue([14.48, 15.22], 0.62, 0.28, 5, 0.16, 2)
   });
+  var COMBAT_BANK = Object.freeze({
+    version: COMBAT_SFX_VERSION,
+    src: COMBAT_SFX_SRC,
+    duration: COMBAT_SFX_DURATION,
+    cues: COMBAT_SFX_CUES,
+    voiceLimit: COMBAT_SFX_VOICE_LIMIT,
+    gainBudget: COMBAT_SFX_GAIN_BUDGET
+  });
   var disconnect = (node) => {
     try {
       node?.disconnect();
@@ -6888,7 +6897,7 @@ var NeonCampaign = (() => {
     }
   };
   var clamp12 = (value, low, high) => Math.max(low, Math.min(high, Number(value) || 0));
-  function createCombatSfx({ context, output, fetchAsset = (...args) => fetch(...args) } = {}) {
+  function createCombatSfx({ context, output, fetchAsset = (...args) => fetch(...args), bank = COMBAT_BANK } = {}) {
     if (!context?.createBufferSource || !context?.decodeAudioData || !context?.createGain || !output) return null;
     const bus = context.createGain();
     bus.gain.value = 1;
@@ -6931,7 +6940,7 @@ var NeonCampaign = (() => {
         await Promise.resolve();
         try {
           if (disposed || generation !== attempt) return false;
-          const response = await fetchAsset(COMBAT_SFX_SRC);
+          const response = await fetchAsset(bank.src);
           if (!response?.ok) throw new Error("combat-sfx asset unavailable");
           const bytes = await response.arrayBuffer();
           if (disposed || generation !== attempt) return false;
@@ -6940,7 +6949,7 @@ var NeonCampaign = (() => {
           }
           const decoded = await context.decodeAudioData(bytes);
           if (disposed || generation !== attempt) return false;
-          if (!Number.isFinite(decoded?.duration) || decoded.duration < COMBAT_SFX_DURATION - 0.12 || decoded.duration > COMBAT_SFX_DURATION + 0.4) {
+          if (!Number.isFinite(decoded?.duration) || decoded.duration < bank.duration - 0.12 || decoded.duration > bank.duration + 0.4) {
             throw new Error("combat-sfx atlas duration invalid");
           }
           buffer = decoded;
@@ -6957,8 +6966,8 @@ var NeonCampaign = (() => {
     }
     function play(name, { eventId = null, pan = 0 } = {}) {
       if (disposed || !enabled || paused || volume <= 0 || !buffer || context.state !== "running") return false;
-      if (!Object.prototype.hasOwnProperty.call(COMBAT_SFX_CUES, name)) return false;
-      const definition = COMBAT_SFX_CUES[name];
+      if (!Object.prototype.hasOwnProperty.call(bank.cues, name)) return false;
+      const definition = bank.cues[name];
       if (!definition) return false;
       const id = typeof eventId === "string" && eventId.length > 0 && eventId.length <= 160 ? eventId : Number.isSafeInteger(eventId) && eventId >= 0 ? String(eventId) : null;
       if (id !== null && recentIds.has(id)) {
@@ -6979,7 +6988,7 @@ var NeonCampaign = (() => {
         return false;
       }
       const weight = () => [...active].reduce((sum, record2) => sum + record2.level, 0);
-      while (active.size >= COMBAT_SFX_VOICE_LIMIT || weight() + definition.gain > COMBAT_SFX_GAIN_BUDGET) {
+      while (active.size >= bank.voiceLimit || weight() + definition.gain > bank.gainBudget) {
         const candidate = [...active].filter((record2) => record2.priority < definition.priority).sort((a, b) => a.priority - b.priority || a.end - b.end)[0];
         if (!candidate) {
           remember(id);
@@ -7053,7 +7062,7 @@ var NeonCampaign = (() => {
         if (volume === 0) stopAll();
       },
       snapshot: () => Object.freeze({
-        version: COMBAT_SFX_VERSION,
+        version: bank.version,
         ready: Boolean(buffer),
         loading: Boolean(loading),
         failed,
@@ -7083,6 +7092,51 @@ var NeonCampaign = (() => {
         disconnect(bus);
       }
     });
+  }
+
+  // src/game/audio/ui-sfx.js
+  var UI_SFX_SRC = "assets/ui_sfx_atlas_v1.m4a";
+  var UI_SFX_DURATION = 10.83;
+  var variant = (offset, duration) => Object.freeze({ offset, duration });
+  var cue2 = (variants, gain, priority3, cooldown, polyphony) => Object.freeze({
+    variants: Object.freeze(variants),
+    gain,
+    priority: priority3,
+    cooldown,
+    polyphony
+  });
+  var UI_SFX_CUES = Object.freeze({
+    "ui-press": cue2([variant(0, 0.1)], 0.16, 1, 0.05, 2),
+    "ui-toggle": cue2([variant(0.22, 0.14)], 0.16, 1, 0.05, 2),
+    "ui-tick": cue2([variant(0.48, 0.06)], 0.14, 1, 0.06, 1),
+    "confirm": cue2([variant(0.66, 0.29)], 0.24, 4, 0.15, 1),
+    "weapon-switch": cue2([variant(1.07, 0.19)], 0.2, 3, 0.12, 1),
+    "pickup-scrap": cue2([variant(1.38, 0.19)], 0.18, 2, 0.05, 2),
+    "pickup-cronium": cue2([variant(1.69, 0.13), variant(1.94, 0.13)], 0.2, 2, 0.03, 3),
+    "ammo-ready": cue2([variant(2.19, 0.03)], 0.14, 1, 0.2, 1),
+    "power-up": cue2([variant(2.34, 0.42)], 0.26, 4, 0.15, 1),
+    "repair": cue2([variant(2.88, 0.54)], 0.26, 4, 0.2, 1),
+    "transmission": cue2([variant(3.54, 0.12)], 0.18, 3, 0.3, 1),
+    "stage-start": cue2([variant(3.78, 0.26)], 0.24, 4, 0.5, 1),
+    "stage-complete": cue2([variant(4.16, 0.5)], 0.3, 6, 0.5, 1),
+    "unlock": cue2([variant(4.78, 0.33)], 0.28, 5, 0.3, 1),
+    "gate-warning": cue2([variant(5.23, 0.11)], 0.2, 4, 0.3, 1),
+    "gate-clear": cue2([variant(5.46, 0.38)], 0.22, 3, 0.2, 1),
+    "defeat": cue2([variant(5.96, 0.53)], 0.3, 7, 0.5, 1),
+    "ship-destroyed": cue2([variant(6.61, 1.01)], 0.4, 8, 0.5, 1),
+    "rupture": cue2([variant(7.74, 2.01)], 0.4, 9, 1, 1),
+    "boss-alert": cue2([variant(9.87, 0.96)], 0.3, 7, 0.3, 1)
+  });
+  var UI_BANK = Object.freeze({
+    version: 1,
+    src: UI_SFX_SRC,
+    duration: UI_SFX_DURATION,
+    cues: UI_SFX_CUES,
+    voiceLimit: 6,
+    gainBudget: 0.9
+  });
+  function createUiSfx(options = {}) {
+    return createCombatSfx({ ...options, bank: UI_BANK });
   }
 
   // src/game/ship/modular-ship.js
@@ -7176,8 +7230,8 @@ var NeonCampaign = (() => {
   ])));
   function shipPartFrame(loadout, part) {
     if (!Object.hasOwn(FRAMES, part)) throw new RangeError("Unknown ship part");
-    const variant = variantAt(loadout, part === "flames" ? "engines" : part);
-    return FRAMES[part][VARIANTS.indexOf(variant)];
+    const variant2 = variantAt(loadout, part === "flames" ? "engines" : part);
+    return FRAMES[part][VARIANTS.indexOf(variant2)];
   }
   function shipNozzleAnchors(loadout) {
     const row = shipPartFrame(loadout, "engines").row;

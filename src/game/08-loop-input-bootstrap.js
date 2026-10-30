@@ -380,6 +380,16 @@
     goHome();sectorMapShown=sector;buildLevelGrid();overlay(ui.levelSelect);
   };
 
+  // Botones e interruptores de menús y ventanas suenan (Kenney CC0). Los mandos
+  // de vuelo no están en un .overlay y tienen su propio sonido de combate.
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest?.("button");
+    if (button && !button.disabled && button.closest(".overlay")) uiSound("ui-press");
+  });
+  document.addEventListener("change", (event) => {
+    if (event.target.matches?.('.overlay input[type="checkbox"]')) uiSound("ui-toggle");
+  });
+
   ui.musicVolume.oninput = (event) => {
     settings.music = +event.target.value;
     ui.musicValue.textContent = `${settings.music}%`;
@@ -392,7 +402,7 @@
     ui.fxValue.textContent = `${settings.fx}%`;
     paintRanges();
     updateAudioVolumes();
-    tone(620, 0.05, "triangle", 0.04);
+    uiSound("ui-tick");
   };
   ui.sensitivity.oninput = (event) => {
     settings.sensitivity = +event.target.value;

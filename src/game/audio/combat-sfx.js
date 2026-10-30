@@ -32,10 +32,14 @@ export const COMBAT_SFX_CUES = Object.freeze({
   'enemy-heavy': cue([14.48, 15.22], .62, .28, 5, .16, 2)
 });
 
+// El banco de interfaz (ui-sfx.js) reutiliza este reproductor con su propio atlas.
+const COMBAT_BANK = Object.freeze({version: COMBAT_SFX_VERSION, src: COMBAT_SFX_SRC, duration: COMBAT_SFX_DURATION,
+  cues: COMBAT_SFX_CUES, voiceLimit: COMBAT_SFX_VOICE_LIMIT, gainBudget: COMBAT_SFX_GAIN_BUDGET});
+
 const disconnect = node => { try { node?.disconnect(); } catch { /* ended node */ } };
 const clamp = (value, low, high) => Math.max(low, Math.min(high, Number(value) || 0));
 
-export function createCombatSfx({context, output, fetchAsset = (...args) => fetch(...args)} = {}) {
+export function createCombatSfx({context, output, fetchAsset = (...args) => fetch(...args), bank = COMBAT_BANK} = {}) {
   if (!context?.createBufferSource || !context?.decodeAudioData || !context?.createGain || !output) return null;
   const bus = context.createGain();
   bus.gain.value = 1; bus.connect(output);
@@ -79,7 +83,7 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
       await Promise.resolve();
       try {
         if (disposed || generation !== attempt) return false;
-        const response = await fetchAsset(COMBAT_SFX_SRC);
+        const response = await fetchAsset(bank.src);
         if (!response?.ok) throw new Error('combat-sfx asset unavailable');
         const bytes = await response.arrayBuffer();
         if (disposed || generation !== attempt) return false;
@@ -90,8 +94,8 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
         if (disposed || generation !== attempt) return false;
         // Allow encoder padding, but never accept the old bank: otherwise an
         // offline mismatch would silently cut off the appended enemy weapons.
-        if (!Number.isFinite(decoded?.duration) || decoded.duration < COMBAT_SFX_DURATION - .12 ||
-            decoded.duration > COMBAT_SFX_DURATION + .40) {
+        if (!Number.isFinite(decoded?.duration) || decoded.duration < bank.duration - .12 ||
+            decoded.duration > bank.duration + .40) {
           throw new Error('combat-sfx atlas duration invalid');
         }
         buffer = decoded; failed = false;
@@ -108,8 +112,8 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
 
   function play(name, {eventId = null, pan = 0} = {}) {
     if (disposed || !enabled || paused || volume <= 0 || !buffer || context.state !== 'running') return false;
-    if (!Object.prototype.hasOwnProperty.call(COMBAT_SFX_CUES, name)) return false;
-    const definition = COMBAT_SFX_CUES[name];
+    if (!Object.prototype.hasOwnProperty.call(bank.cues, name)) return false;
+    const definition = bank.cues[name];
     if (!definition) return false;
     const id = typeof eventId === 'string' && eventId.length > 0 && eventId.length <= 160
       ? eventId : Number.isSafeInteger(eventId) && eventId >= 0 ? String(eventId) : null;
@@ -123,7 +127,7 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
     // Only higher-priority events can replace a playing burst. The entire
     // master peak is .70 (AAC overshoot measured separately); summed voice
     // gain stays below .95, retaining headroom for the existing music bus.
-    while (active.size >= COMBAT_SFX_VOICE_LIMIT || weight() + definition.gain > COMBAT_SFX_GAIN_BUDGET) {
+    while (active.size >= bank.voiceLimit || weight() + definition.gain > bank.gainBudget) {
       const candidate = [...active].filter(record => record.priority < definition.priority)
         .sort((a, b) => a.priority - b.priority || a.end - b.end)[0];
       if (!candidate) { remember(id); dropped++; return false; }
@@ -164,7 +168,7 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
       bus.gain.setTargetAtTime(volume, context.currentTime, .02);
       if (volume === 0) stopAll();
     },
-    snapshot: () => Object.freeze({version: COMBAT_SFX_VERSION, ready: Boolean(buffer), loading: Boolean(loading),
+    snapshot: () => Object.freeze({version: bank.version, ready: Boolean(buffer), loading: Boolean(loading),
       failed, disposed, paused, enabled, volume, activeVoices: active.size,
       activeGain: [...active].reduce((sum, record) => sum + record.level, 0),
       played, playedByCue: Object.freeze(Object.fromEntries(playedByCue)), dropped, stolen,
