@@ -176,6 +176,11 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 30/10/2026: «siento que hay cosas hechas y no están marcadas». Había 8
+  decisiones que eligió en el tablero el 24/10 (campo «eleccion») y seguí
+  pidiéndoselas días después. Antes de preguntarle algo, mira si ya lo eligió
+  en el tablero; al ver una elección nueva, marca la decisión como hecha y
+  crea la tarea para hacerla en su paso.
 - 25/10/2026: «hemos puesto unas normas que no se están cumpliendo» (el
   emisor flotante de la Forja). Antes de dar un paso por cerrado, comprueba
   en el juego real que cada norma que decidió se cumple; las que faltan van
