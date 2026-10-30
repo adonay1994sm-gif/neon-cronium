@@ -31,6 +31,8 @@ const CORE = [
   "assets/exo2_latin_wght_v1.woff2",
   "assets/combat_sfx_atlas_v2.m4a",
   "assets/combat_sfx_atlas_v2.json",
+  "assets/ui_sfx_atlas_v1.m4a",
+  "assets/ui_sfx_atlas_v1.json",
   "assets/cronium_energy_atlas_v2.webp",
   "assets/chapter1_opening_score_v1.m4a",
   "assets/chapter1_voyage_score_v1.m4a",

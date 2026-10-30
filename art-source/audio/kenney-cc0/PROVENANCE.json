@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-30",
+  "title": "Sonidos de interfaz y avisos de NEON CRONIUM (banco ui_sfx_atlas_v1)",
+  "decision": "El propietario eligió el 22/10/2026 «Usar Interface Sounds + Sci-Fi Sounds» (tarea audio-ui-cc0 del tablero).",
+  "sources": [
+    {
+      "pack": "Interface Sounds 1.0",
+      "author": "Kenney (www.kenney.nl)",
+      "page": "https://kenney.nl/assets/interface-sounds",
+      "license": "CC0 1.0",
+      "licenseFile": "License-interface-sounds.txt"
+    },
+    {
+      "pack": "Sci-Fi Sounds",
+      "author": "Kenney (www.kenney.nl)",
+      "page": "https://kenney.nl/assets/sci-fi-sounds",
+      "license": "CC0 1.0",
+      "licenseFile": "License-sci-fi-sounds.txt"
+    }
+  ],
+  "files": {
+    "bong_001.ogg": "d21d0f0b782445db579d11e2506b24cd1ac9d664ee33aeaf807761aa7b6fd710",
+    "click_001.ogg": "ccfb7fa0cccdd9faec0eb16033c732b1e308d139d80f799161495d58f7adcdb9",
+    "confirmation_001.ogg": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a",
+    "confirmation_002.ogg": "33b17a9a9a2397c62b285c52c33a907fdffb476909c99e42dde603f6a7a8b12c",
+    "confirmation_003.ogg": "3091bf0be0497f825769ee0733ca7bdc3bcd59bd6c6e8f2ba8f93d580ff38022",
+    "confirmation_004.ogg": "568967a3d9f8a8f6af54ea01729c4882284308f2a27d78c07ffd7ee0d6951661",
+    "drop_002.ogg": "4ac4d1cef7e936965cbf795852ca2020300b9e2ba7daa59f2bf4f1f7bf416218",
+    "error_004.ogg": "0b574cea597d96507e782ae9764f88482ce49f46e931e57054bf7150047f2d69",
+    "forceField_000.ogg": "c2916f2a062c8ddd1aca2826d134fe90847037db31342726ffb0f9097afe339c",
+    "glass_002.ogg": "08e972c73e53c91d6d310e107e80db60edce78ae47225889a028e628a6f3da49",
+    "glass_003.ogg": "9a6f16e3c2eff6fe5d017a4755a28306b14555728831cd00d70308e8f9689566",
+    "lowFrequency_explosion_000.ogg": "3cb48d86dab63140cfb9aaeea4d4a6846abaca5831d157d8adbec0490da26343",
+    "lowFrequency_explosion_001.ogg": "cdda50600a4928f2f1b8371224d53c171ac799c1cf2c30b11999508985250b3b",
+    "maximize_001.ogg": "fd3e75e1de2f2fda90aceeacaeb0427ac8bddd3b07a6ce2a8f9ba923df3771f9",
+    "maximize_004.ogg": "59c7a24b204be24d2a44a86d1e4d18c2cf51fa0446967a14b2590e8fb3afaf34",
+    "maximize_007.ogg": "3400931f3f3a1e9cf253efef9069bcdf053edd2234e4ee9bf88977c389943484",
+    "minimize_005.ogg": "4e6792a98c75d3ff187c0c55561c38c569e02c64757ebebb98831cfe84e3e172",
+    "select_003.ogg": "9a612fd2f513d52a296906b41071c990f75defe56be3bee60d2d4e2423b51b8b",
+    "tick_002.ogg": "869442f54214be902ec7437f79e400dc91c1bfd90d18a6dd2d5b7e41ffbf457b",
+    "tick_004.ogg": "0253d5f7d8d2afbbc370eac2a4539bb844239f0c98343e516d376b137c06d27c",
+    "toggle_001.ogg": "ca1d2dde5f0b286abac4f070e23edab8f30927c8a533665cdf2ac6492a415e49"
+  },
+  "build": "python3 scripts/build-ui-sfx.py (mono 48 kHz, pico 0,70 por sonido, 120 ms entre sonidos, AAC 96k)",
+  "atlasMaster": "art-source/audio/kenney-cc0/ui_sfx_atlas_v1.wav",
+  "runtime": [
+    "assets/ui_sfx_atlas_v1.m4a",
+    "assets/ui_sfx_atlas_v1.json"
+  ],
+  "artisticAcceptance": "PENDING_OWNER: nadie en la sesión puede escucharlos; la elección de cada sonido es una propuesta técnica para revisar al oído."
+}

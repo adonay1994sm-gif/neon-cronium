@@ -1,8 +1,8 @@
 {
   "manifestVersion": 2,
   "buildVersion": "7.2.0",
-  "assetCount": 128,
-  "runtimeBytes": 18629288,
+  "assetCount": 130,
+  "runtimeBytes": 18763054,
   "audit": {
     "reviewed": 97,
     "READY": 58,
@@ -1841,6 +1841,38 @@
       "origin": "GPT a petición del propietario (encargo art-ui-ajustes-piezas-v2)",
       "version": 1,
       "use": "Ajustes: separador entre filas."
+    },
+    {
+      "id": "ui-sfx-atlas-v1",
+      "path": "assets/ui_sfx_atlas_v1.m4a",
+      "master": "art-source/audio/kenney-cc0/ui_sfx_atlas_v1.wav",
+      "dimensions": "48000Hz mono AAC 10.83s",
+      "format": "aac-lc",
+      "size": 129271,
+      "sha256": "dae2d5f6e7d747db1d354465e960bd93b39a3e4ef1633f7c6aaca442a66dde49",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "Kenney, Interface Sounds y Sci-Fi Sounds (CC0, licencias en art-source/audio/kenney-cc0)",
+      "version": 1,
+      "use": "Sonidos de interfaz y avisos: 20 eventos que sustituyen los pitidos tone()"
+    },
+    {
+      "id": "ui-sfx-map-v1",
+      "path": "assets/ui_sfx_atlas_v1.json",
+      "master": "art-source/audio/kenney-cc0/ui_sfx_atlas_v1.wav",
+      "dimensions": "JSON",
+      "format": "json",
+      "size": 4495,
+      "sha256": "a826454f591f31659188f440511f349ad3743a71ada2a9d54d8b25b9936198be",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "Kenney, Interface Sounds y Sci-Fi Sounds (CC0, licencias en art-source/audio/kenney-cc0)",
+      "version": 1,
+      "use": "Offsets y política de voces del banco de interfaz"
     }
   ],
   "project": "NEON CRONIUM"

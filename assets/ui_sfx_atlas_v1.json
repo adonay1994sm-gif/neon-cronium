@@ -1,0 +1,254 @@
+{
+  "version": 1,
+  "src": "assets/ui_sfx_atlas_v1.m4a",
+  "sampleRate": 48000,
+  "channels": 1,
+  "duration": 10.83,
+  "gap": 0.12,
+  "cues": {
+    "ui-press": {
+      "variants": [
+        {
+          "offset": 0.0,
+          "duration": 0.1
+        }
+      ],
+      "gain": 0.16,
+      "priority": 1,
+      "cooldown": 0.05,
+      "polyphony": 2
+    },
+    "ui-toggle": {
+      "variants": [
+        {
+          "offset": 0.22,
+          "duration": 0.14
+        }
+      ],
+      "gain": 0.16,
+      "priority": 1,
+      "cooldown": 0.05,
+      "polyphony": 2
+    },
+    "ui-tick": {
+      "variants": [
+        {
+          "offset": 0.48,
+          "duration": 0.06
+        }
+      ],
+      "gain": 0.14,
+      "priority": 1,
+      "cooldown": 0.06,
+      "polyphony": 1
+    },
+    "confirm": {
+      "variants": [
+        {
+          "offset": 0.66,
+          "duration": 0.29
+        }
+      ],
+      "gain": 0.24,
+      "priority": 4,
+      "cooldown": 0.15,
+      "polyphony": 1
+    },
+    "weapon-switch": {
+      "variants": [
+        {
+          "offset": 1.07,
+          "duration": 0.19
+        }
+      ],
+      "gain": 0.2,
+      "priority": 3,
+      "cooldown": 0.12,
+      "polyphony": 1
+    },
+    "pickup-scrap": {
+      "variants": [
+        {
+          "offset": 1.38,
+          "duration": 0.19
+        }
+      ],
+      "gain": 0.18,
+      "priority": 2,
+      "cooldown": 0.05,
+      "polyphony": 2
+    },
+    "pickup-cronium": {
+      "variants": [
+        {
+          "offset": 1.69,
+          "duration": 0.13
+        },
+        {
+          "offset": 1.94,
+          "duration": 0.13
+        }
+      ],
+      "gain": 0.2,
+      "priority": 2,
+      "cooldown": 0.03,
+      "polyphony": 3
+    },
+    "ammo-ready": {
+      "variants": [
+        {
+          "offset": 2.19,
+          "duration": 0.03
+        }
+      ],
+      "gain": 0.14,
+      "priority": 1,
+      "cooldown": 0.2,
+      "polyphony": 1
+    },
+    "power-up": {
+      "variants": [
+        {
+          "offset": 2.34,
+          "duration": 0.42
+        }
+      ],
+      "gain": 0.26,
+      "priority": 4,
+      "cooldown": 0.15,
+      "polyphony": 1
+    },
+    "repair": {
+      "variants": [
+        {
+          "offset": 2.88,
+          "duration": 0.54
+        }
+      ],
+      "gain": 0.26,
+      "priority": 4,
+      "cooldown": 0.2,
+      "polyphony": 1
+    },
+    "transmission": {
+      "variants": [
+        {
+          "offset": 3.54,
+          "duration": 0.12
+        }
+      ],
+      "gain": 0.18,
+      "priority": 3,
+      "cooldown": 0.3,
+      "polyphony": 1
+    },
+    "stage-start": {
+      "variants": [
+        {
+          "offset": 3.78,
+          "duration": 0.26
+        }
+      ],
+      "gain": 0.24,
+      "priority": 4,
+      "cooldown": 0.5,
+      "polyphony": 1
+    },
+    "stage-complete": {
+      "variants": [
+        {
+          "offset": 4.16,
+          "duration": 0.5
+        }
+      ],
+      "gain": 0.3,
+      "priority": 6,
+      "cooldown": 0.5,
+      "polyphony": 1
+    },
+    "unlock": {
+      "variants": [
+        {
+          "offset": 4.78,
+          "duration": 0.33
+        }
+      ],
+      "gain": 0.28,
+      "priority": 5,
+      "cooldown": 0.3,
+      "polyphony": 1
+    },
+    "gate-warning": {
+      "variants": [
+        {
+          "offset": 5.23,
+          "duration": 0.11
+        }
+      ],
+      "gain": 0.2,
+      "priority": 4,
+      "cooldown": 0.3,
+      "polyphony": 1
+    },
+    "gate-clear": {
+      "variants": [
+        {
+          "offset": 5.46,
+          "duration": 0.38
+        }
+      ],
+      "gain": 0.22,
+      "priority": 3,
+      "cooldown": 0.2,
+      "polyphony": 1
+    },
+    "defeat": {
+      "variants": [
+        {
+          "offset": 5.96,
+          "duration": 0.53
+        }
+      ],
+      "gain": 0.3,
+      "priority": 7,
+      "cooldown": 0.5,
+      "polyphony": 1
+    },
+    "ship-destroyed": {
+      "variants": [
+        {
+          "offset": 6.61,
+          "duration": 1.01
+        }
+      ],
+      "gain": 0.4,
+      "priority": 8,
+      "cooldown": 0.5,
+      "polyphony": 1
+    },
+    "rupture": {
+      "variants": [
+        {
+          "offset": 7.74,
+          "duration": 2.01
+        }
+      ],
+      "gain": 0.4,
+      "priority": 9,
+      "cooldown": 1,
+      "polyphony": 1
+    },
+    "boss-alert": {
+      "variants": [
+        {
+          "offset": 9.87,
+          "duration": 0.96
+        }
+      ],
+      "gain": 0.3,
+      "priority": 7,
+      "cooldown": 0.3,
+      "polyphony": 1
+    }
+  }
+}
