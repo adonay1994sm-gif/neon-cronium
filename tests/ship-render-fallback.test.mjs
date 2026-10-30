@@ -10,11 +10,9 @@ const [html,uiSource,renderSource]=await Promise.all([
   readFile(new URL('src/game/03-ui-game-flow.js',root),'utf8'),
   readFile(new URL('src/game/07-player-item-rendering.js',root),'utf8')
 ]);
-const setupStart=uiSource.indexOf('  function setupShipHangar() {');
-const setupEnd=uiSource.indexOf('  function updateMenu() {',setupStart);
 const renderEnd=renderSource.indexOf('  function playerFrameState(t) {');
-assert.ok(setupStart>=0&&setupEnd>setupStart&&renderEnd>0,'Real setup and rendering functions must exist');
-const setup=uiSource.slice(setupStart,setupEnd),render=renderSource.slice(0,renderEnd);
+assert.ok(renderEnd>0,'Real rendering functions must exist');
+const render=renderSource.slice(0,renderEnd);
 const aster={hull:'aster',wings:'aster',engines:'aster'};
 const plain=value=>JSON.parse(JSON.stringify(value));
 
@@ -50,10 +48,12 @@ function harness(t){
     function overlay(element){for(const node of [ui.menu,ui.briefing,ui.shipHangar].filter(Boolean))node.classList.remove('show');if(element)element.classList.add('show');}
     function toast(){}
     ${render}
-    ${setup}
-    setupShipHangar();
     window.__FALLBACK_TEST__={
-      sync:syncShipPresentation,draw:drawShipHangar,
+      sync:syncShipPresentation,
+      // El hangar ya no dibuja la nave modular (paso del hangar, 30/10): se
+      // dibuja directamente con el mismo trazado que usa el vuelo.
+      drawModular(loadout){const preview=document.createElement('canvas');preview.id='modularPreview';
+        const target=preview.getContext('2d');drawModularShip(target,NeonCampaign.normalizeShipLoadout(loadout),380,0,0);},
       active(mode,loadout){shipRenderMode=mode;shipLoadout=NeonCampaign.normalizeShipLoadout(loadout);},
       snapshot(){return {mode:shipRenderMode,loadout:shipLoadout,draft:shipHangarDraft,signature:shipPresentationSignature,writes};}
     };
@@ -61,7 +61,6 @@ function harness(t){
   const node=id=>window.document.getElementById(id);
   return {window,node,draws,api:window.__FALLBACK_TEST__,
     snapshot:()=>plain(window.__FALLBACK_TEST__.snapshot()),
-    open(){node('openHangar').click();},
     ready(){Object.assign(window.__ATLAS__,{complete:true,naturalWidth:1774,naturalHeight:887});},
     stats:()=>({rafRequests,dataUrls})};
 }
@@ -86,40 +85,12 @@ test('an unavailable atlas keeps a verified signature intact and never stamps an
   assert.equal(h.stats().dataUrls,1,'only the successful assembly was exported');
 });
 
-test('the hangar shows the same current ship in reserve while unavailable components cannot be applied',t=>{
-  const h=harness(t);h.open();h.api.draw(0);
-  assert.equal(h.node('shipAtlasNotice').classList.contains('hidden'),false);
-  assert.equal(h.node('shipApply').disabled,true);
-  assert.ok(h.draws.some(draw=>draw.canvas==='shipHangarCanvas'&&draw.path==='assets/player_ship_identity_v1.webp'));
-  assert.equal(h.draws.some(draw=>/ship_frame_/.test(draw.path)),false,'retired art is not a fallback');
-  assert.equal(h.draws.some(draw=>draw.path==='assets/ship_modular_atlas_v1.webp'),false);
-  assert.equal(h.node('shipLegacy'),null);
-  h.node('shipApply').click();assert.equal(h.snapshot().writes.length,0);
-  assert.equal(h.stats().rafRequests,0);
-});
-
-test('a recovered atlas replaces reserve with the authored components and keeps a single RAF owner',t=>{
-  const h=harness(t);h.open();h.api.draw(0);
-  assert.equal(h.node('shipApply').disabled,true);
-  h.ready();h.draws.length=0;h.api.draw(32);
-  assert.equal(h.node('shipApply').disabled,false);
-  assert.equal(h.node('shipAtlasNotice').classList.contains('hidden'),true);
-  assert.equal(h.draws.filter(draw=>draw.canvas==='shipHangarCanvas').length,6,'two clean plumes, articulated wing halves, engines and hull');
-  assert.ok(h.draws.every(draw=>draw.path==='assets/ship_modular_atlas_v1.webp'));
-  h.node('shipApply').click();
-  assert.equal(h.snapshot().signature.mode,'modular');
-  for(const image of h.window.document.querySelectorAll('.menu-ship-image,.briefing-ship'))assert.match(image.getAttribute('src'),/^data:image\/png;base64,fixture-/);
-  const exports=h.stats().dataUrls;h.api.sync();
-  assert.equal(h.stats().dataUrls,exports,'unchanged selection reuses the prepared presentation');
-  assert.equal(h.stats().rafRequests,0);
-});
-
 test('the real renderer draws independent proportional jets at either engine family mounting points',t=>{
   const h=harness(t);h.ready();
   const roots={aster:[[1498,177],[1616,178]],bastion:[[1499,557],[1612,557]]};
   for(const engines of ['aster','bastion']){
-    const loadout={...aster,engines};h.api.active('modular',loadout);h.open();h.draws.length=0;h.api.draw(0);
-    const plumeDraws=h.draws.filter(draw=>draw.canvas==='shipHangarCanvas').slice(0,2);
+    const loadout={...aster,engines};h.draws.length=0;h.api.drawModular(loadout);
+    const plumeDraws=h.draws.filter(draw=>draw.canvas==='modularPreview').slice(0,2);
     assert.equal(plumeDraws.length,2);
     const flame=shipModel.shipPartFrame(loadout,'flames'),anchors=shipModel.shipNozzleAnchors(loadout);
     for(const [side,draw]of plumeDraws.entries()){
@@ -136,6 +107,5 @@ test('the real renderer draws independent proportional jets at either engine fam
     const [first,second]=plumeDraws.map(draw=>draw.args);
     assert.ok(first[0]+first[2]<second[0],'the contaminated center stays excluded');
     assert.equal(h.draws.some(draw=>/ship_frame_/.test(draw.path)),false);
-    h.node('shipHangarBack').click();
   }
 });

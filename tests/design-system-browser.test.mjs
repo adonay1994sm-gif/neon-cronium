@@ -19,7 +19,8 @@ const TOKENS = ['ui-ink', 'ui-deep', 'ui-surface', 'ui-raised', 'ui-paper', 'ui-
 const SIZES = [10, 12, 14, 16, 20, 28];
 // [nombre, overlay, ¿en vuelo?]
 const SCREENS = [['menú', 'menu', false], ['pausa', 'paused', true], ['ajustes', 'settingsPanel', false], ['derrota', 'over', true],
-  ['fin de sector', 'complete', true], ['baliza', 'beaconOffer', true], ['cómo jugar', 'instructions', false], ['Forja C9', 'flightDock', true]];
+  ['fin de sector', 'complete', true], ['baliza', 'beaconOffer', true], ['cómo jugar', 'instructions', false], ['Forja C9', 'flightDock', true],
+  ['hangar', 'shipHangar', false]];
 
 test('las pantallas rehechas solo usan colores y tamaños del sistema', {timeout: 180000}, async t => {
   if (!chromium) return t.skip('Playwright no está disponible: esta prueba no se ha ejecutado');
@@ -31,13 +32,17 @@ test('las pantallas rehechas solo usan colores y tamaños del sistema', {timeout
     for (const width of [390, 320]) for (const [name, id, flight] of SCREENS) {
       const page = await browser.newPage({viewport: {width, height: 844}});
       await page.goto(server.url + 'index.html', {waitUntil: 'load'});
-      // Con el emisor recuperado sale el botón FORJA C9 del menú.
-      await page.evaluate(() => localStorage.setItem('neonCronium.flightEquipment.v1',
-        JSON.stringify({version: 1, recoveredTwin: true, unlocked: ['pulse'], selected: 'pulse'})));
+      // Con el emisor recuperado sale el botón FORJA C9 del menú; con el hangar
+      // abierto en el menú, el de ENTRAR AL HANGAR.
+      await page.evaluate(() => {
+        localStorage.setItem('neonCronium.flightEquipment.v1', JSON.stringify({version: 1, recoveredTwin: true, unlocked: ['pulse'], selected: 'pulse'}));
+        localStorage.setItem('neonCronium.menu.v1', JSON.stringify({version: 1, hangar: true, seen: {hangar: true, intro: true}}));
+      });
       await page.reload({waitUntil: 'load'});
       await page.evaluate(() => document.fonts.ready);
       const bad = await page.evaluate(([id, flight, tokens, sizes]) => {
         if (id === 'flightDock') document.getElementById('openFlightDock').click();
+        else if (id === 'shipHangar') document.getElementById('openHangar').click();
         else if (id !== 'menu') {
           document.querySelectorAll('.overlay.show').forEach(o => o.classList.remove('show'));
           document.getElementById(id).classList.add('show');

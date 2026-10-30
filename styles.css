@@ -1428,3 +1428,40 @@ body.flight-mode #flightDock #c9Balance{color:var(--ui-amber)}
 #settingsPanel .settings-panel .hardcore-confirm b{color:var(--ui-red)}
 body.hardcore-mode #menu .menu-topline small::after{content:" · HARDCORE";color:var(--ui-red)}
 body.hardcore-mode .metric-sector small::after{content:" · HC";color:var(--ui-red)}
+/* Hangar con el arte de GPT (paso del hangar, 30/10; maqueta art-ui-hangar-v2;
+   scripts/build-hangar-assets.py). Colores y tamaños del sistema. */
+#shipHangar .hangar-v2{width:min(100%,460px);max-height:100%;overflow:auto;overscroll-behavior:contain;text-align:left}
+#shipHangar .hangar-head small{color:var(--ui-cyan);font:800 12px/1.2 var(--font-display);letter-spacing:.14em}
+#shipHangar .hangar-head h2{margin:4px 0 10px;font-size:28px}
+#shipHangar .hangar-stage{position:relative;display:grid;place-items:center;height:200px;margin:0 0 10px;overflow:hidden;
+  background:url("assets/menu_hangar_bg_v1.webp") 50% 52%/cover no-repeat}
+#shipHangar .hangar-ship-art{width:170px;height:170px;background:url("assets/hangar_ships_v1.webp") 0 0/500% 200% no-repeat;filter:drop-shadow(0 12px 14px #000)}
+#shipHangar .hangar-stage figcaption{position:absolute;left:10px;bottom:8px;display:grid;gap:2px}
+#shipHangar .hangar-stage figcaption b{color:var(--ui-paper);font:800 20px/1.1 var(--font-display);letter-spacing:.06em;text-shadow:0 2px 6px #000}
+#shipHangar .hangar-stage figcaption span{color:var(--ui-cyan);font:800 10px/1.2 var(--font-display);letter-spacing:.14em;text-shadow:0 2px 6px #000}
+#shipHangar .hangar-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:0 0 10px}
+#shipHangar .hangar-slot{position:relative;aspect-ratio:1;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;clip-path:none;
+  background:url("assets/hangar_slot_normal_v1.webp") center/100% 100% no-repeat}
+#shipHangar .hangar-slot::before{content:none}
+#shipHangar .hangar-slot.is-chosen{background-image:url("assets/hangar_slot_chosen_v1.webp")}
+#shipHangar .hangar-slot.is-locked{background-image:url("assets/hangar_slot_locked_v1.webp")}
+#shipHangar .hangar-slot.is-paid{background-image:url("assets/hangar_slot_paid_v1.webp")}
+#shipHangar .hangar-slot[aria-pressed="true"]{outline:2px solid var(--ui-cyan);outline-offset:1px}
+#shipHangar .hangar-thumb{position:absolute;inset:16%;background:url("assets/hangar_ships_v1.webp") 0 0/500% 200% no-repeat}
+#shipHangar .hangar-slot:is(.is-locked,.is-paid) .hangar-thumb{filter:grayscale(1) brightness(.45)}
+#shipHangar .hangar-slot small{position:absolute;top:6%;left:10%;color:var(--ui-muted);font:800 10px/1 var(--font-display)}
+#shipHangar .hangar-slot em{position:absolute;left:0;right:0;bottom:7%;color:var(--ui-amber);font:800 10px/1 var(--font-display);font-style:normal;text-align:center}
+#shipHangar .hangar-plate{position:relative;aspect-ratio:1000/360;background:url("assets/hangar_ability_plate_v1.webp") center/100% 100% no-repeat}
+#shipHangar .hangar-ability{position:absolute;left:0;right:0;height:40%;display:flex;align-items:center}
+#shipHangar .hangar-ability:first-child{top:12%}
+#shipHangar .hangar-ability:last-child{top:48%}
+#shipHangar .hangar-icon{position:absolute;left:7.6%;width:11.6%;aspect-ratio:1;background:url("assets/ship_ability_icons_v1.webp") 0 0/500% 400% no-repeat}
+#shipHangar .hangar-ability p{position:absolute;left:23%;right:8%;margin:0;display:grid;gap:2px}
+#shipHangar .hangar-ability small{color:var(--ui-cyan);font:800 10px/1.1 var(--font-display);letter-spacing:.1em}
+#shipHangar .hangar-ability:last-child small{color:var(--ui-amber)}
+#shipHangar .hangar-ability b{color:var(--ui-paper);font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#shipHangar .hangar-ability-text{display:grid;gap:4px;margin:8px 0 0;padding:0 0 0 16px;color:var(--ui-muted);font-size:12px;line-height:1.4}
+#shipHangar .hangar-status{min-height:0;margin:8px 0 0;color:var(--ui-paper);font-size:12px}
+#shipHangar .ship-hangar-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:6px}
+#shipHangar .ship-hangar-actions button{margin:0;font-size:12px}
+@media(max-width:360px){#shipHangar .ship-hangar-actions{grid-template-columns:1fr}#shipHangar .hangar-ability small{display:none}}

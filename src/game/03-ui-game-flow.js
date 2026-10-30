@@ -1551,16 +1551,21 @@
     syncAtlasHud();
   }
 
+  // Hangar (paso del hangar, 30/10/2026): elegir entre las 10 naves de
+  // SHIP_ROSTER con el arte de GPT (maqueta art-ui-hangar-v2). Se puede mirar
+  // cualquiera; solo se pilota una conseguida. Comprar con chatarra o pagar
+  // llega después (revisión de la economía y tienda).
   function setupShipHangar() {
     if ($("shipHangar")) return;
     const menuActions = ui.menu.querySelector(".menu-actions");
     if (!menuActions) return;
+    const roster = NeonCampaign.SHIP_ROSTER;
 
     const openButton = document.createElement("button");
     openButton.id = "openHangar";
     openButton.type = "button";
     openButton.className = "secondary menu-hangar-button hidden";
-    openButton.innerHTML = '<span class="menu-button-text"><span>ENTRAR AL HANGAR</span><small>PERSONALIZA · EQUIPA · MEJORA</small></span><b class="menu-new" aria-label="Nuevo">NUEVO</b>';
+    openButton.innerHTML = '<span class="menu-button-text"><span>ENTRAR AL HANGAR</span><small>ELIGE TU NAVE</small></span><b class="menu-new" aria-label="Nuevo">NUEVO</b>';
     menuActions.classList.add("has-hangar");
     menuActions.append(openButton);
 
@@ -1570,39 +1575,68 @@
     hangar.setAttribute("role", "dialog");
     hangar.setAttribute("aria-modal", "true");
     hangar.setAttribute("aria-labelledby", "shipHangarTitle");
-    hangar.setAttribute("aria-describedby", "shipHangarRules");
-    hangar.innerHTML = `<section class="panel ship-hangar-panel cockpit-dialog" tabindex="-1">
-      <header class="ship-hangar-header cockpit-section-head"><small>NAVE · COMPONENTES</small><h2 id="shipHangarTitle">HANGAR</h2><p id="shipHangarRules">Configuración visual · mismas reglas de vuelo.</p></header>
-      <div class="ship-hangar-layout">
-        <figure class="ship-hangar-preview"><canvas id="shipHangarCanvas" width="512" height="512" role="img" aria-label="Vista previa de la nave seleccionada">Vista previa de la configuración de nave.</canvas><figcaption id="shipHangarName">Nave seleccionada</figcaption><p id="shipAtlasNotice" class="hidden" role="status">No se han cargado los componentes. Se muestra la nave de reserva; vuelve a abrir el juego para reintentar.</p></figure>
-        <div class="ship-hangar-controls">
-          <div class="ship-preset-list" role="group" aria-label="Naves disponibles"><button type="button" data-ship-preset="aster" aria-pressed="false"><b>ASTÉR</b><span>Exploradora</span></button><button type="button" data-ship-preset="bastion" aria-pressed="false"><b>BASTIÓN</b><span>Interceptora</span></button></div>
-          <fieldset class="ship-components"><legend>Combina sus componentes</legend><label for="shipHull">Fuselaje<select id="shipHull"><option value="aster">Astér</option><option value="bastion">Bastión</option></select></label><label for="shipWings">Alas<select id="shipWings"><option value="aster">Astér</option><option value="bastion">Bastión</option></select></label><label for="shipEngines">Propulsores<select id="shipEngines"><option value="aster">Astér</option><option value="bastion">Bastión</option></select></label></fieldset>
-          <p id="shipHangarStatus" class="ship-hangar-status" role="status">Los cambios se guardan al aplicar.</p>
-        </div>
+    // Celdas de los atlas del hangar (scripts/build-hangar-assets.py): naves en
+    // 5×2 y los 20 iconos de habilidad en 5×4, en el orden de SHIP_ROSTER.
+    const shipPosition = index => `${(index % 5) * 25}% ${Math.floor(index / 5) * 100}%`;
+    const iconPosition = slot => `${(slot % 5) * 25}% ${Math.floor(slot / 5) * (100 / 3)}%`;
+    const slots = roster.map((ship, index) => `<button type="button" class="hangar-slot" data-ship="${ship.id}" aria-pressed="false" aria-label="${ship.name}"><span class="hangar-thumb" style="background-position:${shipPosition(index)}"></span><small>${ship.number}</small><em></em></button>`).join("");
+    hangar.innerHTML = `<section class="panel ship-hangar-panel hangar-v2" tabindex="-1">
+      <header class="hangar-head"><small>ELIGE TU NAVE</small><h2 id="shipHangarTitle">HANGAR</h2></header>
+      <figure class="hangar-stage"><span id="hangarShipArt" class="hangar-ship-art" role="img"></span>
+        <figcaption><b id="shipHangarName"></b><span id="hangarShipRole"></span></figcaption></figure>
+      <div class="hangar-grid" role="group" aria-label="Las 10 naves">${slots}</div>
+      <div class="hangar-plate">
+        <div class="hangar-ability"><i class="hangar-icon" id="hangarIconExclusive"></i><p><small id="hangarExclusiveLabel"></small><b id="hangarExclusiveName"></b></p></div>
+        <div class="hangar-ability"><i class="hangar-icon" id="hangarIconUltimate"></i><p><small>ÚLTIMA</small><b id="hangarUltimateName"></b></p></div>
       </div>
-      <footer class="ship-hangar-actions"><button id="shipApply" class="primary" type="button">APLICAR CONFIGURACIÓN</button><button id="shipHangarBack" class="secondary" type="button">VOLVER SIN CAMBIAR</button></footer>
+      <ul class="hangar-ability-text"><li id="hangarExclusiveText"></li><li id="hangarUltimateText"></li></ul>
+      <p id="shipHangarStatus" class="hangar-status" role="status"></p>
+      <footer class="ship-hangar-actions"><button id="shipHangarBack" class="secondary" type="button">VOLVER</button><button id="shipApply" class="primary" type="button"></button></footer>
     </section>`;
     canvas.closest(".game").append(hangar);
     ui.shipHangar = hangar;
     const panel = hangar.querySelector(".ship-hangar-panel");
-    const presetButtons = [...hangar.querySelectorAll("[data-ship-preset]")];
-    const components = [["hull", $("shipHull")], ["wings", $("shipWings")], ["engines", $("shipEngines")]];
-    const sameLoadout = (first, second) => components.every(([key]) => first[key] === second[key]);
+    const slotButtons = [...hangar.querySelectorAll("[data-ship]")];
 
-    function refreshDraft() {
-      for (const [key, select] of components) {
-        select.value = shipHangarDraft.loadout[key];
-        select.disabled = false;
+    function shipState() {
+      const sector = loadSectorSave();
+      const save = NeonCampaign.normalizeShipSave(storage.getJSON(NeonCampaign.SHIP_ROSTER_KEY, null), sector);
+      return {sector, save, owned: NeonCampaign.ownedShips(sector, save)};
+    }
+    function accessText(ship) {
+      const {access} = ship;
+      if (access.type === "free") return access.sector === 0 ? "Gratis desde el principio." : `Gratis: se consigue al vencer al jefe del sector ${access.sector}.`;
+      if (access.type === "scrap") return `Se compra con ${access.price.toLocaleString("es-ES")} de chatarra. La compra llegará pronto.`;
+      return "Nave de pago. La tienda llegará pronto.";
+    }
+    function refreshHangar() {
+      const {save, owned} = shipState();
+      const index = roster.findIndex(ship => ship.id === shipHangarDraft);
+      const ship = roster[index];
+      for (const button of slotButtons) {
+        const entry = roster.find(item => item.id === button.dataset.ship), mine = owned.includes(entry.id);
+        button.setAttribute("aria-pressed", String(entry.id === shipHangarDraft));
+        button.classList.toggle("is-chosen", entry.id === save.selected);
+        button.classList.toggle("is-locked", !mine && entry.access.type !== "paid");
+        button.classList.toggle("is-paid", !mine && entry.access.type === "paid");
+        button.querySelector("em").textContent = mine ? "" : entry.access.type === "scrap"
+          ? `${entry.access.price / 1000}K` : entry.access.type === "paid" ? "PAGO" : "";
       }
-      for (const button of presetButtons) {
-        const preset = NeonCampaign.SHIP_FLEET.find(entry => entry.id === button.dataset.shipPreset);
-        button.setAttribute("aria-pressed", String(Boolean(preset) && sameLoadout(shipHangarDraft.loadout, preset.loadout)));
-      }
-      const selected = NeonCampaign.SHIP_FLEET.find(entry => sameLoadout(shipHangarDraft.loadout, entry.loadout));
-      $("shipHangarName").textContent = selected?.name || "Configuración combinada";
-      $("shipHangarCanvas").setAttribute("aria-label", `Vista previa: ${$("shipHangarName").textContent}`);
-      $("shipHangarStatus").textContent = "Vista previa · aplica para guardar tu elección.";
+      $("hangarShipArt").style.backgroundPosition = shipPosition(index);
+      $("hangarShipArt").setAttribute("aria-label", `Nave ${ship.name}`);
+      $("shipHangarName").textContent = ship.name.toUpperCase();
+      $("hangarShipRole").textContent = ship.role.toUpperCase();
+      $("hangarIconExclusive").style.backgroundPosition = iconPosition(index * 2);
+      $("hangarIconUltimate").style.backgroundPosition = iconPosition(index * 2 + 1);
+      $("hangarExclusiveLabel").textContent = `EXCLUSIVA · ${ship.exclusive.cooldown} S`;
+      $("hangarExclusiveName").textContent = ship.exclusive.name;
+      $("hangarUltimateName").textContent = ship.ultimate.name;
+      $("hangarExclusiveText").textContent = ship.exclusive.text;
+      $("hangarUltimateText").textContent = ship.ultimate.text;
+      const mine = owned.includes(ship.id);
+      $("shipHangarStatus").textContent = !mine ? accessText(ship) : ship.id === save.selected ? "Es la nave que pilotas." : "La tienes: pulsa PILOTAR para usarla.";
+      $("shipApply").textContent = mine ? `PILOTAR ${ship.name.toUpperCase()}` : "NO LA TIENES";
+      $("shipApply").disabled = !mine || ship.id === save.selected;
     }
 
     function closeHangar() {
@@ -1615,46 +1649,38 @@
 
     openButton.onclick = () => {
       if (state !== "menu" || !(ui.menu.classList.contains("show") || ui.briefing.classList.contains("show"))) return;
-      shipHangarDraft = { mode: "modular", loadout: { ...NeonCampaign.normalizeShipLoadout(shipLoadout) } };
-      refreshDraft();
+      shipHangarDraft = shipState().save.selected;
+      refreshHangar();
       hangar.classList.remove("hidden");
       overlay(hangar);
       panel.focus({ preventScroll: true });
     };
-    for (const button of presetButtons) button.onclick = () => {
+    for (const button of slotButtons) button.onclick = () => {
       if (!shipHangarDraft) return;
-      const preset = NeonCampaign.SHIP_FLEET.find(entry => entry.id === button.dataset.shipPreset);
-      if (!preset) return;
-      shipHangarDraft = { mode: "modular", loadout: { ...NeonCampaign.normalizeShipLoadout(preset.loadout) } };
-      refreshDraft();
-    };
-    for (const [key, select] of components) select.onchange = () => {
-      if (!shipHangarDraft) return;
-      shipHangarDraft = { mode: "modular", loadout: { ...NeonCampaign.normalizeShipLoadout({ ...shipHangarDraft.loadout, [key]: select.value }) } };
-      refreshDraft();
+      shipHangarDraft = button.dataset.ship;
+      refreshHangar();
     };
     $("shipApply").onclick = () => {
       if (!shipHangarDraft) return;
-      const loadout = NeonCampaign.normalizeShipLoadout(shipHangarDraft.loadout);
-      if (!storage.setJSON(NeonCampaign.SHIP_FLEET_SAVE_KEY, { version: 1, mode: "modular", loadout })) {
-        $("shipHangarStatus").textContent = "No se pudo guardar. Tu nave anterior sigue seleccionada.";
+      const {sector, save} = shipState();
+      const chosen = NeonCampaign.chooseShip(save, shipHangarDraft, sector);
+      if (!chosen) return;
+      if (!storage.setJSON(NeonCampaign.SHIP_ROSTER_KEY, chosen)) {
+        $("shipHangarStatus").textContent = "No se pudo guardar. Tu nave anterior sigue elegida.";
         return;
       }
-      shipRenderMode = "modular";
-      shipLoadout = loadout;
-      syncShipPresentation();
+      toast(`Nave elegida: ${roster.find(ship => ship.id === chosen.selected).name}`);
       closeHangar();
-      toast("Configuración de nave guardada");
     };
     $("shipHangarBack").onclick = closeHangar;
     hangar.addEventListener("keydown", event => {
-      // Keep preview keyboard navigation out of the campaign's global controls.
+      // Las teclas del hangar no llegan a los controles de la partida.
       event.stopPropagation();
       if (event.key === "Escape") {
         event.preventDefault();
         closeHangar();
       } else if (event.key === "Tab") {
-        const controls = [...hangar.querySelectorAll("button,select")].filter(element => !element.disabled);
+        const controls = [...hangar.querySelectorAll("button")].filter(element => !element.disabled);
         const first = controls[0], last = controls[controls.length - 1];
         if (event.shiftKey && (document.activeElement === first || document.activeElement === panel)) {
           event.preventDefault(); last.focus();
