@@ -14,7 +14,7 @@ https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-
 Versión para máquinas: https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/encargos-gpt.json
 Añade ?t=<número> al final de cada enlace para no leer una copia vieja.
 
-3. EL BAÚL: https://neon-cronium-video-referencia.chictide18.chatgpt.site
+3. EL BAÚL: https://neon-cronium-video-referencia.nay990.chatgpt.site
 - Antes de empezar un encargo mira catalog.json: si ya hay un archivo con su id en "encargo", no lo repitas.
 - Sube cada imagen a la carpeta encargos/ con el nombre de «Archivo» del encargo, numerado -1, -2… en el orden de su lista, en WebP con transparencia.
 - Añade cada archivo a catalog.json con "encargo": "<id del encargo>".

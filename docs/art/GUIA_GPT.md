@@ -92,7 +92,7 @@ referencia.
 ## 7. Cómo entregar
 
 1. Haz los encargos por orden: prioridad 1 primero.
-2. Súbelos al baúl (https://neon-cronium-video-referencia.chictide18.chatgpt.site)
+2. Súbelos al baúl (https://neon-cronium-video-referencia.nay990.chatgpt.site)
    en `encargos/`, con el nombre de «Archivo» de cada encargo.
 3. Añádelos a `catalog.json` con `"encargo"` igual al id del encargo.
 4. Si un encargo pide varias imágenes, numéralas: `-1.png`, `-2.png`…

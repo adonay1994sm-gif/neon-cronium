@@ -93,7 +93,7 @@ Si algo falla por el cambio, se deshace ese commit y se anota.
   `docs/art/ENCARGOS_GPT.md` y `docs/art/encargos-gpt.json`), que GPT lee en
   https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/ENCARGOS_GPT.md
   (rama de trabajo, orden del propietario 22/10/2026; guía en `docs/art/GUIA_GPT.md`)
-- **Baúl de assets:** https://neon-cronium-video-referencia.chictide18.chatgpt.site
+- **Baúl de assets:** https://neon-cronium-video-referencia.nay990.chatgpt.site
   (`catalog.json`). El propietario sube ahí lo que hace GPT; revisarlo al
   empezar cada trabajo y usar lo nuevo.
 - **Tras cada actualización de la rama** (PR fusionado), pasar una revisión
