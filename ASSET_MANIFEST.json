@@ -1,8 +1,8 @@
 {
   "manifestVersion": 2,
   "buildVersion": "7.2.0",
-  "assetCount": 137,
-  "runtimeBytes": 19451672,
+  "assetCount": 138,
+  "runtimeBytes": 20027382,
   "audit": {
     "reviewed": 97,
     "READY": 58,
@@ -1985,6 +1985,22 @@
       "origin": "GPT a petición del propietario (encargo art-ui-hangar-v2)",
       "version": 1,
       "use": "Hangar: placa de la ficha con los huecos de la habilidad EXCLUSIVA y la ÚLTIMA."
+    },
+    {
+      "id": "ship-flight-poses-v1",
+      "path": "assets/ship_flight_poses_v1.webp",
+      "master": "art-source/ships/laminas-v1",
+      "dimensions": "960x1920",
+      "format": "webp-alpha",
+      "size": 575710,
+      "sha256": "691a2639030988d847fc8a3e5582a496fceda681467f1ad900bdeb4ada03b2fb",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "GPT a petición del propietario (encargo camp-art-nave-*)",
+      "version": 1,
+      "use": "Vuelo: 5 poses por nave (neutral, alabeo izquierdo y derecho, aceleración, frenado), filas en el orden de SHIP_ROSTER, celdas de 192 px."
     }
   ],
   "project": "NEON CRONIUM"
