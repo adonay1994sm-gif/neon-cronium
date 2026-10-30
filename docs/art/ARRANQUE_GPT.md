@@ -20,6 +20,7 @@ Añade ?t=<número> al final de cada enlace para no leer una copia vieja.
 - Añade cada archivo a catalog.json con "encargo": "<id del encargo>".
 
 4. REGLAS QUE NO SE SALTAN:
+- No cambies nada del juego. El repositorio de GitHub es solo para leer: no hagas commits, ramas, PRs, issues ni comentarios, ni toques código, textos o archivos del juego. Tu único sitio para escribir es el baúl (carpeta encargos/ y catalog.json). Si crees que algo del juego está mal, apúntalo en el parte.
 - Cada imagen con el GENERADOR DE IMÁGENES. Prohibido dibujarla con código (Python, PIL, SVG, canvas, CSS o formas de color liso): ya se rechazaron entregas así.
 - Medidas, rejilla y fondo exactos a los del encargo: el juego recorta por tamaño.
 - Fondo transparente real, bordes limpios, sin halo blanco. Sin texto, letras ni números salvo que el encargo lo pida.
