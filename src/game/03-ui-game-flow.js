@@ -1993,6 +1993,7 @@
   }
 
   function showStoryTransmission(speaker, text, duration = 4.6) {
+    if(/LIRA|N-7/.test(speaker))duckMusic(.6);
     if(ui.flightRoute) {
       flightTransmission={speaker,speakerId:/MIRA/.test(speaker)?"mira":/IRIA/.test(speaker)?"iria":/LIRA/.test(speaker)?"lira":null,text,remaining:duration};syncClassicFlightHud();return;
     }

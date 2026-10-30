@@ -114,3 +114,23 @@ test('if the limiter cannot be built, audio still reaches the speakers through t
   assert.deepEqual(edges.filter(([, target]) => target === 'destination').map(([from]) => from), ['gain']);
   assert.ok(edges.filter(([from, to]) => from === 'gain' && to === 'gain').length >= 2, 'music and tone reach the master bus');
 });
+
+// Audio paso 3 (tarea audio-canales): la música baja −6 dB en golpes, jefe,
+// ruptura y transmisiones de LIRA o N-7; los efectos no pasan por ahí.
+test('ducking lowers only the music by 6 dB, fast in and slow out', () => {
+  const {context, edges, gains} = graphHarness();
+  context.ensureAudio();
+  const [master, music, duck] = gains;
+  assert.ok(duck, 'the music has its own ducking stage');
+  assert.ok(edges.some(([from, to]) => from === 'gain' && to === 'gain'));
+  const calls = [];
+  duck.gain.cancelScheduledValues = time => calls.push(['cancel', time]);
+  duck.gain.setTargetAtTime = (value, time, constant) => calls.push(['target', value, time, constant]);
+  context.duckMusic(.5);
+  const [, down, up] = calls;
+  assert.equal(calls[0][0], 'cancel');
+  assert.ok(Math.abs(down[1] - .501) < .01 && down[2] === 0 && Math.abs(down[3] * 3 - .05) < .01, 'in: 0.05 s');
+  assert.ok(up[1] === 1 && Math.abs(up[2] - .5) < 1e-9 && Math.abs(up[3] * 3 - .4) < .01, 'out: 0.4 s after the hold');
+  assert.notEqual(duck, master);
+  assert.notEqual(duck, music);
+});

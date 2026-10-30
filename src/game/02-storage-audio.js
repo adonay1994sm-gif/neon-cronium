@@ -230,6 +230,7 @@
   let masterBus = null;
   let combatSfx = null;
   let uiSfx = null;
+  let musicDuck = null;
   let voyageScoreContext = "transit";
   let scoreSuspended = false;
   const activeToneVoices = new Set();
@@ -255,7 +256,11 @@
       }
       musicGain = audioCtx.createGain();
       musicGain.gain.value = 0;
-      musicGain.connect(masterBus);
+      // La música pasa por su propia etapa para poder bajarla en golpes y
+      // avisos sin tocar los efectos (paso 3 de audio).
+      musicDuck = audioCtx.createGain();
+      musicDuck.gain.value = 1;
+      musicGain.connect(musicDuck).connect(masterBus);
     } catch {
       return null;
     }
@@ -339,6 +344,7 @@
 
   function combatSound(cue,x=player.x,eventId=null) {
     if(state!=="playing"||scoreSuspended||settings.fx<=0)return;
+    if(cue==="hull-hit")duckMusic(.25);
     if(combatSfx?.snapshot().ready) {
       // A rejected voice means muted/paused/throttled, never a fallback beep.
       combatSfx.play(cue,{pan:clamp(x/W*2-1,-.75,.75),eventId});return;
@@ -349,6 +355,16 @@
       "hull-hit":[95,.22,"sawtooth",.08],"enemy-break":[920,.05,"triangle",.04],
       "atlas-charge":[135,.28,"triangle",.065],"atlas-collapse":[640,.28,"sine",.06]};
     if(fallback[cue])tone(...fallback[cue]);
+  }
+
+  // Baja la música −6 dB en 0,05 s y la devuelve en 0,4 s tras «hold»
+  // segundos: golpe al casco, jefe, ruptura y transmisiones de LIRA o N-7.
+  function duckMusic(hold = .3) {
+    if (!musicDuck || !audioCtx) return;
+    const now = audioCtx.currentTime, gain = musicDuck.gain;
+    gain.cancelScheduledValues(now);
+    gain.setTargetAtTime(.501, now, .05 / 3);
+    gain.setTargetAtTime(1, now + hold, .4 / 3);
   }
 
   // Sonidos de interfaz y avisos (Kenney CC0, ui-sfx.js): suenan también en
@@ -362,6 +378,8 @@
     "boss-alert":[135,.28,"triangle",.065]};
   function uiSound(cue,x=W/2) {
     if(settings.fx<=0||scoreSuspended)return;
+    if(cue==="boss-alert")duckMusic(.6);
+    if(cue==="rupture")duckMusic(1.5);
     const ac=ensureAudio();
     if(!ac)return;
     if(ac.state==="suspended")ac.resume().catch(()=>{});

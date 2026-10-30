@@ -22,7 +22,7 @@ function harness({ready = true, fx = 70, music = 50} = {}) {
     oscillators: [], sources: [], gains: [], voyage: [], writes: [], timeline: [], scrap: []};
   const records = new Map(); let blocked = false, bank;
   const parameter = () => ({value: 0, values: [], setValueAtTime(v,t) {this.value = v; this.values.push([v,t]);},
-    setTargetAtTime(v,t,d) {this.value = v; this.values.push([v,t,d]);}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {}});
+    setTargetAtTime(v,t,d) {this.value = v; this.values.push([v,t,d]);}, cancelScheduledValues() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {}});
   const node = extra => ({connections: [], disconnected: 0,
     connect(target) {this.connections.push(target); return target;}, disconnect() {this.disconnected++;}, ...extra});
   class SharedAudioContext {
