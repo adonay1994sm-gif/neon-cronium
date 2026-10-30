@@ -810,6 +810,7 @@
   let combatSfx = null;
   let uiSfx = null;
   let musicDuck = null;
+  let fallbackTones = 0;
   let voyageScoreContext = "transit";
   let scoreSuspended = false;
   const activeToneVoices = new Set();
@@ -933,7 +934,7 @@
       "impact-metal":[620,.05,"triangle",.035],"impact-plasma":[180,.04,"square",.025],
       "hull-hit":[95,.22,"sawtooth",.08],"enemy-break":[920,.05,"triangle",.04],
       "atlas-charge":[135,.28,"triangle",.065],"atlas-collapse":[640,.28,"sine",.06]};
-    if(fallback[cue])tone(...fallback[cue]);
+    if(fallback[cue]){fallbackTones++;tone(...fallback[cue]);}
   }
 
   // Baja la música −6 dB en 0,05 s y la devuelve en 0,4 s tras «hold»
@@ -968,7 +969,7 @@
     }
     else if(uiSfx?.snapshot().failed)uiSfx.load();
     if(uiSfx?.snapshot().ready){uiSfx.setPaused(false);uiSfx.play(cue,{pan:clamp(x/W*2-1,-.75,.75)});return;}
-    if(UI_FALLBACK_TONES[cue])tone(...UI_FALLBACK_TONES[cue]);
+    if(UI_FALLBACK_TONES[cue]){fallbackTones++;tone(...UI_FALLBACK_TONES[cue]);}
   }
 
   function tone(frequency = 440, duration = 0.06, type = "sine", base = 0.06) {
@@ -1036,6 +1037,20 @@
     if (panel) panel.scrollTop = 0;
     overlay(ui.settingsPanel);
     startMusic();
+    showAudioDiagnostics();
+  }
+
+  // Diagnóstico temporal (30/10): con #audio en la dirección, Ajustes dice si
+  // los bancos de sonido cargaron o si suenan los pitidos de respaldo.
+  function showAudioDiagnostics() {
+    if (location.hash !== "#audio" || !ui.settingsPanel) return;
+    let line = document.getElementById("audioDiagnostics");
+    if (!line) {
+      line = document.createElement("p"); line.id = "audioDiagnostics"; line.setAttribute("role", "status");
+      ui.settingsPanel.querySelector(".settings-panel")?.prepend(line);
+    }
+    const bank = sfx => !sfx ? "sin crear" : sfx.snapshot().ready ? "cargado" : sfx.snapshot().failed ? "FALLÓ" : "cargando";
+    line.textContent = `AUDIO · contexto ${audioCtx?.state || "sin crear"} · combate ${bank(combatSfx)} · interfaz ${bank(uiSfx)} · pitidos de respaldo ${fallbackTones}`;
   }
 
   function closeSettings() {
