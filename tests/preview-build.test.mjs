@@ -68,7 +68,7 @@ test('unit: preview transforms require the actual game markers and preserve ordi
   const html = await text('index.html');
   const transformed = previewGame(source);
   // En la preview, el modo desarrollo (?dev=1) guarda aparte; si no, el guardado de la preview.
-  assert.match(transformed, /createStorageService\(window\.NeonDev\?\.storage \|\| window\.NeonPreview\.storage\)/);
+  assert.match(transformed, /createStorageService\(HARDCORE\?\.storage \?\? \(window\.NeonDev\?\.storage \|\| window\.NeonPreview\.storage\)\)/);
   assert.doesNotMatch(transformed, /VER ANUNCIO Y REPARAR/);
   assert.equal(source, await text('game.js'));
   assert.match(previewPage(html), /preview-config\.js/);

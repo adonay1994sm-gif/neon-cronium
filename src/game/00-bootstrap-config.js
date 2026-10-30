@@ -225,6 +225,8 @@
   // morir. Todo se guarda con su prefijo salvo los ajustes, que son comunes;
   // cambiar de modo en Ajustes recarga el juego con la otra partida.
   const HARDCORE = (() => {
+    // Encima del guardado aislado de pruebas (?dev=1); el paquete de preview
+    // cambia esta base por la suya (scripts/build-preview.mjs).
     const base = window.NeonDev?.storage ?? window.localStorage, prefix = "neon-hardcore-v1:";
     let enabled = false;
     try { enabled = JSON.parse(base.getItem(KEYS.settings) || "{}")?.difficulty === "hardcore"; } catch {}

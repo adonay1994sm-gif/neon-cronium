@@ -17,9 +17,14 @@ function replaceOnce(source, before, after) {
 }
 
 export function previewGame(source) {
-  return replaceOnce(source, 'const storage = NeonCore.createStorageService(window.NeonDev?.storage);',
-    'const storage = NeonCore.createStorageService(window.NeonDev?.storage || window.NeonPreview.storage);')
-    .replaceAll('▶ VER ANUNCIO Y REPARAR', 'REPARAR NAVE');
+  let game = replaceOnce(source, 'const storage = NeonCore.createStorageService(HARDCORE?.storage ?? window.NeonDev?.storage);',
+    'const storage = NeonCore.createStorageService(HARDCORE?.storage ?? (window.NeonDev?.storage || window.NeonPreview.storage));');
+  // La partida HARDCORE también vive dentro del guardado aislado del preview.
+  game = replaceOnce(game, 'const base = window.NeonDev?.storage ?? window.localStorage, prefix = "neon-hardcore-v1:";',
+    'const base = window.NeonDev?.storage ?? window.NeonPreview.storage, prefix = "neon-hardcore-v1:";');
+  game = replaceOnce(game, 'return Object.freeze({prefix: (window.NeonDev?.prefix || "") + prefix, storage: Object.freeze({',
+    'return Object.freeze({prefix: (window.NeonDev?.prefix || window.NeonPreview.storagePrefix) + prefix, storage: Object.freeze({');
+  return game.replaceAll('▶ VER ANUNCIO Y REPARAR', 'REPARAR NAVE');
 }
 
 export function previewWorker(source, revision) {
