@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-30",
+  "origin": "GPT (generador de imágenes) a petición del propietario, encargos camp-art-nave-* (Bastión: camp-art-nave-bastion-v2); descargado del baúl",
+  "use": "Láminas de las 10 naves: 5 poses arriba (neutral, alabeo izquierdo y derecho, aceleración, frenado) y despiece abajo.",
+  "build": "python3 scripts/build-hangar-assets.py",
+  "files": {
+    "arpon_lamina_v1.webp": "6105eeb70a855506f5a11b79aa6c8098da909fd779836fe97cdeb43cb09cbb16",
+    "aster_lamina_v1.webp": "935b7450432b50839ad7ef871c64b5a81e95e0e3580738e6963ad0d81bc92810",
+    "bastion_lamina_v1.webp": "1967b60f2073bc80b14c6ea5289c80549d8784dec41750cc09651b5043d64121",
+    "eclipse_lamina_v1.webp": "33e62691c1527d8a8d23bb0d93e241b4b09de6446221f867c37768e3987ab857",
+    "mantarraya_lamina_v1.webp": "12d42a43243aae5af8e385189235d46170f413b5bc8306cf301a862c746fc9c3",
+    "nomada_lamina_v1.webp": "bbd4e28bf0e78cd259bfb39881c3fc538f73e24e8b26a5178a33d3574bf93c7f",
+    "orion_lamina_v1.webp": "7a241d67b495f8392c6b10bbd16220160e5520d86e95b459e7d9d7a5e1967430",
+    "quimera_lamina_v1.webp": "dcec089663195b87a2c1b2543a54a459cd5bae7b358fe8764c6bc7ef1f41354d",
+    "titan_lamina_v1.webp": "b48da1703908f988ed2b7106cf0547443c02f884c2112f4e758d18de539abaee",
+    "vertice_lamina_v1.webp": "b6fc83fe9e956b6e5fc3bde2d1b391f5a0e48d178973a93e3738140f3063cb9f"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-30",
+  "origin": "GPT (generador de imágenes) a petición del propietario, encargos camp-art-habilidades-iconos; descargado del baúl",
+  "use": "20 iconos de habilidad, en el orden de SHIP_ROSTER: exclusiva y última de cada nave.",
+  "build": "python3 scripts/build-hangar-assets.py",
+  "files": {
+    "habilidad_01_v1.webp": "f979cea7a16656e4c85538e2172ee847843bb1dc6da86125e140802fa5edb373",
+    "habilidad_02_v1.webp": "3ef72d3ce356219e698a68459da6003c89c69553b7bdd0cfe0e0483e9f90519b",
+    "habilidad_03_v1.webp": "5674502f2ca5760a38ca548800ac10a2853554d2f2c62d44ef5b8a50f8c171a0",
+    "habilidad_04_v1.webp": "3fdf30259ddc3b104d87fe3c77e2c6e7876a513dac7a22f40be59a48cb4477ac",
+    "habilidad_05_v1.webp": "7d7831ad8580a2f444b603c61c8c206b5997141224313ba37fb9299d3086e53d",
+    "habilidad_06_v1.webp": "b43b448d3527d8f4721484858152e4ec3cc006f25d3584296a7ec9916081e53c",
+    "habilidad_07_v1.webp": "1430a11153f112fadeca7b195a5c0f6033c035a0758244bfcfc12aca837c23f1",
+    "habilidad_08_v1.webp": "c417deef10540b7414d5a8d78f21664970aba816dbefe3cbf36fe8217f2336d8",
+    "habilidad_09_v1.webp": "b1de480f2cc8db4b024dd0d87d0b8421218a19fc8bbcaf188330472e1637046f",
+    "habilidad_10_v1.webp": "8d1d763253f354e0ef42f98d658b2c2bd02bb8d9442abbe946bcbdab0ee2cac0",
+    "habilidad_11_v1.webp": "9ef958201a9f40a097026f54db7b4ad8d3a5d77b2893c5ec59fdbc67ee58cb30",
+    "habilidad_12_v1.webp": "7e5facdf2f8c64ab503fdedfda93949e5e491f8eeaae437fad282e5dde4c6966",
+    "habilidad_13_v1.webp": "4c062abaa7b84b7d89937a162fcf3088f3f6b1c6c5ca74ec0c9e39f445c3e7c2",
+    "habilidad_14_v1.webp": "923970dc1a9f8faf9639d62e196d97d1e4c89cb223dfd5549392c59b0d6312d7",
+    "habilidad_15_v1.webp": "2578ed115ba3fe91907c1ea1eb5d424db3e23d374ead7282c715b8f2d1519363",
+    "habilidad_16_v1.webp": "7523567f609af4da23c871eec29bdea1faf3f2db20f322f134479871a3c55668",
+    "habilidad_17_v1.webp": "457512db1b16bcafe9f02a53795330301a36b98206b5dc66f5c6ac9d6f6d48fc",
+    "habilidad_18_v1.webp": "e2e38212ab811075d6765031483d926b133f6c42022530ac6b10fa904ee2d340",
+    "habilidad_19_v1.webp": "6536d342a51504cab04fb011633734adee78e25514b97ffcecb338766e4604e7",
+    "habilidad_20_v1.webp": "08ce77789b53c4ac2de4a311f044d8bc9d7b7941a64935913af4856e3d7950b7"
+  }
+}
