@@ -32,7 +32,11 @@ test('C9 docks at the start of stage 6 with only the entry quota', () => {
 
 test('stages 1 to 4 bring in the new Gaia profiles before the sub-boss', () => {
   const early = new Set(S1_GAIA.encounters.slice(0, 4).flatMap(rules => rules.patrol ? [...rules.patrol.roster] : []));
-  for (const id of ['tracker', 'sower', 'aegis']) assert.ok(early.has(id), id);
+  for (const id of ['tracker', 'aegis']) assert.ok(early.has(id), id);
+});
+
+test('the Sembrador stays out of sector 1 until its logic is redone (owner, 31/10)', () => {
+  for (const rules of S1_GAIA.encounters) assert.ok(!rules.patrol || !rules.patrol.roster.includes('sower'));
 });
 
 test('sectors are found by id', () => {

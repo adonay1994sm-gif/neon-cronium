@@ -204,7 +204,7 @@ test('a sector stage spawns CRONIUM and patrols', () => {
 });
 
 test('stages that open with new Gaia enemies play without errors', () => {
-  // Tramos 3, 4 y 7 abren con sower, aegis y alpha (ficha del sector 1).
+  // Tramos 3, 4 y 7 abren con raider (el Sembrador está fuera de momento), aegis y alpha.
   for (const stageNumber of [3, 4, 7]) {
     const {T} = harness({query: '?dev=1'});
     startAt(T, stageNumber);
@@ -400,7 +400,7 @@ test('a removed enemy frees its token in the same frame', () => {
 
 // Plan F3b, tarea 7: los enemigos de Gaia en el juego.
 test('each Gaia roster entry spawns its own enemy', () => {
-  for (const [stage, kind] of [[2, 'tracker'], [3, 'sower'], [4, 'aegis'], [7, 'alpha']]) {
+  for (const [stage, kind] of [[2, 'tracker'], [4, 'aegis'], [7, 'alpha']]) {
     const {T} = harness({query: '?dev=1'});
     startAt(T, stage);
     T.ev('DEV.invulnerable=true');
@@ -673,6 +673,7 @@ test('the panel is not offered twice or when the beacon is already owned', () =>
 
 // Furia de Atlas (plan F3c, tarea 6): escoltas, drones, rayo y escenario roto.
 const atlasFight = T => { startAt(T, 10); T.ev('DEV.invulnerable=true'); toFinish(T); T.adv(3); };
+
 const enrage = T => T.ev("Object.assign(atlasBoss,{state:'exposed',vulnerability:true});for(const e of NeonCampaign.hitGuardianAtlas(atlasBoss,atlasBoss.maxHp-Math.floor(atlasBoss.maxHp*.3)).events)consumeAtlasEvent(e)");
 const escorts = T => T.ev("items.filter(item=>item.gaia?.kind==='atlasEscort').length");
 

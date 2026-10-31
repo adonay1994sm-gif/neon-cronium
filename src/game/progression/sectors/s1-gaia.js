@@ -14,9 +14,11 @@ const immutable = object => Object.freeze(object);
 const ROSTERS = immutable({
   escape: immutable(['raider', 'scout']),
   flank: immutable(['raider', 'tracker', 'scout']),
-  mines: immutable(['sower', 'raider', 'interceptor']),
+  // Sin el Sembrador de momento (propietario, 31/10/2026): hay que rehacer
+  // su lógica (tarea sembrador-minas). Vuelve aquí y en elite cuando esté.
+  mines: immutable(['raider', 'interceptor']),
   shield: immutable(['aegis', 'interceptor', 'tracker', 'scout']),
-  elite: immutable(['alpha', 'aegis', 'interceptor', 'sower']),
+  elite: immutable(['alpha', 'aegis', 'interceptor']),
   gate: immutable(['interceptor', 'tracker', 'aegis', 'raider'])
 });
 // attackers: cuántos enemigos pueden atacar a la vez (turnos de ataque) y
