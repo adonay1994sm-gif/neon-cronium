@@ -2495,6 +2495,8 @@
     if (typeof resetGameInput === "function") resetGameInput();
     cancelSupplyFailureTimer();
     atlasBoss = NeonCampaign.createGuardianAtlas({width: W, height: H, playerY: player.y});resetAtlasFury();
+    // El Fulminante usa el haz pintado del láser del subguardián.
+    ensureSprite(SPRITES.subguardianLaser);
     // Vida de Atlas según el modo de dificultad (Normal = la de siempre).
     const bossHealth=NeonCampaign.DIFFICULTY_MODES?.[settings.difficulty]?.bossHealth??1;
     if(bossHealth!==1)atlasBoss.hp=atlasBoss.maxHp=Math.round(atlasBoss.maxHp*bossHealth);
@@ -6165,6 +6167,23 @@
     ctx.save();
     ctx.beginPath(); ctx.moveTo(atlasBoss.x - mouth, top); ctx.lineTo(atlasBoss.x + mouth, top);
     ctx.lineTo(band.x1, H); ctx.lineTo(band.x0, H); ctx.closePath();
+    const laser = SPRITES.subguardianLaser;
+    if (spriteReady(laser)) {
+      // Pintado (propietario, 31/10: «parece programación»): el haz del láser
+      // del subguardián ensanchado a la franja del Fulminante y recortado a su
+      // forma; el aviso, con la franja roja pintada.
+      // Un solo haz continuo a lo largo del eje del cono (sin escalones).
+      ctx.clip();
+      const cell = atlasBeam ? Math.floor(elapsed * 14) % 4 : 4, cellWidth = laser.naturalWidth / 5;
+      const dx = (band.x0 + band.x1) / 2 - atlasBoss.x, dy = H - top, length = Math.hypot(dx, dy);
+      const width = (band.x1 - band.x0) * 1.15, tile = width * laser.naturalHeight / cellWidth;
+      ctx.globalAlpha = atlasBeam ? 1 : .5 + .35 * Math.sin(elapsed * 14);
+      ctx.translate(atlasBoss.x, top); ctx.rotate(-Math.atan2(dx, dy));
+      for (let y = -tile * .1; y < length + 40; y += tile)
+        ctx.drawImage(laser, cell * cellWidth, 0, cellWidth, laser.naturalHeight, -width / 2, y, width, tile);
+      ctx.restore();
+      return;
+    }
     if (atlasBeam) {
       const glow = ctx.createLinearGradient(band.x0, 0, band.x1, 0);
       glow.addColorStop(0, "rgba(255,50,40,.35)"); glow.addColorStop(.5, "rgba(255,226,200,.9)"); glow.addColorStop(1, "rgba(255,50,40,.35)");

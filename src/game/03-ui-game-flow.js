@@ -1408,6 +1408,8 @@
     if (typeof resetGameInput === "function") resetGameInput();
     cancelSupplyFailureTimer();
     atlasBoss = NeonCampaign.createGuardianAtlas({width: W, height: H, playerY: player.y});resetAtlasFury();
+    // El Fulminante usa el haz pintado del láser del subguardián.
+    ensureSprite(SPRITES.subguardianLaser);
     // Vida de Atlas según el modo de dificultad (Normal = la de siempre).
     const bossHealth=NeonCampaign.DIFFICULTY_MODES?.[settings.difficulty]?.bossHealth??1;
     if(bossHealth!==1)atlasBoss.hp=atlasBoss.maxHp=Math.round(atlasBoss.maxHp*bossHealth);
