@@ -108,7 +108,9 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
     cambia ahí.
   - Cada cambio se marca allí.
   - Todo lo que se encuentra y no se termina se añade como tarea, en su paso.
-  - Las decisiones se añaden con su recomendación.
+  - Las decisiones se añaden con su recomendación, **siempre con `opciones`**
+    (id, texto, detalle, `recomendada`) y `estado: "decision"`: sin opciones
+    no salen en «Decide tú» y él no las encuentra.
   - Se revisa sola tres veces al día (tarea programada «Revisión del
     tablero», 8:39, 13:39 y 19:39 de Madrid): decisiones nuevas, entregas
     del baúl y días que lleva quieta cada tarea. Lo atascado (3 días o más)
@@ -182,6 +184,10 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 31/10/2026: «no encuentro las decisiones pendientes, creo que estamos en
+  2 caminos diferentes». Le hice preguntas en el chat y en notas, pero el
+  tablero solo muestra en «Decide tú» las tareas con `opciones`. Toda
+  pregunta para él va también al tablero como decisión con opciones.
 - 31/10/2026: tras jugar en su iPhone juzga por sensación: «la música no me
   gusta» (rehacer toda la banda sonora con música gratis y música propia
   para cada jefe), el subjefe «está estático» y su ataque final «se ve
