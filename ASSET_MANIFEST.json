@@ -1,8 +1,8 @@
 {
   "manifestVersion": 2,
   "buildVersion": "7.2.0",
-  "assetCount": 138,
-  "runtimeBytes": 20027382,
+  "assetCount": 141,
+  "runtimeBytes": 21451406,
   "audit": {
     "reviewed": 97,
     "READY": 58,
@@ -2001,6 +2001,54 @@
       "origin": "GPT a petición del propietario (encargo camp-art-nave-*)",
       "version": 1,
       "use": "Vuelo: 5 poses por nave (neutral, alabeo izquierdo y derecho, aceleración, frenado), filas en el orden de SHIP_ROSTER, celdas de 192 px."
+    },
+    {
+      "id": "subguardian-atlas-v1",
+      "path": "assets/subguardian_atlas_v1.webp",
+      "master": "art-source/enemies/subguardian/subguardian_estados_v1.webp",
+      "dimensions": "2048x1024",
+      "format": "webp-alpha",
+      "size": 883142,
+      "sha256": "1656f654a5931bec7c6dd344a97fbbd065ecbed85a93ec36c53b6afaec245338",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "GPT a petición del propietario (encargo camp-art-s1-subguardian)",
+      "version": 1,
+      "use": "Subguardián del tramo 5: 8 estados en 4×2 celdas de 512 px, en el orden de subguardianFrame."
+    },
+    {
+      "id": "subguardian-laser-v1",
+      "path": "assets/subguardian_laser_v1.webp",
+      "master": "art-source/enemies/subguardian",
+      "dimensions": "960x768",
+      "format": "webp-alpha",
+      "size": 340422,
+      "sha256": "988fa45808a6a0a88debcdda04555b2a7684c9f26ec4e53cd27f6a67dc61c8db",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "GPT a petición del propietario (encargo camp-art-s1-laser-subjefe)",
+      "version": 1,
+      "use": "Láser del subguardián: 4 fotogramas del haz y la franja de aviso, celdas de 192×768 que se repiten en vertical."
+    },
+    {
+      "id": "subguardian-impact-v1",
+      "path": "assets/subguardian_impact_v1.webp",
+      "master": "art-source/enemies/subguardian/laser_impacto_v1.webp",
+      "dimensions": "768x384",
+      "format": "webp-alpha",
+      "size": 200460,
+      "sha256": "3a4e77387846e80c51a21a5010b1171512243c6cc29b5ea5ef2b3026773abc2d",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "GPT a petición del propietario (encargo camp-art-s1-laser-subjefe)",
+      "version": 1,
+      "use": "Láser del subguardián: salpicadura del impacto, 4×2 celdas de 192 px."
     }
   ],
   "project": "NEON CRONIUM"
