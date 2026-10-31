@@ -530,68 +530,76 @@ test('a tracker leaves the screen instead of staying behind the ship forever', (
   assert.equal(T.ev('items.includes(window.__r)'), false);
 });
 
-// Plan F3c, tarea 3: CH-03 defiende el tramo 5.
-const ch03Fight = T => { startAt(T, 5); T.ev('DEV.invulnerable=true'); T.adv(9); }; // aparece a los 6 s y entra en 2 s
+// El subguardián defiende el tramo 5 (dec-subguardian-plan, 31/10/2026;
+// antes el CH-03 del plan F3c).
+const subFight = T => { startAt(T, 5); T.ev('DEV.invulnerable=true'); T.adv(9); }; // aparece a los 6 s y entra en 2 s
+const aimLaser = "Object.assign(subBoss,{state:'attack',attack:'laser',stateTime:0,beam:{angle:Math.atan2(player.x-subBoss.x,player.y-subBoss.y-NeonCampaign.SUBGUARDIAN_RULES.emitterY),direction:1,active:true}})";
 
-test('CH-03 appears 6 s into stage 5 and holds the route', () => {
+test('the subguardian appears 6 s into stage 5 and holds the route', () => {
   const {T} = harness({query: '?dev=1'});
-  ch03Fight(T);
-  assert.equal(T.ev('Boolean(ch03Boss)'), true);
+  subFight(T);
+  assert.equal(T.ev('Boolean(subBoss)'), true);
   const elapsed = T.ev('classicFlightView.stageElapsed');
   T.adv(20);
   assert.equal(T.stage(), 5);
   assert.ok(Math.abs(T.ev('classicFlightView.stageElapsed') - elapsed) < .1, 'the stage clock is held');
 });
 
-test('patrols stop while CH-03 fights', () => {
+test('patrols stop while the subguardian fights', () => {
   const {T} = harness({query: '?dev=1'});
-  ch03Fight(T);
+  subFight(T);
   const patrols = T.ev('classicPatrolSequence');
   T.adv(15);
   assert.equal(T.ev('classicPatrolSequence'), patrols);
 });
 
-test('beating CH-03 resumes the route and drops scrap', () => {
+test('it comes with Atlas\'s 4 escorts, which fall with it', () => {
   const {T} = harness({query: '?dev=1'});
-  ch03Fight(T);
-  T.ev('NeonCampaign.hitCh03Satellite(ch03Boss, 999)');
+  subFight(T);
+  assert.equal(T.ev("items.filter(item=>item.gaia?.kind==='atlasEscort').length"), 4);
+  T.ev('NeonCampaign.hitSubguardian(subBoss, 999)');
+  T.adv(1 / 60);
+  assert.equal(T.ev("items.filter(item=>item.gaia?.kind==='atlasEscort').length"), 0);
+});
+
+test('beating the subguardian resumes the route and drops the same scrap as CH-03', () => {
+  const {T} = harness({query: '?dev=1'});
+  subFight(T);
+  T.ev('NeonCampaign.hitSubguardian(subBoss, 999)');
   T.adv(2);
-  assert.equal(T.ev('ch03Boss'), null);
-  assert.equal(T.ev('ch03Beaten'), true);
+  assert.equal(T.ev('subBoss'), null);
+  assert.equal(T.ev('subBossBeaten'), true);
   // La chatarra del jefe vuela hacia la nave: o sigue en pantalla o ya se cobró.
   assert.ok(T.ev("items.some(item=>item.salvagePickup&&item.enemyType==='ch03')||classicSalvageState.activeRun.claimed.some(receipt=>receipt.id==='ch03')"));
   assert.equal(T.toStage(6), 6);
 });
 
-test('its beam and grid hurt the ship', () => {
+test('its laser hurts the ship and shows its splash on it', () => {
   const {T} = harness();
   startAt(T, 5); T.adv(8);
-  T.ev("hullGrace=0;classicHullReserve=0;Object.assign(ch03Boss,{state:'attack',attack:'sweep',stateTime:0,beam:{angle:Math.atan2(player.x-ch03Boss.x,player.y-ch03Boss.y),direction:1,active:true}})");
+  T.ev(`hullGrace=0;classicHullReserve=0;${aimLaser}`);
   const before = T.hull();
   T.adv(1 / 60);
-  assert.ok(T.hull() < before, 'the beam hurts');
-  T.ev("hullGrace=0;classicHullReserve=0;const c=Math.floor(player.x/(W/6));Object.assign(ch03Boss,{state:'attack',attack:'grid',beam:null,grid:{columns:6,step:0,safe:(c+3)%6,active:true,time:0}})");
-  const mid = T.hull();
-  T.adv(1 / 60);
-  assert.ok(T.hull() < mid, 'the grid hurts');
+  assert.equal(before - T.hull(), 14, 'the laser hurts like the CH-03 sweep did');
+  assert.equal(T.ev('Boolean(subBossBurn)'), true);
 });
 
-test('dying during CH-03 and reviving keeps its damage; retrying restarts at stage 1', () => {
+test('dying during the subguardian and reviving keeps its damage; retrying restarts at stage 1', () => {
   const {T} = harness();
   startAt(T, 5); T.adv(9);
-  T.ev('NeonCampaign.hitCh03Satellite(ch03Boss, 15)');
-  const hp = T.ev('ch03Boss.hp');
-  assert.ok(hp < 40, 'the hit counted');
+  T.ev('NeonCampaign.hitSubguardian(subBoss, 15)');
+  const hp = T.ev('subBoss.hp');
+  assert.ok(hp < 60, 'the hit counted');
   T.ev('hull=0'); T.finishGame('hull'); T.resumeReward();
-  assert.equal(T.ev('ch03Boss.hp'), hp);
+  assert.equal(T.ev('subBoss.hp'), hp);
   T.finishGame('hull'); T.startLevel(0);
-  assert.deepEqual([T.stage(), T.ev('ch03Boss')], [1, null]);
+  assert.deepEqual([T.stage(), T.ev('subBoss')], [1, null]);
 });
 
-test('CH-03 only fights in the sector', () => {
+test('the subguardian only fights in the sector', () => {
   const {T} = harness();
   T.startSideVoyage('S1-V2'); T.toStage(5); T.adv(10);
-  assert.equal(T.ev('ch03Boss'), null);
+  assert.equal(T.ev('subBoss'), null);
 });
 
 // Baliza de reaparición (plan F3c, tarea 4): 40 chatarra en la parada de C9.
@@ -601,7 +609,7 @@ const offerShown = w => w.document.getElementById('beaconOffer').classList.conta
 const devSave = w => JSON.parse(w.localStorage.getItem(`neon-dev-v1:${KEY}`) || 'null');
 const toService = T => { T.ev('DEV.invulnerable=true'); T.adv(4); };
 
-test('after beating CH-03, C9 offers the beacon', () => {
+test('after beating the subguardian, C9 offers the beacon', () => {
   const {w, T} = harness({query: '?dev=1'});
   startAt(T, 6); giveScrap(T, 5); toService(T);
   assert.equal(offerShown(w), true);
@@ -660,7 +668,7 @@ test('the panel is not offered twice or when the beacon is already owned', () =>
   assert.equal(offerShown(owned.w), false);
   const early = harness({query: '?dev=1'});
   startAt(early.T, 4); giveScrap(early.T, 5); early.T.ev('DEV.invulnerable=true'); early.T.toStage(6); early.T.adv(4);
-  assert.equal(offerShown(early.w), false, 'sin vencer al CH-03 en este intento no se ofrece');
+  assert.equal(offerShown(early.w), false, 'sin vencer al subguardián en este intento no se ofrece');
 });
 
 // Furia de Atlas (plan F3c, tarea 6): escoltas, drones, rayo y escenario roto.
@@ -729,27 +737,23 @@ test('fury darkens the scene', () => {
   assert.equal(T.ev('atlasFuryScene'), false);
 });
 
-// Revisión final F3c (auditor-codigo): un golpe por ataque del CH-03.
-test('CH-03 hurts once per sweep and once per grid step', () => {
+// Revisión final F3c (auditor-codigo): un golpe por barrido del láser.
+test('the subguardian laser hurts once per sweep', () => {
   const {T} = harness();
   startAt(T, 5); T.adv(8);
-  T.ev("hullGrace=0;classicHullReserve=0;items=[];const c=Math.floor(player.x/(W/6));Object.assign(ch03Boss,{state:'attack',attack:'grid',stateTime:0,beam:null,grid:{columns:6,step:0,safe:(c+3)%6,active:true,time:0}})");
+  T.ev(`hullGrace=0;classicHullReserve=0;items=[];${aimLaser};subBoss.attacks++`);
   const before = T.hull();
-  T.adv(.45);
-  assert.equal(before - T.hull(), 16, 'one grid step hits once');
-  T.ev("hullGrace=0;items=[];Object.assign(ch03Boss,{state:'attack',attack:'sweep',stateTime:0,grid:null,attacks:ch03Boss.attacks+1,beam:{angle:Math.atan2(player.x-ch03Boss.x,player.y-ch03Boss.y)-(14+30)/Math.hypot(player.x-ch03Boss.x,player.y-ch03Boss.y),direction:1,active:true}})");
-  const mid = T.hull();
   T.adv(.4);
   // El mismo barrido vuelve sobre la nave pasada la gracia (como con la nave lejos).
-  T.ev("items=[];ch03Boss.beam.angle=Math.atan2(player.x-ch03Boss.x,player.y-ch03Boss.y)");
+  T.ev("items=[];subBoss.beam.angle=Math.atan2(player.x-subBoss.x,player.y-subBoss.y-NeonCampaign.SUBGUARDIAN_RULES.emitterY)");
   T.adv(.1);
-  assert.equal(mid - T.hull(), 14, 'one sweep hits once');
+  assert.equal(before - T.hull(), 14, 'one sweep hits once');
 });
 
-test('beating CH-03 in stage 5 makes C9 offer the beacon in stage 6', () => {
+test('beating the subguardian in stage 5 makes C9 offer the beacon in stage 6', () => {
   const {w, T} = harness({query: '?dev=1'});
-  ch03Fight(T); giveScrap(T, 5);
-  T.ev('NeonCampaign.hitCh03Satellite(ch03Boss, 999)');
+  subFight(T); giveScrap(T, 5);
+  T.ev('NeonCampaign.hitSubguardian(subBoss, 999)');
   T.adv(2);
   T.toStage(6); T.adv(4);
   assert.equal(offerShown(w), true);
@@ -768,12 +772,12 @@ test('a beam that starts during the hit grace still burns the ship once the grac
   assert.equal(T.hull(), start - 26);
 });
 
-test('leaving to the menu during CH-03 removes the satellite', () => {
+test('leaving to the menu during the subguardian removes it', () => {
   const {T} = harness();
   startAt(T, 5); T.adv(9);
-  assert.equal(T.ev('Boolean(ch03Boss)'), true);
+  assert.equal(T.ev('Boolean(subBoss)'), true);
   T.goHome();
-  assert.equal(T.ev('ch03Boss'), null);
+  assert.equal(T.ev('subBoss'), null);
 });
 
 test('in fury the open core is drawn with the core animation, not the closed fury pose', () => {
@@ -881,7 +885,7 @@ test('dying in HARDCORE erases the whole HARDCORE save, with no revive and no be
   const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, [KEY]: runAt(7), [HC + KEY]: runAt(3),
     [HC + 'neonCronium.menu.v1']: JSON.stringify({version: 1, hangar: true, seen: {hangar: true}})}});
   click(w, 'play');
-  T.ev('ch03Beaten=true');
+  T.ev('subBossBeaten=true');
   assert.equal(T.ev('offerSectorBeacon()'), false, 'no beacon in HARDCORE');
   T.finishGame('hull');
   assert.equal(rewardShown(w), false, 'no rewarded revive');

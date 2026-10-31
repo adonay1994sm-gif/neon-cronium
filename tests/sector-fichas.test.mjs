@@ -12,7 +12,7 @@ test('the sector 1 route has ten stages of 45 to 60 seconds', () => {
 });
 
 test('the sub-boss fights in stage 5 and the boss in stage 10', () => {
-  assert.deepEqual(S1_GAIA.encounters[4].boss, {id: 'ch03', role: 'subjefe'});
+  assert.deepEqual(S1_GAIA.encounters[4].boss, {id: 'subguardian', role: 'subjefe'});
   assert.deepEqual(S1_GAIA.encounters[9].boss, {id: 'guardian-atlas', role: 'jefe'});
   S1_GAIA.encounters.forEach((rules, index) => {
     if (index !== 4 && index !== 9) assert.equal(rules.boss, null, `stage ${index + 1}`);

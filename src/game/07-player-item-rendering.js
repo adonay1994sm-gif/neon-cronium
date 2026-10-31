@@ -156,37 +156,41 @@
     return true;
   }
 
-  // Satélite CH-03 (plan F3c). Celdas de la hoja: 0 reposo, 1-2 carga y rayo,
-  // 3 cañones, 4 láseres cruzados, 5 rejilla, 6 dañado, 7 destruido.
-  function drawCh03Satellite() {
-    if (typeof ch03Boss === "undefined" || !ch03Boss) return;
-    const boss = ch03Boss, size = 300;
-    if (boss.attack === "grid" && boss.grid && boss.state === "attack") {
-      // Columnas de la rejilla: aviso tenue, láser encendido brillante; la segura, libre.
-      const column = W / boss.grid.columns;
-      ctx.save();
-      for (let c = 0; c < boss.grid.columns; c++) {
-        if (c === boss.grid.safe) continue;
-        ctx.fillStyle = boss.grid.active ? "rgba(255,70,90,.42)" : "rgba(255,120,120,.12)";
-        ctx.fillRect(c * column + 6, boss.y, column - 12, H - boss.y);
-      }
-      ctx.restore();
-    }
-    if (boss.attack === "sweep" && boss.beam?.active && boss.state === "attack") {
-      ctx.save(); ctx.translate(boss.x, boss.y); ctx.rotate(-boss.beam.angle);
-      ctx.fillStyle = "rgba(255,60,80,.85)"; ctx.shadowBlur = 22; ctx.shadowColor = "#ff2d45";
-      ctx.fillRect(-NeonCampaign.CH03_RULES.sweep.width / 2, 0, NeonCampaign.CH03_RULES.sweep.width, H * 1.5);
-      ctx.fillStyle = "rgba(255,240,240,.9)"; ctx.fillRect(-4, 0, 8, H * 1.5);
-      ctx.restore();
-    }
-    if (!spriteReady(SPRITES.ch03)) return;
-    const cell = boss.state === "defeated" ? (boss.stateTime < .5 ? 6 : 7)
-      : boss.state === "warning" ? (boss.attack === "ring" ? 3 : boss.attack === "grid" ? 4 : 1)
-      : boss.state === "attack" ? (boss.attack === "sweep" ? 2 : boss.attack === "ring" ? 3 : 5)
-      : boss.hp <= boss.maxHp * .35 ? 6 : 0;
-    ctx.save(); ctx.translate(boss.x, boss.y);
-    drawGaiaCell(SPRITES.ch03, 4, cell, size);
+  // Subguardián del tramo 5 (dec-subguardian-plan, 31/10/2026). Hoja 4×2 en
+  // el orden de subguardianFrame. Láser pintado: 4 fotogramas del haz y la
+  // franja de aviso (celdas de 192×768 que se repiten a lo largo del rayo) e
+  // impacto en 4×2. El rayo nace en el emisor y va por detrás del cuerpo.
+  const SUB_BOSS_SIZE = 300, SUB_BEAM_WIDTH = 92;
+  function drawSubBossBeam(cell, angle, alpha) {
+    const image = SPRITES.subguardianLaser;
+    if (!spriteReady(image)) return;
+    const origin = NeonCampaign.subguardianEmitter(subBoss), cellWidth = image.naturalWidth / 5;
+    const tile = SUB_BEAM_WIDTH * image.naturalHeight / cellWidth;
+    ctx.save(); ctx.translate(origin.x, origin.y - subBoss.recoil); ctx.rotate(-angle); ctx.globalAlpha *= alpha;
+    for (let y = 0; y < H * 1.6; y += tile)
+      ctx.drawImage(image, cell * cellWidth, 0, cellWidth, image.naturalHeight, -SUB_BEAM_WIDTH / 2, y, SUB_BEAM_WIDTH, tile);
     ctx.restore();
+  }
+  function drawSubguardian() {
+    if (typeof subBoss === "undefined" || !subBoss) return;
+    const boss = subBoss;
+    if (boss.attack === "laser" && boss.beam && boss.state === "warning") {
+      // Aviso: la franja por donde empezará el barrido, latiendo.
+      drawSubBossBeam(4, boss.beam.angle, .45 + .35 * Math.sin(boss.stateTime * 14));
+    } else if (boss.attack === "laser" && boss.beam?.active && boss.state === "attack") {
+      drawSubBossBeam(Math.floor(boss.stateTime * 14) % 4, boss.beam.angle, Math.min(1, boss.stateTime / .08));
+    }
+    if (spriteReady(SPRITES.subguardian)) {
+      ctx.save(); ctx.translate(boss.x, boss.y - boss.recoil);
+      drawGaiaCell(SPRITES.subguardian, 4, NeonCampaign.subguardianFrame(boss), SUB_BOSS_SIZE);
+      ctx.restore();
+    }
+    if (subBossBurn && spriteReady(SPRITES.subguardianImpact)) {
+      // Salpicadura del láser sobre la nave alcanzada.
+      ctx.save(); ctx.translate(subBossBurn.x, subBossBurn.y);
+      drawGaiaCell(SPRITES.subguardianImpact, 4, Math.min(7, Math.floor(subBossBurn.age / .5 * 8)), 150);
+      ctx.restore();
+    }
   }
 
   function drawGuardianAtlas() {

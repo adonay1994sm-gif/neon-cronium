@@ -291,6 +291,11 @@
     // Jefes del sector 1 (plan F3c): CH-03 y Atlas en furia en celdas de 384,
     // escoltas de Atlas y baliza en celdas de 192.
     ch03: loadSprite("assets/ch03_satellite_atlas_v1.webp", false),
+    // Subguardián del tramo 5: 8 estados en 4×2, haz del láser y aviso en
+    // 5 celdas de 192×768 e impacto en 4×2 de 192.
+    subguardian: loadSprite("assets/subguardian_atlas_v1.webp", false),
+    subguardianLaser: loadSprite("assets/subguardian_laser_v1.webp", false),
+    subguardianImpact: loadSprite("assets/subguardian_impact_v1.webp", false),
     atlasFury: loadSprite("assets/atlas_fury_atlas_v1.webp", false),
     atlasEscorts: loadSprite("assets/atlas_escorts_atlas_v1.webp", false),
     sectorBeacon: loadSprite("assets/sector_beacon_atlas_v1.webp", false),

@@ -38,7 +38,7 @@ test('it is never static: it patrols the top band and changes height between att
   assert.ok(Math.max(...xs) - Math.min(...xs) > W * .3, 'crosses a good part of the screen');
   assert.ok(Math.max(...ys) - Math.min(...ys) > 20, 'changes height');
   assert.ok(xs.every(x => x >= W * SUBGUARDIAN_RULES.motion.minX - 1 && x <= W * SUBGUARDIAN_RULES.motion.maxX + 1));
-  assert.ok(ys.every(y => y < H * .3), 'stays in the top band');
+  assert.ok(ys.every(y => y > H * .2 && y < H * .36), 'stays in the top band, under the boss panel');
 });
 
 test('twin cannons aim at the ship; the fan opens in two shifted waves', () => {

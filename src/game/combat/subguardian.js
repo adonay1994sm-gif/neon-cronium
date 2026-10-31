@@ -10,10 +10,11 @@
  * Puro: reloj de juego que pasa el llamador y azar con semilla.
  */
 export const SUBGUARDIAN_RULES = Object.freeze({
-  hp: 60, entrySeconds: 2, holdY: .2, rest: 1.1, defeatSeconds: 1.6, damagedAt: .35,
+  hp: 60, entrySeconds: 2, holdY: .29, rest: 1.1, defeatSeconds: 1.6, damagedAt: .35,
   // Patrulla: va hacia un punto nuevo de la franja de arriba entre ataques y
   // sigue derivando despacio durante los cañones y el abanico.
-  motion: Object.freeze({speed: 150, attackSpeed: 55, minX: .24, maxX: .76, heightJitter: .05}),
+  // holdY .29: por debajo del panel del jefe, que tapa la franja de arriba.
+  motion: Object.freeze({speed: 150, attackSpeed: 55, minX: .24, maxX: .76, heightJitter: .04}),
   // El emisor del láser está bajo el cuerpo: el rayo nace ahí.
   emitterY: 64,
   twin: Object.freeze({warning: .55, bursts: 3, gap: .32, offset: 46, speed: 430, damage: 13}),

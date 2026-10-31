@@ -3380,7 +3380,7 @@ var NeonCampaign = (() => {
       ["Campo de restos", 50, 11, "Cruza los restos; algo te sigue por detr\xE1s", "Campo de restos", "Salida orbital", "wreckage-crossing", 0.15, 0.8, 0.52],
       ["La red exterior", 52, 17, "La red de Gaia siembra minas en tu ruta", "Salida orbital", "Red exterior de Gaia", "net-edge", 0.12, 0.6, 0.58],
       ["Cuarentena", 52, 23, "Rompe los escudos de la \xC9gida y sigue adelante", "Red exterior de Gaia", "Anillo de sat\xE9lites", "quarantine", 0.16, 0.62, 0.64],
-      ["El sat\xE9lite CH-03", 56, 27, "Derriba el sat\xE9lite de defensa que cierra el anillo", "Anillo de sat\xE9lites", "Corredor de enlace", "sub-boss", 0.18, 0.66, 0.7],
+      ["El subguardi\xE1n", 56, 27, "Derriba al subguardi\xE1n que cierra el anillo", "Anillo de sat\xE9lites", "Corredor de enlace", "sub-boss", 0.18, 0.66, 0.7],
       ["Enlace C9", 48, 27, "Repara en C9 y prueba tu nave en el corredor", "Corredor de enlace", "Lado nocturno", "service-stop", 0.06, 0.34, 0.3],
       ["El Alfa", 54, 38, "El Alfa del C-17 lidera la caza en la oscuridad", "Lado nocturno", "Escolta del C-17", "alpha-hunt", 0.08, 0.28, 0.72],
       ["Lluvia en el acceso", 52, 44, "Cruza la lluvia de meteoritos sin dejar de combatir", "Escolta del C-17", "Piquetes de Gaia", "meteor-rain", 0.14, 0.58, 0.76],
@@ -3406,7 +3406,7 @@ var NeonCampaign = (() => {
       encounter11(2, [3, ROSTERS11.flank, 7], { attackers: 1 }),
       encounter11(3, [3, ROSTERS11.mines, 7], { repairAt: 30, horde: HORDE }),
       encounter11(7, [4, ROSTERS11.shield, 6], { comets: "aimed" }),
-      encounter11(4, [2, ROSTERS11.flank, 9], { boss: { id: "ch03", role: "subjefe" } }),
+      encounter11(4, [2, ROSTERS11.flank, 9], { boss: { id: "subguardian", role: "subjefe" } }),
       encounter11(5, [2, ROSTERS11.escape, 8], { attackers: 3 }),
       encounter11(8, [4, ROSTERS11.elite, 6], { repairAt: 32, attackers: 3, horde: HORDE }),
       encounter11(9, [4, ROSTERS11.elite, 6], { comets: "aimed", attackers: 3 }),
@@ -6195,13 +6195,14 @@ var NeonCampaign = (() => {
   var SUBGUARDIAN_RULES = Object.freeze({
     hp: 60,
     entrySeconds: 2,
-    holdY: 0.2,
+    holdY: 0.29,
     rest: 1.1,
     defeatSeconds: 1.6,
     damagedAt: 0.35,
     // Patrulla: va hacia un punto nuevo de la franja de arriba entre ataques y
     // sigue derivando despacio durante los cañones y el abanico.
-    motion: Object.freeze({ speed: 150, attackSpeed: 55, minX: 0.24, maxX: 0.76, heightJitter: 0.05 }),
+    // holdY .29: por debajo del panel del jefe, que tapa la franja de arriba.
+    motion: Object.freeze({ speed: 150, attackSpeed: 55, minX: 0.24, maxX: 0.76, heightJitter: 0.04 }),
     // El emisor del láser está bajo el cuerpo: el rayo nace ahí.
     emitterY: 64,
     twin: Object.freeze({ warning: 0.55, bursts: 3, gap: 0.32, offset: 46, speed: 430, damage: 13 }),
