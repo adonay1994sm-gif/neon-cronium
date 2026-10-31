@@ -45,6 +45,7 @@ var NeonCampaign = (() => {
     SHIP_FLEET_SAVE_KEY: () => SHIP_FLEET_SAVE_KEY,
     SHIP_ROSTER: () => SHIP_ROSTER,
     SHIP_ROSTER_KEY: () => SHIP_ROSTER_KEY,
+    SUBGUARDIAN_RULES: () => SUBGUARDIAN_RULES,
     VOYAGES: () => VOYAGES,
     advanceAimedMeteorRain: () => advanceAimedMeteorRain,
     advanceCh03Satellite: () => advanceCh03Satellite,
@@ -58,6 +59,7 @@ var NeonCampaign = (() => {
     advanceMine: () => advanceMine,
     advanceShipBank: () => advanceShipBank,
     advanceShowerComet: () => advanceShowerComet,
+    advanceSubguardian: () => advanceSubguardian,
     advanceVoyageHazardField: () => advanceVoyageHazardField,
     attackHolders: () => attackHolders,
     awardClassicBossWeapon: () => awardClassicBossWeapon,
@@ -96,6 +98,7 @@ var NeonCampaign = (() => {
     createRelativeFlightInput: () => createRelativeFlightInput,
     createScrapLedger: () => createScrapLedger,
     createSectorSave: () => createSectorSave,
+    createSubguardian: () => createSubguardian,
     createUiSfx: () => createUiSfx,
     createVoyageHazardField: () => createVoyageHazardField,
     createVoyageRoute: () => createVoyageRoute,
@@ -118,6 +121,7 @@ var NeonCampaign = (() => {
     hitCh03Satellite: () => hitCh03Satellite,
     hitClassicProjectile: () => hitClassicProjectile,
     hitGuardianAtlas: () => hitGuardianAtlas,
+    hitSubguardian: () => hitSubguardian,
     markMenuSeen: () => markMenuSeen,
     menuView: () => menuView,
     moveFlightInput: () => moveFlightInput,
@@ -146,6 +150,9 @@ var NeonCampaign = (() => {
     shipNozzleAnchors: () => shipNozzleAnchors,
     shipPartFrame: () => shipPartFrame,
     startSectorRun: () => startSectorRun,
+    subguardianEmitter: () => subguardianEmitter,
+    subguardianFrame: () => subguardianFrame,
+    subguardianHitsShip: () => subguardianHitsShip,
     syncClassicWorkshopWeapons: () => syncClassicWorkshopWeapons,
     triggerClassicMissile: () => triggerClassicMissile,
     triggerClassicWeapon: () => triggerClassicWeapon,
@@ -4594,7 +4601,7 @@ var NeonCampaign = (() => {
       if (vx > bankThreshold) return "bankRight";
       return Math.abs(vy) > bankThreshold ? "flight" : "idle";
     }
-    function enter2(next) {
+    function enter3(next) {
       state = next;
       elapsedMs = 0;
       eventCursor = 0;
@@ -4617,7 +4624,7 @@ var NeonCampaign = (() => {
           fired: attackFired
         });
       }
-      enter2(next);
+      enter3(next);
       return true;
     }
     function update(dt, sample = {}) {
@@ -4637,7 +4644,7 @@ var NeonCampaign = (() => {
         vy = nextVy;
         if (health === 0) request("destroy");
         else if (lostHealth) request("hurt");
-        else if (!animations[state].locked && state !== baseState()) enter2(baseState());
+        else if (!animations[state].locked && state !== baseState()) enter3(baseState());
       }
       const emitted = pending;
       pending = [];
@@ -4672,7 +4679,7 @@ var NeonCampaign = (() => {
           elapsedMs = 0;
           eventCursor = 0;
         } else {
-          enter2(baseState());
+          enter3(baseState());
         }
       }
       return emitted;
@@ -4983,7 +4990,7 @@ var NeonCampaign = (() => {
     observePlayer(enemy, player, profile2.sampleInterval);
     const lostHealth = enemy.previousHp !== null && hp < enemy.previousHp;
     enemy.previousHp = hp;
-    const enter2 = (state) => {
+    const enter3 = (state) => {
       enemy.state = enemy.stage = state;
       enemy.stateAge = 0;
     };
@@ -5020,7 +5027,7 @@ var NeonCampaign = (() => {
       enemy.targetX = laneTarget();
       enemy.nextTargetAt = enemy.age + profile2.sampleInterval;
       enemy.nextFire = enemy.age + profile2.recovery * (1 - 0.18 * enemy.intensity) * (0.65 + nextRandom(enemy) * 0.7);
-      enter2("reposition");
+      enter3("reposition");
     };
     const retreat = (reason) => {
       releaseTurn();
@@ -5028,13 +5035,13 @@ var NeonCampaign = (() => {
       enemy.followUp = null;
       enemy.retreatReason = reason;
       enemy.targetX = player.x < enemy.width / 2 ? enemy.width - 56 : 56;
-      enter2("retreat");
+      enter3("retreat");
     };
     if (hp <= 0) {
       releaseTurn();
       clearCharge();
       enemy.followUp = null;
-      if (enemy.state !== "destroyed") enter2("destroyed");
+      if (enemy.state !== "destroyed") enter3("destroyed");
     } else if (enemy.state !== "retreat" && enemy.state !== "destroyed") {
       const heldFor = enemy.combatStartedAt === null ? 0 : enemy.age - enemy.combatStartedAt;
       enemy.intensity = gate ? 0 : Math.min(2, Math.floor(heldFor / profile2.holdSeconds));
@@ -5046,17 +5053,17 @@ var NeonCampaign = (() => {
         reposition();
       }
     }
-    if (enemy.state === "entry" && item.y >= enemy.holdY - 110) enter2("brake");
+    if (enemy.state === "entry" && item.y >= enemy.holdY - 110) enter3("brake");
     if (enemy.state === "brake" && Math.abs(item.y - enemy.holdY) <= 32 && Math.abs(item.s) <= 62 && item.x >= enemy.combatMinX && item.x <= enemy.combatMaxX) {
       enemy.combatStartedAt ??= enemy.age;
       enemy.targetX = laneTarget();
       enemy.nextTargetAt = enemy.age + profile2.sampleInterval;
-      enter2("track");
+      enter3("track");
     }
     if (enemy.state === "fire" && enemy.stateAge >= 0.34) {
       reposition();
     }
-    if (enemy.state === "reposition" && enemy.age >= enemy.nextFire) enter2("track");
+    if (enemy.state === "reposition" && enemy.age >= enemy.nextFire) enter3("track");
     if (enemy.state === "reposition" && enemy.age >= enemy.nextTargetAt) {
       enemy.targetX = laneTarget();
       enemy.nextTargetAt = enemy.age + profile2.sampleInterval;
@@ -5078,7 +5085,7 @@ var NeonCampaign = (() => {
         enemy.chargeStartedAt = enemy.age;
         enemy.chargeSerial++;
         enemy.volley = chooseVolley(enemy, profile2.volleys);
-        enter2("charge");
+        enter3("charge");
       }
     }
     if (enemy.state === "charge") {
@@ -5147,7 +5154,7 @@ var NeonCampaign = (() => {
       enemy.fired++;
       enemy.telegraph = 0;
       enemy.attackScheduled = false;
-      enter2("fire");
+      enter3("fire");
       if (enemy.volley === "spread") {
         const { spreadAngle, spreadCount } = CLASSIC_PURSUIT_VOLLEY;
         for (let k = 0; k < spreadCount; k++) launch((k - (spreadCount - 1) / 2) * spreadAngle);
@@ -5852,7 +5859,7 @@ var NeonCampaign = (() => {
       if (vx > bankThreshold) return "bankRight";
       return Math.abs(vy) > bankThreshold ? "flight" : "idle";
     }
-    function enter2(next) {
+    function enter3(next) {
       state = next;
       elapsedMs = 0;
       eventCursor = 0;
@@ -5875,7 +5882,7 @@ var NeonCampaign = (() => {
           fired: attackFired
         });
       }
-      enter2(next);
+      enter3(next);
       return true;
     }
     function update(dt, sample = {}) {
@@ -5895,7 +5902,7 @@ var NeonCampaign = (() => {
         vy = nextVy;
         if (health === 0) request("destroy");
         else if (lostHealth) request("hurt");
-        else if (!animations2[state].locked && state !== baseState()) enter2(baseState());
+        else if (!animations2[state].locked && state !== baseState()) enter3(baseState());
       }
       const emitted = pending;
       pending = [];
@@ -5930,7 +5937,7 @@ var NeonCampaign = (() => {
           elapsedMs = 0;
           eventCursor = 0;
         } else {
-          enter2(baseState());
+          enter3(baseState());
         }
       }
       return emitted;
@@ -6184,6 +6191,209 @@ var NeonCampaign = (() => {
     return { accepted: true, hp: boss.hp };
   }
 
+  // src/game/combat/subguardian.js
+  var SUBGUARDIAN_RULES = Object.freeze({
+    hp: 60,
+    entrySeconds: 2,
+    holdY: 0.2,
+    rest: 1.1,
+    defeatSeconds: 1.6,
+    damagedAt: 0.35,
+    // Patrulla: va hacia un punto nuevo de la franja de arriba entre ataques y
+    // sigue derivando despacio durante los cañones y el abanico.
+    motion: Object.freeze({ speed: 150, attackSpeed: 55, minX: 0.24, maxX: 0.76, heightJitter: 0.05 }),
+    // El emisor del láser está bajo el cuerpo: el rayo nace ahí.
+    emitterY: 64,
+    twin: Object.freeze({ warning: 0.55, bursts: 3, gap: 0.32, offset: 46, speed: 430, damage: 13 }),
+    fan: Object.freeze({ warning: 0.6, projectiles: 7, spread: 0.7, speed: 360, waves: 2, gap: 0.5, damage: 15 }),
+    // ±0,5 rad: a la altura de la nave el rayo recorre la pantalla de borde a borde.
+    laser: Object.freeze({ warning: 1.1, range: 0.5, speed: 0.3, width: 28, damage: 14, recoil: 26 })
+  });
+  var ORDER2 = Object.freeze(["twin", "fan", "laser"]);
+  function nextRandom4(boss) {
+    boss.rng = boss.rng + 1831565813 >>> 0;
+    let value = Math.imul(boss.rng ^ boss.rng >>> 15, 1 | boss.rng);
+    value ^= value + Math.imul(value ^ value >>> 7, 61 | value);
+    return ((value ^ value >>> 14) >>> 0) / 4294967296;
+  }
+  function createSubguardian({ width, height, seed = 0 }) {
+    if (![width, height, seed].every(Number.isFinite) || width < 280 || height < 540) throw new RangeError("Invalid subguardian arena");
+    const holdY = height * SUBGUARDIAN_RULES.holdY;
+    return {
+      width,
+      height,
+      x: width / 2,
+      y: -140,
+      vx: 0,
+      holdY,
+      targetX: width / 2,
+      targetY: holdY,
+      hp: SUBGUARDIAN_RULES.hp,
+      maxHp: SUBGUARDIAN_RULES.hp,
+      state: "entry",
+      stateTime: 0,
+      attack: null,
+      attacks: 0,
+      beam: null,
+      volleys: 0,
+      recoil: 0,
+      resolved: false,
+      defeatAnnounced: false,
+      rng: (Math.imul(Math.trunc(seed) >>> 0, 2654435769) ^ 1398096455) >>> 0
+    };
+  }
+  function chooseAttack2(boss) {
+    if (boss.attacks < ORDER2.length) return ORDER2[boss.attacks];
+    const options = ORDER2.filter((attack) => attack !== boss.attack);
+    return options[Math.floor(nextRandom4(boss) * options.length)];
+  }
+  function enter2(boss, state) {
+    boss.state = state;
+    boss.stateTime = 0;
+  }
+  function pickTarget(boss) {
+    const { minX, maxX, heightJitter } = SUBGUARDIAN_RULES.motion;
+    const left = boss.x > boss.width / 2;
+    const span = (maxX - minX) / 2;
+    boss.targetX = boss.width * (left ? minX + nextRandom4(boss) * span * 0.8 : maxX - nextRandom4(boss) * span * 0.8);
+    boss.targetY = boss.holdY + boss.height * heightJitter * (nextRandom4(boss) * 2 - 1);
+  }
+  function move(boss, dt, speed) {
+    const dx = boss.targetX - boss.x, dy = boss.targetY - boss.y, distance2 = Math.hypot(dx, dy);
+    if (distance2 < 1) {
+      boss.vx = 0;
+      return true;
+    }
+    const step = Math.min(distance2, speed * dt);
+    boss.x += dx / distance2 * step;
+    boss.y += dy / distance2 * step;
+    boss.vx = dx / distance2 * speed;
+    return false;
+  }
+  function subguardianEmitter(boss) {
+    return { x: boss.x, y: boss.y + SUBGUARDIAN_RULES.emitterY };
+  }
+  function fireTwin(boss, emit, target) {
+    const { offset, speed, damage } = SUBGUARDIAN_RULES.twin;
+    for (const side of [-1, 1]) {
+      const x = boss.x + side * offset, y = boss.y + 40;
+      const dx = target.x - x, dy = Math.max(40, target.y - y), length = Math.hypot(dx, dy);
+      emit({ type: "projectile", x, y, vx: dx / length * speed, vy: dy / length * speed, damage });
+    }
+    boss.volleys++;
+  }
+  function fireFan(boss, emit) {
+    const { projectiles, spread: spread2, speed, damage } = SUBGUARDIAN_RULES.fan;
+    const shift = boss.volleys % 2 ? spread2 / (projectiles - 1) / 2 : 0;
+    for (let k = 0; k < projectiles; k++) {
+      const angle = -spread2 / 2 + k * spread2 / (projectiles - 1) + shift;
+      emit({ type: "projectile", x: boss.x, y: boss.y + 40, vx: Math.sin(angle) * speed, vy: Math.cos(angle) * speed, damage });
+    }
+    boss.volleys++;
+  }
+  function warningSeconds(attack) {
+    return SUBGUARDIAN_RULES[attack].warning;
+  }
+  function startWarning(boss, emit) {
+    boss.attack = chooseAttack2(boss);
+    if (boss.attack === "laser") {
+      const direction = nextRandom4(boss) < 0.5 ? -1 : 1;
+      boss.beam = { angle: -direction * SUBGUARDIAN_RULES.laser.range, direction, active: false };
+    }
+    enter2(boss, "warning");
+    emit({ type: "warning", attack: boss.attack });
+  }
+  function endAttack2(boss) {
+    boss.beam = null;
+    boss.volleys = 0;
+    boss.attacks++;
+    pickTarget(boss);
+    enter2(boss, "idle");
+  }
+  function advanceAttack2(boss, dt, emit, target) {
+    if (boss.attack === "laser") {
+      const { range: range2, speed } = SUBGUARDIAN_RULES.laser;
+      boss.beam.angle += boss.beam.direction * speed * dt;
+      if (Math.abs(boss.beam.angle) >= range2 && Math.sign(boss.beam.angle) === boss.beam.direction) endAttack2(boss);
+    } else if (boss.attack === "twin") {
+      const { bursts, gap } = SUBGUARDIAN_RULES.twin;
+      while (boss.volleys < bursts && boss.stateTime >= boss.volleys * gap) fireTwin(boss, emit, target);
+      if (boss.stateTime >= bursts * gap) endAttack2(boss);
+    } else {
+      const { waves, gap } = SUBGUARDIAN_RULES.fan;
+      while (boss.volleys < waves && boss.stateTime >= boss.volleys * gap) fireFan(boss, emit);
+      if (boss.stateTime >= waves * gap) endAttack2(boss);
+    }
+  }
+  function advanceSubguardian(boss, dt, emit, target = { x: boss.width / 2, y: boss.height * 0.85 }) {
+    if (!(dt > 0) || boss.resolved) return;
+    boss.stateTime += dt;
+    boss.recoil = Math.max(0, boss.recoil - dt * 60);
+    const { motion } = SUBGUARDIAN_RULES;
+    if (boss.state === "entry") {
+      const progress = Math.min(1, boss.stateTime / SUBGUARDIAN_RULES.entrySeconds);
+      boss.y = -140 + (boss.holdY + 140) * (1 - (1 - progress) ** 3);
+      if (progress >= 1) {
+        pickTarget(boss);
+        enter2(boss, "idle");
+      }
+    } else if (boss.state === "idle") {
+      const arrived = move(boss, dt, motion.speed);
+      if (boss.stateTime >= SUBGUARDIAN_RULES.rest && (arrived || boss.stateTime >= SUBGUARDIAN_RULES.rest * 2)) startWarning(boss, emit);
+    } else if (boss.state === "warning") {
+      if (boss.attack === "laser") boss.vx = 0;
+      else if (move(boss, dt, motion.attackSpeed)) pickTarget(boss);
+      if (boss.stateTime >= warningSeconds(boss.attack)) {
+        enter2(boss, "attack");
+        boss.volleys = 0;
+        if (boss.attack === "laser") {
+          boss.beam.active = true;
+          boss.recoil = SUBGUARDIAN_RULES.laser.recoil;
+        }
+        emit({ type: "fire", attack: boss.attack });
+        advanceAttack2(boss, 0, emit, target);
+      }
+    } else if (boss.state === "attack") {
+      if (boss.attack !== "laser" && move(boss, dt, motion.attackSpeed)) pickTarget(boss);
+      if (boss.attack === "laser") boss.vx = 0;
+      advanceAttack2(boss, dt, emit, target);
+    } else if (boss.state === "defeated") {
+      boss.vx = 0;
+      if (!boss.defeatAnnounced) {
+        boss.defeatAnnounced = true;
+        emit({ type: "defeated" });
+      }
+      if (boss.stateTime >= SUBGUARDIAN_RULES.defeatSeconds) boss.resolved = true;
+    }
+  }
+  function subguardianHitsShip(boss, ship2) {
+    if (boss.state !== "attack" || boss.attack !== "laser" || !boss.beam?.active) return 0;
+    const origin = subguardianEmitter(boss);
+    const dx = Math.sin(boss.beam.angle), dy = Math.cos(boss.beam.angle);
+    const along = (ship2.x - origin.x) * dx + (ship2.y - origin.y) * dy;
+    if (along <= 0) return 0;
+    const across = Math.abs((ship2.x - origin.x) * dy - (ship2.y - origin.y) * dx);
+    return across <= SUBGUARDIAN_RULES.laser.width / 2 + ship2.r ? SUBGUARDIAN_RULES.laser.damage : 0;
+  }
+  function hitSubguardian(boss, damage = 1) {
+    if (!(damage > 0) || boss.state === "entry" || boss.state === "defeated") return { accepted: false, hp: boss.hp };
+    boss.hp = Math.max(0, boss.hp - damage);
+    if (boss.hp === 0) {
+      boss.beam = null;
+      enter2(boss, "defeated");
+    }
+    return { accepted: true, hp: boss.hp };
+  }
+  function subguardianFrame(boss) {
+    if (boss.state === "defeated") return 7;
+    if (boss.attack === "laser" && boss.state === "warning") return 5;
+    if (boss.attack === "laser" && boss.state === "attack") return 6;
+    if (boss.state === "attack" && boss.attack === "twin") return 4;
+    if (boss.vx < -40) return 1;
+    if (boss.vx > 40) return 2;
+    return boss.hp <= boss.maxHp * SUBGUARDIAN_RULES.damagedAt ? 3 : 0;
+  }
+
   // src/game/progression/chronos-flight.js
   var immutable13 = (object2) => Object.freeze(object2);
   var CHRONOS_FLIGHT_EVENTS = immutable13([
@@ -6425,7 +6635,7 @@ var NeonCampaign = (() => {
       recordId: "chronos-sabotage-atlas-log"
     };
   }
-  function nextRandom4(boss) {
+  function nextRandom5(boss) {
     let value = boss.seed;
     value ^= value << 13;
     value ^= value >>> 17;
@@ -6477,13 +6687,13 @@ var NeonCampaign = (() => {
     if (tacticalAttack && boss.tacticalManeuver === "flank") {
       boss.motionSide = boss.telegraph.sweepDirection;
     }
-    const flank = exposed ? space * 0.24 : space * (0.28 + nextRandom4(boss) * 0.17);
+    const flank = exposed ? space * 0.24 : space * (0.28 + nextRandom5(boss) * 0.17);
     const lead = clamp10(sample.vx * 0.24, -boss.width * 0.1, boss.width * 0.1);
     const target = exposed ? boss.x + boss.motionSide * flank : tacticalAttack && boss.tacticalManeuver === "withdraw" ? boss.width / 2 + boss.motionSide * space * 0.34 : sample.x + lead + boss.motionSide * flank;
     boss.motionX = clamp10(target, bounds.left, bounds.right);
     const verticalPhase = boss.motionDecision * 1.7 + boss.phase * 0.9;
     boss.motionY = clamp10(boss.targetY + (tacticalAttack && boss.tacticalManeuver === "withdraw" ? -16 : Math.sin(verticalPhase) * 18), bounds.top, bounds.bottom);
-    boss.nextMotionAt = boss.age + (exposed ? 1.15 : tacticalAttack ? 0.8 : 1.25 + nextRandom4(boss) * 0.5);
+    boss.nextMotionAt = boss.age + (exposed ? 1.15 : tacticalAttack ? 0.8 : 1.25 + nextRandom5(boss) * 0.5);
     boss.motionDecision++;
   }
   function moveAtlas(boss, dt) {
@@ -6519,7 +6729,7 @@ var NeonCampaign = (() => {
   }
   function scheduleFulminant(boss) {
     const [low, high] = boss.phase === 1 ? GUARDIAN_ATLAS_RULES.fulminant.everyAttacks : GUARDIAN_ATLAS_RULES.fulminant.phaseTwoEveryAttacks;
-    boss.nextFulminantAfter = low + Math.floor(nextRandom4(boss) * (high - low + 1));
+    boss.nextFulminantAfter = low + Math.floor(nextRandom5(boss) * (high - low + 1));
   }
   function beginCharge(boss, player, events, chained = false) {
     boss.attackId++;
@@ -6538,10 +6748,10 @@ var NeonCampaign = (() => {
       boss.attackTier = "superpower";
       boss.attackDecision = "reactor-recharged";
     } else if (Math.abs(sample.vx) >= 85 || Math.abs(sample.x - boss.width / 2) >= boss.width * 0.27) {
-      boss.attackTier = nextRandom4(boss) < 0.7 ? "medium" : "basic";
+      boss.attackTier = nextRandom5(boss) < 0.7 ? "medium" : "basic";
       boss.attackDecision = "intercept-flank";
     } else {
-      boss.attackTier = nextRandom4(boss) < 0.5 ? "medium" : "basic";
+      boss.attackTier = nextRandom5(boss) < 0.5 ? "medium" : "basic";
       boss.attackDecision = "pressure-observed-lane";
     }
     boss.attacksSinceSuperpower = boss.attackTier === "superpower" ? 0 : boss.attacksSinceSuperpower + 1;
@@ -6550,7 +6760,7 @@ var NeonCampaign = (() => {
       scheduleFulminant(boss);
     } else if (!teaching) boss.attacksSinceFulminant++;
     if (!chained) {
-      boss.chainRemaining = boss.phase === 2 ? GUARDIAN_ATLAS_RULES.chains.phaseTwo : teaching ? 0 : nextRandom4(boss) < GUARDIAN_ATLAS_RULES.chains.phaseOneChance ? 1 : 0;
+      boss.chainRemaining = boss.phase === 2 ? GUARDIAN_ATLAS_RULES.chains.phaseTwo : teaching ? 0 : nextRandom5(boss) < GUARDIAN_ATLAS_RULES.chains.phaseOneChance ? 1 : 0;
     }
     const tier = boss.attackTier, pattern = GUARDIAN_ATLAS_RULES.patterns[tier];
     const leadOffset = tier === "basic" && boss.phase === 1 ? 0 : clamp10(sample.vx * 0.28, -100, 100);
@@ -8040,16 +8250,16 @@ var NeonCampaign = (() => {
   function decideEnemyIntent(enemy, ctx) {
     const rules = ENEMY_AI_PROFILES[enemy.profile];
     if (!rules) throw new RangeError(`Unknown enemy profile: ${enemy.profile}`);
-    const { w, h } = ctx.bounds, move = movement(enemy, ctx, rules);
+    const { w, h } = ctx.bounds, move2 = movement(enemy, ctx, rules);
     const intent = {
-      targetX: clamp16(move.x, 40, w - 40),
-      targetY: clamp16(move.y, 40, h - 40),
+      targetX: clamp16(move2.x, 40, w - 40),
+      targetY: clamp16(move2.y, 40, h - 40),
       attack: false,
       ability: null,
-      ...move.heading !== void 0 ? { heading: move.heading } : {}
+      ...move2.heading !== void 0 ? { heading: move2.heading } : {}
     };
     const ready = enemy.cooldowns.unique <= ctx.now ? "unique" : enemy.cooldowns.basic <= ctx.now ? "basic" : null;
-    if (enemy.profile === "escort") return { ...intent, ability: ready === "unique" ? "unique" : null, guardId: move.guardId };
+    if (enemy.profile === "escort") return { ...intent, ability: ready === "unique" ? "unique" : null, guardId: move2.guardId };
     if (!ready || !wantsToAttack(enemy, ctx, rules) || !requestAttack(ctx.tokens, enemy, ctx.now)) {
       releaseAttack(ctx.tokens, enemy.id);
       return intent;
