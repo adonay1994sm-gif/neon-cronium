@@ -93,6 +93,12 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
   visual. Hoy es https://claude.ai/artifact/7HCk4RiGujkUSph4qd57Fg, que se
   actualiza al publicar el mismo archivo.
 - Si no se pudo comprobar algo (iPhone real, sonido), dilo.
+- **Solo usa el iPhone** (no tiene ordenador a mano). No le pidas que
+  comparta carpetas ni ejecute nada. Los archivos grandes (grabaciones de
+  pantalla) los manda con un enlace público de iCloud Drive: se descargan
+  con la API de CloudKit (`records/resolve` con el código del enlace →
+  `fileContent.downloadURL`). Una grabación suya dice más que una captura:
+  mide en ella sonido y fotogramas.
 
 ## 6. Cómo se trabaja en este proyecto
 
@@ -111,8 +117,8 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
 - **Arte con GPT:** él no copia prompts a mano. Cada necesidad visual va al
   tablero con su prompt (DESIGN.md §13). Después se regenera
   `docs/art/ENCARGOS_GPT.md`, que GPT revisa solo cada 10 minutos.
-- **Baúl de assets:** https://neon-cronium-video-referencia.chictide18.chatgpt.site
-  (`catalog.json`).
+- **Baúl de assets:** https://neon-cronium-video-referencia.nay990.chatgpt.site
+  (`catalog.json`; el dominio antiguo `chictide18` redirige).
   - Revísalo al empezar cada trabajo.
   - Integra lo entregado **sin esperar a que lo pida**: le molestó encontrar
     el fondo del taller y los iconos sin usar (24/10).
@@ -175,6 +181,17 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
 Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
+
+- 31/10/2026: tras jugar en su iPhone juzga por sensación: «la música no me
+  gusta» (rehacer toda la banda sonora con música gratis y música propia
+  para cada jefe), el subjefe «está estático» y su ataque final «se ve
+  falso», y el Sembrador «tiene movimientos estúpidos». Los enemigos tienen
+  que actuar con intención (soltar sus minas donde estorban y marcharse) y
+  los ataques tienen que parecer de verdad; la intensidad sí le gusta.
+- 31/10/2026: no puede usar el ordenador; manda los archivos pesados con un
+  enlace de iCloud (ver §5). Preguntó «qué falta y dónde está la respuesta»:
+  al resumir, pon primero lo que necesitas de él y di dónde queda cada cosa
+  (chat o tarea del tablero).
 
 - 30/10/2026: «siento que hay cosas hechas y no están marcadas». Había 8
   decisiones que eligió en el tablero el 24/10 (campo «eleccion») y seguí
