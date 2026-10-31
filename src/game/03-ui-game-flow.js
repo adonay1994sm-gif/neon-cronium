@@ -1157,7 +1157,10 @@
   }
 
   function interceptClassicProjectile(item) {
-    if(!classicWeapons || atlasBoss || !isThreat(item))return false;
+    if(!classicWeapons || !isThreat(item))return false;
+    // Con Atlas en pantalla solo se puede derribar a sus drones y escoltas:
+    // antes ningún disparo los tocaba y eran inmortales (propietario, 31/10).
+    if(atlasBoss && !item.atlasDrone && item.gaia?.kind!=="atlasEscort")return false;
     if(!item.id)item.id=`classic-target:${++classicThreatSequence}`;
     for(const shot of [...classicWeapons.projectiles]) {
       const ax=shot.previousX??shot.x,ay=shot.previousY??shot.y,dx=shot.x-ax,dy=shot.y-ay;

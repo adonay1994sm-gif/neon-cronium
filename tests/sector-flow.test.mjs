@@ -674,6 +674,22 @@ test('the panel is not offered twice or when the beacon is already owned', () =>
 // Furia de Atlas (plan F3c, tarea 6): escoltas, drones, rayo y escenario roto.
 const atlasFight = T => { startAt(T, 10); T.ev('DEV.invulnerable=true'); toFinish(T); T.adv(3); };
 
+// Propietario (31/10): con Atlas en pantalla sus esbirros eran inmortales.
+test('during the Atlas fight its drones and escorts can be shot down, but its shots still cannot', () => {
+  const {T} = harness({query: '?dev=1'});
+  atlasFight(T);
+  assert.equal(T.ev('Boolean(atlasBoss)'), true);
+  let shots = 900;
+  const shoot = target => T.ev(`(()=>{const t=${target};const f=NeonCampaign.triggerClassicMissile(classicWeapons,{x:t.x,y:t.y+60,shotId:'missile:${++shots}'});
+    const p=f.projectiles[0];p.previousX=t.x;p.previousY=t.y+60;p.x=t.x;p.y=t.y;return interceptClassicProjectile(t);})()`);
+  T.ev("spawnAtlasDrones({count:1,x:360,y:500});window.__d=items.find(item=>item.atlasDrone)");
+  T.ev("window.__d.hp=1");
+  assert.equal(shoot('window.__d'), true, 'a drone can be destroyed');
+  T.ev("classicWeapons.missileCooldown=0;spawnAtlasEscorts(1);window.__e=items.find(item=>item.gaia?.kind==='atlasEscort');window.__e.hp=1");
+  assert.equal(shoot('window.__e'), true, 'an escort can be destroyed');
+  T.ev("classicWeapons.missileCooldown=0;window.__s=gaiaShot({x:360,y:700,vx:0,vy:200,damage:10});items.push(window.__s)");
+  assert.equal(shoot('window.__s'), false, 'Atlas\'s own shots are not intercepted');
+});
 const enrage = T => T.ev("Object.assign(atlasBoss,{state:'exposed',vulnerability:true});for(const e of NeonCampaign.hitGuardianAtlas(atlasBoss,atlasBoss.maxHp-Math.floor(atlasBoss.maxHp*.3)).events)consumeAtlasEvent(e)");
 const escorts = T => T.ev("items.filter(item=>item.gaia?.kind==='atlasEscort').length");
 
