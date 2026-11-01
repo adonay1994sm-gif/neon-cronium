@@ -39,6 +39,7 @@ const CORE = [
   "assets/subguardian_atlas_v1.webp",
   "assets/subguardian_laser_v1.webp",
   "assets/subguardian_impact_v1.webp",
+  "assets/weapon_levels_v1.webp",
   "assets/hangar_slot_normal_v1.webp",
   "assets/hangar_slot_chosen_v1.webp",
   "assets/hangar_slot_locked_v1.webp",

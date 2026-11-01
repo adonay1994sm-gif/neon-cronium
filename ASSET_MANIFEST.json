@@ -1,8 +1,8 @@
 {
   "manifestVersion": 2,
   "buildVersion": "7.2.0",
-  "assetCount": 141,
-  "runtimeBytes": 21451406,
+  "assetCount": 142,
+  "runtimeBytes": 21532218,
   "audit": {
     "reviewed": 97,
     "READY": 58,
@@ -2049,6 +2049,22 @@
       "origin": "GPT a petición del propietario (encargo camp-art-s1-laser-subjefe)",
       "version": 1,
       "use": "Láser del subguardián: salpicadura del impacto, 4×2 celdas de 192 px."
+    },
+    {
+      "id": "weapon-levels-v1",
+      "path": "assets/weapon_levels_v1.webp",
+      "master": "art-source/player/armas-niveles-v1/armas_niveles_v1.webp",
+      "dimensions": "768x384",
+      "format": "webp-alpha",
+      "size": 80812,
+      "sha256": "93a102dac0dcdf5a04e20636d6b249cb4505c36e5816b5db095b96a959a9b55c",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "GPT a petición del propietario (encargo camp-art-armas-niveles)",
+      "version": 1,
+      "use": "Disparos del jugador por nivel: 4 columnas (N1-N4) × 2 filas (Pulso, Gemelo), celdas de 192 px."
     }
   ],
   "project": "NEON CRONIUM"
