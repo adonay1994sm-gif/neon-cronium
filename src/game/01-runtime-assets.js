@@ -271,6 +271,8 @@
     shipIdentity: loadSprite("assets/player_ship_identity_v1.webp", true),
     // 5 poses de vuelo por nave del hangar, filas en el orden de SHIP_ROSTER.
     flightPoses: loadSprite("assets/ship_flight_poses_v1.webp", false),
+    // Un proyectil pintado por nivel de Pulso y Gemelo (scripts/build-weapon-levels.py).
+    weaponBolts: loadSprite("assets/weapon_bolts_v1.webp", true),
     guardianAtlas: loadSprite("assets/guardian_atlas_states_v2.webp", false),
     atlasVfx: loadSprite("assets/atlas_combat_vfx_v1.webp", false),
     arcadePulse: loadSprite("assets/arcade_pulse_atlas_v2.webp", false),

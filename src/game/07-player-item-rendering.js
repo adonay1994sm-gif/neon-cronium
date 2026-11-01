@@ -104,6 +104,12 @@
         // row travels with this physical projectile, including its first frame.
         const frame=Math.floor(age*14)%4,size=54;
         ctx.drawImage(atlas,frame*cell,0,cell,cell,-size/2,-size/2,size,size);
+      } else if((shot.weapon==="pulse"||shot.weapon==="twin")&&spriteReady(SPRITES.weaponBolts)) {
+        // Armas por niveles (dec-armas-plan): el disparo pintado de su nivel,
+        // con la cabeza en la posición física del proyectil.
+        const atlas=SPRITES.weaponBolts,width=atlas.naturalWidth/4,height=atlas.naturalHeight/2;
+        const tall=shot.weapon==="pulse"?58+(shot.level||1)*4:60,wide=tall/2;
+        ctx.drawImage(atlas,((shot.level||1)-1)*width,shot.weapon==="twin"?height:0,width,height,-wide/2,-tall*.3,wide,tall);
       } else if(shot.weapon==='needle') {
         // The authored high-energy lance is compressed into a slender rail
         // pulse; the physics, penetration and cooldown belong to Aguja.

@@ -1,8 +1,8 @@
 {
   "manifestVersion": 2,
   "buildVersion": "7.2.0",
-  "assetCount": 142,
-  "runtimeBytes": 21532218,
+  "assetCount": 143,
+  "runtimeBytes": 21597230,
   "audit": {
     "reviewed": 97,
     "READY": 58,
@@ -2065,6 +2065,22 @@
       "origin": "GPT a petición del propietario (encargo camp-art-armas-niveles)",
       "version": 1,
       "use": "Disparos del jugador por nivel: 4 columnas (N1-N4) × 2 filas (Pulso, Gemelo), celdas de 192 px."
+    },
+    {
+      "id": "weapon-bolts-v1",
+      "path": "assets/weapon_bolts_v1.webp",
+      "master": "art-source/player/armas-niveles-v1/armas_niveles_v1.webp",
+      "dimensions": "384x384",
+      "format": "webp-alpha",
+      "size": 65012,
+      "sha256": "2d506fe1849b003299ebcff5625e5454cc915652f9ae90bbeb764fb0ec13402f",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "GPT a petición del propietario (encargo camp-art-armas-niveles)",
+      "version": 1,
+      "use": "Un proyectil por nivel (el más centrado de cada ráfaga): 4 columnas (N1-N4) × 2 filas (Pulso, Gemelo), celdas de 96×192."
     }
   ],
   "project": "NEON CRONIUM"
