@@ -38,6 +38,9 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
   rechaza: rayos negros, estelas planas o pantallas sin relieve. Usa siempre
   el arte de GPT del baúl o del repositorio antes de dibujar nada a mano. Si
   falta, haz un encargo para GPT y usa algo pintado como provisional.
+  Antes de cerrar un jefe o un ataque, busca en su código rellenos, líneas o
+  degradados dibujados a mano: el Fulminante de Atlas seguía así y lo cazó
+  él al jugar (31/10).
 - **Si GPT le dio algo bueno, se usa tal cual o mejor**, nunca una versión
   plana. Rehacerlo peor le hace perder la paciencia.
 - **Interfaz con relieve y aspecto profesional**, como las maquetas ORBIT / 01:
@@ -49,7 +52,10 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
   - usa un portal dimensional en vez de estelas.
 - **Combate justo pero exigente:** avisos visibles, sin zonas seguras
   marcadas en los meteoritos, enemigos poco predecibles, jefes con 3 ataques,
-  un especial y furia.
+  un especial y furia. Los jefes se mueven (nada de jefes estáticos) y todo lo
+  que sueltan se puede derribar.
+- **Narrativa visual:** quiere que la historia se vea, sobre todo con los
+  jefes, no solo mensajes de texto con retrato (31/10).
 - **Juega en el móvil (iPhone).** Mira siempre el resultado a 390×844 con
   capturas antes de decir que algo está bien.
 
@@ -184,6 +190,11 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 01/11/2026: con el subjefe nuevo dijo «está muy bien la verdad»: le gustó
+  que se mueva y el láser pintado. Lo que falla al jugar prefiere quitarlo
+  del juego hasta rehacerlo (el Sembrador) antes que dejarlo roto. Quiere
+  cerrar pasos el mismo día («a ver si hoy dejamos el hangar listo»): da el
+  resultado y deja lo siguiente ya planteado en el tablero.
 - 31/10/2026: «no encuentro las decisiones pendientes, creo que estamos en
   2 caminos diferentes». Le hice preguntas en el chat y en notas, pero el
   tablero solo muestra en «Decide tú» las tareas con `opciones`. Toda
