@@ -35,6 +35,28 @@ export const CLASSIC_WEAPON_RULES = Object.freeze({
   })
 });
 
+// Niveles de Pulso y Gemelo (dec-armas-plan, 01/11/2026): se compran con
+// chatarra en el hangar y valen para siempre. Daño por ráfaga ×1, ×1,3, ×1,6
+// y ×2 (si impactan todos los proyectiles); el nivel 1 es el arma de siempre.
+const FAN = Object.freeze([{offset: -6, spread: -.1}, {offset: 0, spread: 0}, {offset: 6, spread: .1}]);
+const QUAD = Object.freeze([{offset: -18, spread: 0}, {offset: -6, spread: 0}, {offset: 6, spread: 0}, {offset: 18, spread: 0}]);
+// El nivel 1 conserva la descripción de siempre del arma.
+const level = (damageMultiplier, damage, radius, barrels, description) =>
+  Object.freeze({damageMultiplier, damage, radius, ...(description ? {description} : {}),
+    barrels: Object.freeze(barrels.map(barrel => Object.freeze({...barrel})))});
+export const CLASSIC_WEAPON_LEVELS = Object.freeze({
+  pulse: Object.freeze([null,
+    level(1, 1, 9, [{offset: 0, spread: 0}]),
+    level(1.3, 1.3, 11, [{offset: 0, spread: 0}], 'Nivel 2 · daño ×1,3: un pulso más grande.'),
+    level(1.6, 1.6 / 3, 9, FAN, 'Nivel 3 · daño ×1,6: tres pulsos en abanico.'),
+    level(2, 2 / 3, 10, FAN, 'Nivel 4 · daño ×2: tres pulsos con anillo.')]),
+  twin: Object.freeze([null,
+    level(2, 1, 7, [{offset: -10, spread: 0}, {offset: 10, spread: 0}]),
+    level(2.6, 1.3, 8, [{offset: -10, spread: 0}, {offset: 10, spread: 0}], 'Nivel 2 · daño ×2,6: dos balas más largas.'),
+    level(3.2, .8, 7, QUAD, 'Nivel 3 · daño ×3,2: cuatro balas.'),
+    level(4, 1, 8, QUAD, 'Nivel 4 · daño ×4: cuatro balas con estela.')])
+});
+
 function knownType(type) {
   if (!Object.hasOwn(CLASSIC_WEAPON_RULES.types, type)) {
     throw new RangeError(`Unknown classic weapon: ${String(type)}`);
@@ -67,7 +89,8 @@ export function createClassicWeapons({type = 'pulse', unlocked = ['pulse'],
   if (!available.includes(type)) throw new RangeError('Selected weapon must be unlocked');
   return {
     version: CLASSIC_WEAPON_RULES.version, width, height,
-    selected: type, unlocked: available, weaponRanks: {scatter: 1, needle: 1}, charges: CLASSIC_WEAPON_RULES.maxCharges,
+    selected: type, unlocked: available, weaponRanks: {scatter: 1, needle: 1}, weaponLevels: {pulse: 1, twin: 1},
+    charges: CLASSIC_WEAPON_RULES.maxCharges,
     rechargeSeconds, recharge: 0, cooldown: 0, elapsed: 0,
     unlimitedFire: false, missileCooldown: 0, missileSequence: 0,
     projectileSequence: 0, eventSequence: 0, shotSequence: 0, projectiles: []
@@ -108,8 +131,27 @@ export function setClassicWeaponTuning(state, ranks = {}) {
   return {...next};
 }
 
+/** Los niveles comprados cambian los disparos siguientes, nunca los que ya vuelan. */
+export function setClassicWeaponLevels(state, levels = {}) {
+  if (!levels || typeof levels !== 'object' || Array.isArray(levels) ||
+      Object.keys(levels).some(id => !Object.hasOwn(CLASSIC_WEAPON_LEVELS, id))) throw new TypeError('Known weapon levels required');
+  const next = {};
+  for (const id of Object.keys(CLASSIC_WEAPON_LEVELS)) {
+    const value = levels[id] ?? 1;
+    if (!Number.isInteger(value) || value < 1 || value > 4) throw new RangeError('Weapon level must be 1 to 4');
+    next[id] = value;
+  }
+  state.weaponLevels = next;
+  return {...next};
+}
+
 function tunedWeaponDefinition(state) {
   const base = CLASSIC_WEAPON_RULES.types[state.selected];
+  const levels = CLASSIC_WEAPON_LEVELS[state.selected];
+  if (levels) {
+    const value = state.weaponLevels?.[state.selected] ?? 1;
+    return {...base, ...levels[value], level: value};
+  }
   if (state.selected === 'scatter' && state.weaponRanks?.scatter === 2) {
     return {...base, duration: .48,
       description: 'Daño ×3 si impactan los tres pulsos; apertura concentrada y alcance ampliado de 224 a 317.',
@@ -210,7 +252,7 @@ export function triggerClassicWeapon(state, {x, y, angle = -Math.PI / 2} = {}) {
     // keeps two muzzle positions attached to the hull even when it banks.
     const projectile = {
       id: `${state.version}:projectile:${++state.projectileSequence}`, shotId,
-      weapon: state.selected, barrel: barrelIndex,
+      weapon: state.selected, barrel: barrelIndex, level: definition.level || 1,
       x: x - Math.sin(angle) * barrel.offset,
       y: y + Math.cos(angle) * barrel.offset,
       vx: Math.cos(direction) * definition.speed,
@@ -296,7 +338,7 @@ export function hitClassicProjectile(state, projectileId, targetId) {
 /** Deep copies of mutable arrays prevent HUD/diagnostics from changing combat. */
 export function classicWeaponSnapshot(state) {
   const definition = tunedWeaponDefinition(state);
-  return {...state, unlocked: [...state.unlocked], weaponRanks: {...state.weaponRanks},
+  return {...state, unlocked: [...state.unlocked], weaponRanks: {...state.weaponRanks}, weaponLevels: {...state.weaponLevels},
     label: definition.label, description: definition.description,
     damageMultiplier: definition.damageMultiplier,
     rechargeProgress: state.charges === CLASSIC_WEAPON_RULES.maxCharges ? 0 :

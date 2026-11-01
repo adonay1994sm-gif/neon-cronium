@@ -27,6 +27,7 @@ var NeonCampaign = (() => {
     CHRONOS_VOYAGE_KEY: () => CHRONOS_VOYAGE_KEY,
     CHRONOS_VOYAGE_STAGES: () => CHRONOS_VOYAGE_STAGES,
     CLASSIC_PURSUIT_VERSION: () => CLASSIC_PURSUIT_VERSION,
+    CLASSIC_WEAPON_LEVELS: () => CLASSIC_WEAPON_LEVELS,
     CLASSIC_WEAPON_RULES: () => CLASSIC_WEAPON_RULES,
     DIFFICULTY_MODES: () => DIFFICULTY_MODES,
     ENEMY_AI_PROFILES: () => ENEMY_AI_PROFILES,
@@ -146,6 +147,7 @@ var NeonCampaign = (() => {
     selectClassicWeapon: () => selectClassicWeapon,
     setClassicRechargeInterval: () => setClassicRechargeInterval,
     setClassicUnlimitedFire: () => setClassicUnlimitedFire,
+    setClassicWeaponLevels: () => setClassicWeaponLevels,
     setClassicWeaponTuning: () => setClassicWeaponTuning,
     shipAssemblyPose: () => shipAssemblyPose,
     shipNozzleAnchors: () => shipNozzleAnchors,
@@ -393,7 +395,7 @@ var NeonCampaign = (() => {
   // src/game/audio/voyage-score.js
   var VOYAGE_SCORE_VERSION = "chronos-score-v1";
   var SCORE_VOICE_LIMIT = 12;
-  var note = (beat, midi, length, voice = "glass", level = 0.095) => Object.freeze({ beat, midi, length, voice, level });
+  var note = (beat, midi, length, voice = "glass", level2 = 0.095) => Object.freeze({ beat, midi, length, voice, level: level2 });
   var phrase = (bpm, beats, notes) => Object.freeze({
     bpm,
     beats,
@@ -1251,8 +1253,8 @@ var NeonCampaign = (() => {
       });
       return { ...replay(loaded.record), recovered: true };
     }
-    function complete({ completionId, level, stars, score, checkpoint = null, equipment = null } = {}) {
-      if (typeof completionId !== "string" || !completionId || completionId.length > 200 || !integer2(level, 1) || level > levelCount || !integer2(stars, 1) || stars > 3 || !integer2(score)) {
+    function complete({ completionId, level: level2, stars, score, checkpoint = null, equipment = null } = {}) {
+      if (typeof completionId !== "string" || !completionId || completionId.length > 200 || !integer2(level2, 1) || level2 > levelCount || !integer2(stars, 1) || stars > 3 || !integer2(score)) {
         throw new TypeError("Valid completionId, campaign level, stars and score required");
       }
       const recovery = recover();
@@ -1301,10 +1303,10 @@ var NeonCampaign = (() => {
         scope,
         phase: "pending",
         id: completionId,
-        level,
+        level: level2,
         stars,
         score,
-        unlockTo: save.unlocked === level ? Math.min(levelCount, level + 1) : save.unlocked,
+        unlockTo: save.unlocked === level2 ? Math.min(levelCount, level2 + 1) : save.unlocked,
         checkpoint: checkpointIntent,
         ...equipmentIntent === null ? {} : { equipment: equipmentIntent }
       };
@@ -7792,6 +7794,31 @@ var NeonCampaign = (() => {
       })
     })
   });
+  var FAN = Object.freeze([{ offset: -6, spread: -0.1 }, { offset: 0, spread: 0 }, { offset: 6, spread: 0.1 }]);
+  var QUAD = Object.freeze([{ offset: -18, spread: 0 }, { offset: -6, spread: 0 }, { offset: 6, spread: 0 }, { offset: 18, spread: 0 }]);
+  var level = (damageMultiplier, damage, radius, barrels, description) => Object.freeze({
+    damageMultiplier,
+    damage,
+    radius,
+    ...description ? { description } : {},
+    barrels: Object.freeze(barrels.map((barrel) => Object.freeze({ ...barrel })))
+  });
+  var CLASSIC_WEAPON_LEVELS = Object.freeze({
+    pulse: Object.freeze([
+      null,
+      level(1, 1, 9, [{ offset: 0, spread: 0 }]),
+      level(1.3, 1.3, 11, [{ offset: 0, spread: 0 }], "Nivel 2 \xB7 da\xF1o \xD71,3: un pulso m\xE1s grande."),
+      level(1.6, 1.6 / 3, 9, FAN, "Nivel 3 \xB7 da\xF1o \xD71,6: tres pulsos en abanico."),
+      level(2, 2 / 3, 10, FAN, "Nivel 4 \xB7 da\xF1o \xD72: tres pulsos con anillo.")
+    ]),
+    twin: Object.freeze([
+      null,
+      level(2, 1, 7, [{ offset: -10, spread: 0 }, { offset: 10, spread: 0 }]),
+      level(2.6, 1.3, 8, [{ offset: -10, spread: 0 }, { offset: 10, spread: 0 }], "Nivel 2 \xB7 da\xF1o \xD72,6: dos balas m\xE1s largas."),
+      level(3.2, 0.8, 7, QUAD, "Nivel 3 \xB7 da\xF1o \xD73,2: cuatro balas."),
+      level(4, 1, 8, QUAD, "Nivel 4 \xB7 da\xF1o \xD74: cuatro balas con estela.")
+    ])
+  });
   function knownType(type) {
     if (!Object.hasOwn(CLASSIC_WEAPON_RULES.types, type)) {
       throw new RangeError(`Unknown classic weapon: ${String(type)}`);
@@ -7829,6 +7856,7 @@ var NeonCampaign = (() => {
       selected: type,
       unlocked: available,
       weaponRanks: { scatter: 1, needle: 1 },
+      weaponLevels: { pulse: 1, twin: 1 },
       charges: CLASSIC_WEAPON_RULES.maxCharges,
       rechargeSeconds,
       recharge: 0,
@@ -7866,8 +7894,24 @@ var NeonCampaign = (() => {
     state.weaponRanks = next;
     return { ...next };
   }
+  function setClassicWeaponLevels(state, levels = {}) {
+    if (!levels || typeof levels !== "object" || Array.isArray(levels) || Object.keys(levels).some((id) => !Object.hasOwn(CLASSIC_WEAPON_LEVELS, id))) throw new TypeError("Known weapon levels required");
+    const next = {};
+    for (const id of Object.keys(CLASSIC_WEAPON_LEVELS)) {
+      const value = levels[id] ?? 1;
+      if (!Number.isInteger(value) || value < 1 || value > 4) throw new RangeError("Weapon level must be 1 to 4");
+      next[id] = value;
+    }
+    state.weaponLevels = next;
+    return { ...next };
+  }
   function tunedWeaponDefinition(state) {
     const base = CLASSIC_WEAPON_RULES.types[state.selected];
+    const levels = CLASSIC_WEAPON_LEVELS[state.selected];
+    if (levels) {
+      const value = state.weaponLevels?.[state.selected] ?? 1;
+      return { ...base, ...levels[value], level: value };
+    }
     if (state.selected === "scatter" && state.weaponRanks?.scatter === 2) {
       return {
         ...base,
@@ -7974,6 +8018,7 @@ var NeonCampaign = (() => {
         shotId,
         weapon: state.selected,
         barrel: barrelIndex,
+        level: definition.level || 1,
         x: x - Math.sin(angle) * barrel.offset,
         y: y + Math.cos(angle) * barrel.offset,
         vx: Math.cos(direction) * definition.speed,
@@ -8061,6 +8106,7 @@ var NeonCampaign = (() => {
       ...state,
       unlocked: [...state.unlocked],
       weaponRanks: { ...state.weaponRanks },
+      weaponLevels: { ...state.weaponLevels },
       label: definition.label,
       description: definition.description,
       damageMultiplier: definition.damageMultiplier,

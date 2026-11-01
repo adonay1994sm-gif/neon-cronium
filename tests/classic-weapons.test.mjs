@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {CLASSIC_WEAPON_RULES, createClassicWeapons, selectClassicWeapon, unlockClassicWeapon,
   triggerClassicWeapon, advanceClassicWeapons, hitClassicProjectile,
   classicWeaponSnapshot, setClassicRechargeInterval, setClassicUnlimitedFire,
-  canTriggerClassicMissile, triggerClassicMissile, setClassicWeaponTuning} from '../src/game/combat/classic-weapons.js';
+  canTriggerClassicMissile, triggerClassicMissile, setClassicWeaponTuning, setClassicWeaponLevels} from '../src/game/combat/classic-weapons.js';
 
 const origin = {x: 360, y: 1000};
 const run = (state, seconds, events = []) => {
@@ -655,4 +655,23 @@ test('a physical missile hits exactly one target once and never creates repeated
 test('the model has no independent clock, random source, renderer or persistence', async () => {
   const source = await readFile(new URL('../src/game/combat/classic-weapons.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /requestAnimationFrame|setInterval|setTimeout|Math\.random|Date\.now|localStorage|document\.|window\./);
+});
+
+// Armas por niveles (dec-armas-plan, 01/11/2026): Pulso y Gemelo, niveles 1 a 4.
+test('Pulse and Twin fire their bought level: damage per volley x1, x1.3, x1.6 and x2', () => {
+  for (const [type, base] of [['pulse', 1], ['twin', 2]]) {
+    for (const [value, factor, barrels] of [[1, 1, type === 'pulse' ? 1 : 2], [2, 1.3, type === 'pulse' ? 1 : 2], [3, 1.6, type === 'pulse' ? 3 : 4], [4, 2, type === 'pulse' ? 3 : 4]]) {
+      const state = createClassicWeapons({type, unlocked: ['pulse', 'twin']});
+      setClassicWeaponLevels(state, {[type]: value});
+      const shot = triggerClassicWeapon(state, origin);
+      assert.equal(shot.projectiles.length, barrels, `${type} ${value}`);
+      assert.ok(shot.projectiles.every(projectile => projectile.level === value));
+      const damage = shot.projectiles.reduce((total, projectile) => total + projectile.damage, 0);
+      assert.ok(Math.abs(damage - base * factor) < 1e-9, `${type} level ${value}: ${damage}`);
+      assert.equal(classicWeaponSnapshot(state).damageMultiplier, base * factor);
+      assert.equal(state.charges, 19, 'one charge per volley at every level');
+    }
+  }
+  assert.throws(() => setClassicWeaponLevels(createClassicWeapons(), {pulse: 5}), RangeError);
+  assert.throws(() => setClassicWeaponLevels(createClassicWeapons(), {scatter: 2}), TypeError);
 });
