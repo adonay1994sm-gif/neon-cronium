@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
 import * as roster from '../src/game/ship/ship-roster.js';
+import {SCRAP_SHIPS, createScrapLedger} from '../src/game/progression/scrap-economy.js';
 import {createSectorSave, startSectorRun, completeSector} from '../src/game/progression/sector-save.js';
 
 // Hangar del paso del hangar (30/10/2026): elegir entre las 10 naves de
@@ -20,19 +21,32 @@ const fresh=createSectorSave();
 const afterAtlas=completeSector(startSectorRun(fresh,1),1,1);
 const plain=value=>JSON.parse(JSON.stringify(value));
 
-function harness(t,{sector=fresh,ships=null}={}){
+// Bodega de chatarra real en memoria, con el saldo pedido (en jefes Atlas de 600 y exploradores de 9).
+function scrapStorage(balance){
+  const map=new Map(),storage={readRaw:key=>({ok:true,value:map.get(key)??null}),setJSON:(key,value)=>{map.set(key,JSON.stringify(value));return true;}};
+  const ledger=createScrapLedger({storage}),run=ledger.beginRun({scope:'prueba'});
+  let left=balance,n=0;
+  while(left>=600){ledger.claimDrop({runId:run.runId,dropId:`a:${n++}`,enemyType:'atlas'});left-=600;}
+  while(left>=9){ledger.claimDrop({runId:run.runId,dropId:`s:${n++}`,enemyType:'scout'});left-=9;}
+  return storage;
+}
+
+function harness(t,{sector=fresh,ships=null,scrap=0}={}){
   const dom=new JSDOM(html,{url:'https://neon.test/',runScripts:'outside-only'});
   t.after(()=>dom.window.close());
   const {window}=dom;
   let rafRequests=0;
   window.requestAnimationFrame=()=>++rafRequests;
-  window.NeonCampaign=roster;
-  window.__HANGAR_INITIAL__={sector,ships};
+  window.NeonCampaign={...roster,SCRAP_SHIPS};
+  window.__HANGAR_INITIAL__={sector,ships,scrapLedger:createScrapLedger({storage:scrapStorage(scrap)})};
   window.eval(`
     const $=id=>document.getElementById(id);
     const canvas=$('canvas'),ui={menu:$('menu'),briefing:$('briefing')};
     let state='menu',shipHangarDraft=null,allowSave=true,flownShip='aster',shipPresentationSignature='old';
-    const SPRITES={flightPoses:{}},ensured=[];
+    const SPRITES={flightPoses:{}},ensured=[],sounds=[];
+    let classicSalvageLedger=window.__HANGAR_INITIAL__.scrapLedger,classicSalvageState=null;
+    function loadClassicSalvage(){const r=classicSalvageLedger.load();classicSalvageState=r.ok?r.state:null;return r.ok;}
+    function uiSound(cue){sounds.push(cue);}
     const ensureSprite=image=>ensured.push(image===SPRITES.flightPoses?'poses':'other');
     const stored={[NeonCampaign.SHIP_ROSTER_KEY]:window.__HANGAR_INITIAL__.ships};
     const writes=[],messages=[];
@@ -54,7 +68,8 @@ function harness(t,{sector=fresh,ships=null}={}){
       allowSave(value){allowSave=value;},
       showBriefing(){overlay(ui.briefing);},
       hideOverlays(){overlay();},
-      snapshot(){return {state,draft:shipHangarDraft,writes,messages,flownShip,signature:shipPresentationSignature,ensured};}
+      snapshot(){return {state,draft:shipHangarDraft,writes,messages,flownShip,signature:shipPresentationSignature,ensured,sounds,
+        balance:classicSalvageLedger.getBalance(),scrapShips:classicSalvageState?.upgrades.filter(sku=>sku.startsWith('ship-'))||[]};}
     };
   `);
   const document=window.document;
@@ -98,14 +113,15 @@ test('every ship can be looked at; one you do not have says how to get it and ca
   h.open();
   assert.equal(h.slot('aster').classList.contains('is-chosen'),true);
   assert.equal(h.slot('bastion').classList.contains('is-locked'),true);
-  assert.equal(h.slot('vertice').querySelector('em').textContent,'10K');
+  assert.equal(h.slot('vertice').querySelector('em').textContent,'2,5K');
   assert.equal(h.slot('titan').classList.contains('is-paid'),true);
   h.pick('vertice');
   assert.equal(h.node('shipHangarName').textContent,'VÉRTICE');
   assert.equal(h.node('hangarExclusiveName').textContent,'Lanza');
   assert.equal(h.node('hangarUltimateName').textContent,'Prisma');
-  assert.match(h.node('shipHangarStatus').textContent,/10\.000 de chatarra/);
-  assert.equal(h.node('shipApply').disabled,true);
+  assert.match(h.node('shipHangarStatus').textContent,/Cuesta 2\.500 de chatarra\. Tienes 0: te faltan 2\.500\./);
+  assert.equal(h.node('shipApply').textContent,'COMPRAR · 2.500');
+  assert.equal(h.node('shipApply').disabled,true,'not enough scrap');
   h.pick('bastion');
   assert.match(h.node('shipHangarStatus').textContent,/jefe del sector 1/);
   h.apply();
@@ -194,4 +210,46 @@ test('the saved ship is the one that flies from the start, and Astér needs no p
   const plainStart=harness(t);
   assert.equal(plainStart.snapshot().flownShip,'aster');
   assert.deepEqual(plainStart.snapshot().ensured,[]);
+});
+
+// Compra con chatarra (01/11/2026, dec-hangar-cierre y dec-precios-naves).
+test('with enough scrap a scrap ship is bought once, charged in the scrap ledger and flown', t=>{
+  const h=harness(t,{scrap:3000});
+  h.open();h.pick('vertice');
+  assert.match(h.node('shipHangarStatus').textContent,/Tienes 3\.000\./);
+  assert.equal(h.node('shipApply').disabled,false);
+  h.apply();
+  const snap=h.snapshot();
+  assert.equal(snap.balance,500);
+  assert.deepEqual(snap.scrapShips,['ship-vertice']);
+  assert.deepEqual(snap.writes,[{key:roster.SHIP_ROSTER_KEY,value:{version:1,selected:'vertice',bought:['vertice']}}]);
+  assert.deepEqual(snap.messages,['Nave comprada: Vértice']);
+  assert.equal(snap.flownShip,'vertice');
+  assert.deepEqual(snap.sounds,['confirm']);
+  h.open();h.pick('vertice');
+  assert.equal(h.node('shipApply').textContent,'PILOTAR VÉRTICE');
+  assert.equal(h.snapshot().balance,500,'never charged twice');
+});
+
+test('a bought ship stays yours even if the ship save was lost (the scrap ledger rules)', t=>{
+  const h=harness(t,{scrap:3000});
+  h.open();h.pick('vertice');h.api.allowSave(false);h.apply();
+  assert.equal(h.snapshot().balance,500,'charged');
+  assert.match(h.node('shipHangarStatus').textContent,/Comprada, pero no se pudo elegir/);
+  assert.equal(h.node('shipApply').textContent,'PILOTAR VÉRTICE');
+  h.api.allowSave(true);h.apply();
+  assert.equal(h.snapshot().balance,500,'the retry does not charge again');
+  assert.equal(h.snapshot().flownShip,'vertice');
+});
+
+test('without enough scrap nothing is charged and the hangar says how much is missing', t=>{
+  const h=harness(t,{scrap:7200});
+  h.open();h.pick('mantarraya');
+  assert.equal(h.node('shipApply').disabled,true);
+  assert.match(h.node('shipHangarStatus').textContent,/te faltan 800\./);
+  h.apply();
+  assert.equal(h.snapshot().balance,7200);
+  assert.equal(h.snapshot().writes.length,0);
+  h.pick('titan');
+  assert.equal(h.node('shipApply').textContent,'NO LA TIENES','paid ships wait for the store');
 });

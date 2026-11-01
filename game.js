@@ -2730,19 +2730,29 @@
     const panel = hangar.querySelector(".ship-hangar-panel");
     const slotButtons = [...hangar.querySelectorAll("[data-ship]")];
 
+    // Las naves de chatarra compradas se apuntan en la bodega (la misma
+    // escritura que resta la chatarra); si el guardado de naves se perdió,
+    // la bodega manda.
     function shipState() {
-      const sector = loadSectorSave();
-      const save = NeonCampaign.normalizeShipSave(storage.getJSON(NeonCampaign.SHIP_ROSTER_KEY, null), sector);
-      return {sector, save, owned: NeonCampaign.ownedShips(sector, save)};
+      const sector = loadSectorSave(), scrapReady = loadClassicSalvage();
+      const balance = scrapReady ? classicSalvageState.balance : 0;
+      const paid = scrapReady ? classicSalvageState.upgrades.filter(sku => NeonCampaign.SCRAP_SHIPS[sku]).map(sku => NeonCampaign.SCRAP_SHIPS[sku].shipId) : [];
+      let raw = storage.getJSON(NeonCampaign.SHIP_ROSTER_KEY, null);
+      if (paid.length) raw = {version: 1, selected: raw?.selected ?? "aster", bought: [...new Set([...(Array.isArray(raw?.bought) ? raw.bought : []), ...paid])]};
+      const save = NeonCampaign.normalizeShipSave(raw, sector);
+      return {sector, save, owned: NeonCampaign.ownedShips(sector, save), balance, scrapReady};
     }
-    function accessText(ship) {
+    // Siempre con punto de miles (el formato del navegador deja «2500» sin punto).
+    const scrapText = amount => String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    function accessText(ship, balance) {
       const {access} = ship;
       if (access.type === "free") return access.sector === 0 ? "Gratis desde el principio." : `Gratis: se consigue al vencer al jefe del sector ${access.sector}.`;
-      if (access.type === "scrap") return `Se compra con ${access.price.toLocaleString("es-ES")} de chatarra. La compra llegará pronto.`;
+      if (access.type === "scrap") return `Cuesta ${scrapText(access.price)} de chatarra. Tienes ${scrapText(balance)}`
+        + (balance < access.price ? `: te faltan ${scrapText(access.price - balance)}.` : ".");
       return "Nave de pago. La tienda llegará pronto.";
     }
     function refreshHangar() {
-      const {save, owned} = shipState();
+      const {save, owned, balance, scrapReady} = shipState();
       const index = roster.findIndex(ship => ship.id === shipHangarDraft);
       const ship = roster[index];
       for (const button of slotButtons) {
@@ -2752,7 +2762,7 @@
         button.classList.toggle("is-locked", !mine && entry.access.type !== "paid");
         button.classList.toggle("is-paid", !mine && entry.access.type === "paid");
         button.querySelector("em").textContent = mine ? "" : entry.access.type === "scrap"
-          ? `${entry.access.price / 1000}K` : entry.access.type === "paid" ? "PAGO" : "";
+          ? `${String(entry.access.price / 1000).replace(".", ",")}K` : entry.access.type === "paid" ? "PAGO" : "";
       }
       $("hangarShipArt").style.backgroundPosition = shipPosition(index);
       $("hangarShipArt").setAttribute("aria-label", `Nave ${ship.name}`);
@@ -2765,10 +2775,10 @@
       $("hangarUltimateName").textContent = ship.ultimate.name;
       $("hangarExclusiveText").textContent = ship.exclusive.text;
       $("hangarUltimateText").textContent = ship.ultimate.text;
-      const mine = owned.includes(ship.id);
-      $("shipHangarStatus").textContent = !mine ? accessText(ship) : ship.id === save.selected ? "Es la nave que pilotas." : "La tienes: pulsa PILOTAR para usarla.";
-      $("shipApply").textContent = mine ? `PILOTAR ${ship.name.toUpperCase()}` : "NO LA TIENES";
-      $("shipApply").disabled = !mine || ship.id === save.selected;
+      const mine = owned.includes(ship.id), forSale = !mine && ship.access.type === "scrap";
+      $("shipHangarStatus").textContent = !mine ? accessText(ship, balance) : ship.id === save.selected ? "Es la nave que pilotas." : "La tienes: pulsa PILOTAR para usarla.";
+      $("shipApply").textContent = mine ? `PILOTAR ${ship.name.toUpperCase()}` : forSale ? `COMPRAR · ${scrapText(ship.access.price)}` : "NO LA TIENES";
+      $("shipApply").disabled = mine ? ship.id === save.selected : !forSale || !scrapReady || balance < ship.access.price;
     }
 
     function fly(id) {
@@ -2799,15 +2809,30 @@
     };
     $("shipApply").onclick = () => {
       if (!shipHangarDraft) return;
+      const ship = roster.find(entry => entry.id === shipHangarDraft);
+      let bought = false;
+      if (ship.access.type === "scrap" && !shipState().owned.includes(ship.id)) {
+        // Primero se cobra (con recibo fijo: un reintento no cobra dos veces) y luego se elige.
+        const result = loadClassicSalvage() ? classicSalvageLedger.purchase({transactionId: `ship:${ship.id}`, sku: `ship-${ship.id}`}) : null;
+        if (result?.state) classicSalvageState = result.state;
+        if (!result?.ok) {
+          $("shipHangarStatus").textContent = result?.reason === "insufficient-funds" ? `Te faltan ${scrapText(result.missing)} de chatarra.`
+            : "No se pudo comprar. Tu chatarra está intacta.";
+          return;
+        }
+        uiSound("confirm"); bought = true;
+      }
       const {sector, save} = shipState();
       const chosen = NeonCampaign.chooseShip(save, shipHangarDraft, sector);
       if (!chosen) return;
       if (!storage.setJSON(NeonCampaign.SHIP_ROSTER_KEY, chosen)) {
-        $("shipHangarStatus").textContent = "No se pudo guardar. Tu nave anterior sigue elegida.";
+        refreshHangar();
+        $("shipHangarStatus").textContent = bought ? "Comprada, pero no se pudo elegir: vuelve a pulsar PILOTAR."
+          : "No se pudo guardar. Tu nave anterior sigue elegida.";
         return;
       }
       fly(chosen.selected);
-      toast(`Nave elegida: ${roster.find(ship => ship.id === chosen.selected).name}`);
+      toast(`${bought ? "Nave comprada" : "Nave elegida"}: ${ship.name}`);
       closeHangar();
     };
     $("shipHangarBack").onclick = closeHangar;
