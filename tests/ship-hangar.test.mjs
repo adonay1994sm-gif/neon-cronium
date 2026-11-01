@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {JSDOM} from 'jsdom';
 import * as roster from '../src/game/ship/ship-roster.js';
-import {SCRAP_SHIPS, createScrapLedger} from '../src/game/progression/scrap-economy.js';
+import {SCRAP_SHIPS, SCRAP_WEAPON_LEVELS, createScrapLedger, classicWorkshopState} from '../src/game/progression/scrap-economy.js';
+import {CLASSIC_WEAPON_LEVELS} from '../src/game/combat/classic-weapons.js';
 import {createSectorSave, startSectorRun, completeSector} from '../src/game/progression/sector-save.js';
 
 // Hangar del paso del hangar (30/10/2026): elegir entre las 10 naves de
@@ -31,14 +32,14 @@ function scrapStorage(balance){
   return storage;
 }
 
-function harness(t,{sector=fresh,ships=null,scrap=0}={}){
+function harness(t,{sector=fresh,ships=null,scrap=0,equipment={version:1,recoveredTwin:false,unlocked:['pulse'],selected:'pulse'}}={}){
   const dom=new JSDOM(html,{url:'https://neon.test/',runScripts:'outside-only'});
   t.after(()=>dom.window.close());
   const {window}=dom;
   let rafRequests=0;
   window.requestAnimationFrame=()=>++rafRequests;
-  window.NeonCampaign={...roster,SCRAP_SHIPS};
-  window.__HANGAR_INITIAL__={sector,ships,scrapLedger:createScrapLedger({storage:scrapStorage(scrap)})};
+  window.NeonCampaign={...roster,SCRAP_SHIPS,SCRAP_WEAPON_LEVELS,CLASSIC_WEAPON_LEVELS,classicWorkshopState};
+  window.__HANGAR_INITIAL__={sector,ships,equipment,scrapLedger:createScrapLedger({storage:scrapStorage(scrap)})};
   window.eval(`
     const $=id=>document.getElementById(id);
     const canvas=$('canvas'),ui={menu:$('menu'),briefing:$('briefing')};
@@ -47,6 +48,8 @@ function harness(t,{sector=fresh,ships=null,scrap=0}={}){
     let classicSalvageLedger=window.__HANGAR_INITIAL__.scrapLedger,classicSalvageState=null;
     function loadClassicSalvage(){const r=classicSalvageLedger.load();classicSalvageState=r.ok?r.state:null;return r.ok;}
     function uiSound(cue){sounds.push(cue);}
+    let classicEquipment=window.__HANGAR_INITIAL__.equipment;const equipmentWrites=[];
+    function persistClassicEquipment(next){if(!allowSave)return false;classicEquipment=JSON.parse(JSON.stringify(next));equipmentWrites.push(classicEquipment);return true;}
     const ensureSprite=image=>ensured.push(image===SPRITES.flightPoses?'poses':'other');
     const stored={[NeonCampaign.SHIP_ROSTER_KEY]:window.__HANGAR_INITIAL__.ships};
     const writes=[],messages=[];
@@ -69,7 +72,8 @@ function harness(t,{sector=fresh,ships=null,scrap=0}={}){
       showBriefing(){overlay(ui.briefing);},
       hideOverlays(){overlay();},
       snapshot(){return {state,draft:shipHangarDraft,writes,messages,flownShip,signature:shipPresentationSignature,ensured,sounds,
-        balance:classicSalvageLedger.getBalance(),scrapShips:classicSalvageState?.upgrades.filter(sku=>sku.startsWith('ship-'))||[]};}
+        balance:classicSalvageLedger.getBalance(),scrapShips:classicSalvageState?.upgrades.filter(sku=>sku.startsWith('ship-'))||[],
+        levels:classicSalvageState?.upgrades.filter(sku=>sku.startsWith('level-'))||[],equipment:classicEquipment,equipmentWrites};}
     };
   `);
   const document=window.document;
@@ -252,4 +256,38 @@ test('without enough scrap nothing is charged and the hangar says how much is mi
   assert.equal(h.snapshot().writes.length,0);
   h.pick('titan');
   assert.equal(h.node('shipApply').textContent,'NO LA TIENES','paid ships wait for the store');
+});
+
+// Arma (dec-armas-plan, 01/11/2026): Pulso y Gemelo, elegir y subir de nivel con chatarra.
+const card=(h,id)=>h.document.querySelector(`[data-weapon="${id}"]`);
+test('the ARMA section levels Pulse up with scrap, once per level, and shows the new damage', t=>{
+  const h=harness(t,{scrap:1200});
+  h.open();
+  assert.equal(card(h,'pulse').querySelector('[data-weapon-level]').textContent,'NIVEL 1 · DAÑO ×1');
+  assert.equal(card(h,'pulse').querySelector('[data-weapon-pick]').textContent,'EQUIPADA');
+  const up=card(h,'pulse').querySelector('[data-weapon-up]');
+  assert.equal(up.textContent,'SUBIR · 300');
+  up.click();
+  assert.equal(h.snapshot().balance,900);
+  assert.deepEqual(h.snapshot().levels,['level-pulse-2']);
+  assert.equal(card(h,'pulse').querySelector('[data-weapon-level]').textContent,'NIVEL 2 · DAÑO ×1,3');
+  assert.match(h.node('hangarWeaponStatus').textContent,/Pulso sube a nivel 2/);
+  up.click();
+  assert.equal(h.snapshot().balance,100,'level 3 costs 800');
+  assert.equal(up.textContent,'SUBIR · 1.800');
+  assert.equal(up.disabled,true,'not enough scrap for level 4');
+});
+
+test('Gemelo needs Atlas; once it is yours it can be chosen as the weapon you fly', t=>{
+  const locked=harness(t,{scrap:1000});
+  locked.open();
+  assert.equal(card(locked,'twin').querySelector('[data-weapon-pick]').textContent,'REQUIERE ATLAS');
+  assert.equal(card(locked,'twin').querySelector('[data-weapon-pick]').disabled,true);
+  assert.equal(card(locked,'twin').querySelector('[data-weapon-up]').disabled,true);
+  const h=harness(t,{scrap:1000,equipment:{version:1,recoveredTwin:true,unlocked:['pulse','twin'],selected:'pulse'}});
+  h.open();
+  card(h,'twin').querySelector('[data-weapon-pick]').click();
+  assert.equal(h.snapshot().equipment.selected,'twin');
+  assert.equal(card(h,'twin').querySelector('[data-weapon-pick]').textContent,'EQUIPADA');
+  assert.match(h.node('hangarWeaponStatus').textContent,/Vuelas con Gemelo/);
 });

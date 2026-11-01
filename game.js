@@ -2708,7 +2708,13 @@
       </div>
       <ul class="hangar-ability-text"><li id="hangarExclusiveText"></li><li id="hangarUltimateText"></li></ul>
       <p id="shipHangarStatus" class="hangar-status" role="status"></p>
+
       <footer class="ship-hangar-actions"><button id="shipHangarBack" class="secondary" type="button">VOLVER</button><button id="shipApply" class="primary" type="button"></button></footer>
+      <section class="hangar-weapons" aria-labelledby="hangarWeaponTitle"><h3 id="hangarWeaponTitle">ARMA</h3>
+        <div class="hangar-weapon-cards">${["pulse", "twin"].map(id => `<div class="hangar-weapon" data-weapon="${id}"><span class="hangar-weapon-art" aria-hidden="true"></span>
+          <p><b>${id === "pulse" ? "PULSO" : "GEMELO"}</b><small data-weapon-level></small></p>
+          <span class="hangar-weapon-actions"><button type="button" class="secondary" data-weapon-pick></button><button type="button" class="secondary" data-weapon-up></button></span></div>`).join("")}</div>
+        <p id="hangarWeaponStatus" class="hangar-status" role="status"></p></section>
     </section>`;
     canvas.closest(".game").append(hangar);
     ui.shipHangar = hangar;
@@ -2764,6 +2770,7 @@
       $("shipHangarStatus").textContent = !mine ? accessText(ship, balance) : ship.id === save.selected ? "Es la nave que pilotas." : "La tienes: pulsa PILOTAR para usarla.";
       $("shipApply").textContent = mine ? `PILOTAR ${ship.name.toUpperCase()}` : forSale ? `COMPRAR · ${scrapText(ship.access.price)}` : "NO LA TIENES";
       $("shipApply").disabled = mine ? ship.id === save.selected : !forSale || !scrapReady || balance < ship.access.price;
+      refreshWeapons();
     }
 
     function fly(id) {
@@ -2771,6 +2778,46 @@
       if (id !== "aster") ensureSprite(SPRITES.flightPoses);
       shipPresentationSignature = "";
     }
+    // Arma (dec-armas-plan, 01/11/2026): una por partida, se elige aquí y
+    // cada nivel se compra con chatarra en la bodega (recibo fijo por nivel).
+    const weaponName = id => id === "pulse" ? "Pulso" : "Gemelo";
+    const multiplier = value => String(+value.toFixed(1)).replace(".", ",");
+    function refreshWeapons() {
+      const {balance, scrapReady} = shipState();
+      const levels = NeonCampaign.classicWorkshopState(classicSalvageState).weaponLevels;
+      for (const card of hangar.querySelectorAll("[data-weapon]")) {
+        const id = card.dataset.weapon, level = levels[id], owned = classicEquipment.unlocked.includes(id);
+        const next = NeonCampaign.SCRAP_WEAPON_LEVELS[`level-${id}-${level + 1}`];
+        card.classList.toggle("is-locked", !owned);
+        card.querySelector(".hangar-weapon-art").style.backgroundPosition = `${(level - 1) * 100 / 3}% ${id === "twin" ? 100 : 0}%`;
+        card.querySelector("[data-weapon-level]").textContent = `NIVEL ${level} · DAÑO ×${multiplier(NeonCampaign.CLASSIC_WEAPON_LEVELS[id][level].damageMultiplier)}`;
+        const pick = card.querySelector("[data-weapon-pick]"), up = card.querySelector("[data-weapon-up]");
+        pick.textContent = !owned ? "REQUIERE ATLAS" : classicEquipment.selected === id ? "EQUIPADA" : "ELEGIR";
+        pick.disabled = !owned || classicEquipment.selected === id;
+        up.textContent = next ? `SUBIR · ${scrapText(next.price)}` : "NIVEL MÁXIMO";
+        up.setAttribute("aria-label", next ? `Subir ${weaponName(id)} a nivel ${level + 1} por ${scrapText(next.price)} de chatarra` : "Nivel máximo");
+        up.disabled = !next || !owned || !scrapReady || balance < next.price;
+      }
+    }
+    for (const card of hangar.querySelectorAll("[data-weapon]")) {
+      const id = card.dataset.weapon;
+      card.querySelector("[data-weapon-pick]").onclick = () => {
+        if (!classicEquipment.unlocked.includes(id) || !persistClassicEquipment({...classicEquipment, selected: id})) return;
+        uiSound("weapon-switch");
+        $("hangarWeaponStatus").textContent = `Vuelas con ${weaponName(id)}.`;
+        refreshWeapons();
+      };
+      card.querySelector("[data-weapon-up]").onclick = () => {
+        const level = NeonCampaign.classicWorkshopState(classicSalvageState).weaponLevels[id] + 1;
+        const result = loadClassicSalvage() ? classicSalvageLedger.purchase({transactionId: `level:${id}:${level}`, sku: `level-${id}-${level}`}) : null;
+        if (result?.state) classicSalvageState = result.state;
+        $("hangarWeaponStatus").textContent = result?.ok ? `${weaponName(id)} sube a nivel ${level}.`
+          : result?.reason === "insufficient-funds" ? `Te faltan ${scrapText(result.missing)} de chatarra.` : "No se pudo mejorar. Tu chatarra está intacta.";
+        if (result?.ok) uiSound("confirm");
+        refreshHangar();
+      };
+    }
+
     function closeHangar() {
       hangar.classList.remove("show");
       hangar.classList.add("hidden");
