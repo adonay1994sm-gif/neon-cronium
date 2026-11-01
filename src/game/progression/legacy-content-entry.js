@@ -4,7 +4,7 @@ export {createChapterScore} from '../audio/chapter-score.js';
 export {createChronosChapterStory, normalizeChronosChapterCheckpoint, CHRONOS_CHAPTER_ROUTE_SECONDS} from '../narrative/chronos-chapter.js';
 export {resolveHullReinforcement} from '../combat/hull-reinforcement.js';
 export {createCompletionJournal} from './completion-journal.js';
-export {SCRAP_ECONOMY_KEY, SCRAP_UPGRADES, SCRAP_CONSUMABLES,
+export {SCRAP_ECONOMY_KEY, SCRAP_UPGRADES, SCRAP_SHIPS, SCRAP_CONSUMABLES,
   createScrapLedger, rewardForEnemy, formatDenominations, classicWorkshopState} from './scrap-economy.js';
 export {createVoyageHazardField, advanceVoyageHazardField} from './voyage-hazards.js';
 export {VOYAGES, PLAYABLE_VOYAGES, getVoyageFicha, getVoyageStageRules, getVoyageStageRulesFor} from './voyages/index.js';

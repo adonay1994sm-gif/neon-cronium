@@ -10,6 +10,8 @@ export const SCRAP_ECONOMY_RULES = Object.freeze({
   maxDropReceipts: 512, maxPurchaseReceipts: 128, maxInvalidBackups: 8
 });
 
+import {SHIP_ROSTER} from '../ship/ship-roster.js';
+
 export const SCRAP_REWARDS = Object.freeze({raider: 6, scout: 9, interceptor: 15, atlas: 600, debris: 6, satellite: 18, ch03: 120});
 const upgrade = definition => Object.freeze({...definition,
   requires: Object.freeze([...(definition.requires || [])]),
@@ -44,6 +46,12 @@ export const SCRAP_UPGRADES = Object.freeze({
     description: 'Perfora cuatro objetivos y dispara cada 0,46 s en lugar de cada 0,56 s.',
     tradeoff: 'Mantiene el daño directo de 2: destaca frente a objetivos alineados.'})
 });
+// Naves de chatarra del hangar (01/11/2026): la compra se apunta aquí, en el
+// mismo guardado que resta la chatarra. No salen en la Forja C9.
+export const SCRAP_SHIPS = Object.freeze(Object.fromEntries(SHIP_ROSTER.filter(ship => ship.access.type === 'scrap')
+  .map(ship => [`ship-${ship.id}`, upgrade({id: `ship-${ship.id}`, shipId: ship.id, price: ship.access.price, label: ship.name})])));
+const catalogue = sku => SCRAP_UPGRADES[sku] || SCRAP_SHIPS[sku];
+const inCatalogue = sku => has(SCRAP_UPGRADES, sku) || has(SCRAP_SHIPS, sku);
 
 // Consumibles: se gastan y se pueden volver a comprar. No ocupan recibos de
 // mejoras: el registro guarda lo gastado en ellos y el último recibo (como los
@@ -134,8 +142,8 @@ export function normalizeScrapRecord(value) {
       (!legacy&&value.revision!==SCRAP_ECONOMY_RULES.revision) ||
       !['balance', 'earned', 'spent', 'runSequence'].every(key => integer(value[key])) ||
       value.earned < value.spent || value.balance !== value.earned - value.spent ||
-      !Array.isArray(value.upgrades) || value.upgrades.length > Object.keys(SCRAP_UPGRADES).length ||
-      upgrades.some(sku => typeof sku !== 'string' || !has(SCRAP_UPGRADES, sku)) ||
+      !Array.isArray(value.upgrades) || value.upgrades.length > Object.keys(SCRAP_UPGRADES).length + Object.keys(SCRAP_SHIPS).length ||
+      upgrades.some(sku => typeof sku !== 'string' || !inCatalogue(sku)) ||
       new Set(upgrades).size !== upgrades.length ||
       !Array.isArray(value.purchases) || value.purchases.length > SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return null;
   const missileAmmo=legacy?3:value.missileAmmo;
@@ -169,11 +177,11 @@ export function normalizeScrapRecord(value) {
   for (const receipt of value.purchases) {
     const sku=upgradeName(receipt?.sku);
     if (!object(receipt) || !identifier(receipt.id) || transactionIds.has(receipt.id) || typeof sku !== 'string' ||
-        !has(SCRAP_UPGRADES, sku) || purchased.has(sku) ||
-        !SCRAP_UPGRADES[sku].receiptPrices.includes(receipt.price)) return null;
+        !inCatalogue(sku) || purchased.has(sku) ||
+        !catalogue(sku).receiptPrices.includes(receipt.price)) return null;
     transactionIds.add(receipt.id); purchased.add(sku); spent += receipt.price;
   }
-  if ([...purchased].some(sku => SCRAP_UPGRADES[sku].requires.some(required => !purchased.has(required)))) return null;
+  if ([...purchased].some(sku => catalogue(sku).requires.some(required => !purchased.has(required)))) return null;
   if (spent+missileRoundsPurchased*SCRAP_ECONOMY_RULES.missileUnitPrice+consumableSpent !== value.spent || upgrades.length !== purchased.size ||
       upgrades.some(sku => !purchased.has(sku))) return null;
   if (value.activeRun !== null) {
@@ -376,7 +384,7 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
   function purchase({transactionId, sku:requestedSku} = {}) {
     const sku=upgradeName(requestedSku);
     if (!identifier(transactionId) || typeof sku !== 'string' ||
-      (!has(SCRAP_UPGRADES, sku)&&sku!=='missile-refill')) throw new TypeError('A stable transaction ID and catalogue SKU are required');
+      (!inCatalogue(sku)&&sku!=='missile-refill')) throw new TypeError('A stable transaction ID and catalogue SKU are required');
     if(sku==='missile-refill')return refillMissiles(transactionId);
     if(transactionId.startsWith('c9:missiles:'))throw new TypeError('Missile refill transaction IDs are reserved');
     const loaded = readState();
@@ -387,10 +395,10 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
     if (current.lastConsumable?.id === transactionId) return blocked('transaction-id-conflict');
     if (current.upgrades.includes(sku)) return {ok: false, status: 'unavailable', reason: 'already-owned', state: copy(current)};
     if (current.purchases.length >= SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return blocked('purchase-receipt-capacity');
-    const requires = SCRAP_UPGRADES[sku].requires.filter(required => !current.upgrades.includes(required));
+    const requires = catalogue(sku).requires.filter(required => !current.upgrades.includes(required));
     if (requires.length) return {ok: false, status: 'unavailable', reason: 'prerequisite-required',
       requires, state: copy(current)};
-    const price = SCRAP_UPGRADES[sku].price;
+    const price = catalogue(sku).price;
     if (current.balance < price) return {ok: false, status: 'unavailable', reason: 'insufficient-funds', price,
       missing: price - current.balance, state: copy(current)};
     const next = copy(current);

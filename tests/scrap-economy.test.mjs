@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SCRAP_ECONOMY_KEY, SCRAP_ECONOMY_RULES, SCRAP_UPGRADES, SCRAP_REWARDS,
   createScrapRecord, normalizeScrapRecord, formatDenominations, rewardForEnemy,
-  createScrapLedger, hullReserveCapacity, classicWorkshopState, SCRAP_CONSUMABLES} from '../src/game/progression/scrap-economy.js';
+  createScrapLedger, hullReserveCapacity, classicWorkshopState, SCRAP_CONSUMABLES, SCRAP_SHIPS} from '../src/game/progression/scrap-economy.js';
 
 function memory(map = new Map(), {failWrite = 0, afterWrite = false, denyReads = new Set(),
   throwRead = false, throwWrite = false, interceptRead = null} = {}) {
@@ -136,6 +136,25 @@ test('C9 purchase commits balance, entitlement and receipt in one write without 
   assert.equal(SCRAP_UPGRADES['twin-preparation'].price, 24);
   assert.equal(SCRAP_UPGRADES['hull-reinforcement'].price, 30);
   assert.equal(SCRAP_UPGRADES['coolant-feed'].price, 45);
+});
+
+// Hangar (01/11/2026): las naves de chatarra se compran en la misma bodega.
+test('a scrap ship is bought in one write, survives a reload, is never charged twice and stays out of the C9 workshop', () => {
+  assert.deepEqual(Object.fromEntries(Object.entries(SCRAP_SHIPS).map(([sku, ship]) => [sku, ship.price])),
+    {'ship-vertice': 2500, 'ship-mantarraya': 8000, 'ship-arpon': 20000});
+  const device = memory(), log = ledger(device), run = start(log);
+  for (let index = 0; index < 5; index++) log.claimDrop({runId: run.runId, dropId: `boss:${index}`, enemyType: 'atlas'});
+  assert.equal(log.purchase({transactionId: 'ship:mantarraya', sku: 'ship-mantarraya'}).reason, 'insufficient-funds');
+  const result = log.purchase({transactionId: 'ship:vertice', sku: 'ship-vertice'});
+  assert.equal(result.ok, true); assert.equal(result.price, 2500);
+  assert.equal(log.getBalance(), 500);
+  assert.deepEqual(result.state.upgrades, ['ship-vertice']);
+  const restored = ledger(memory(device.map));
+  assert.equal(restored.load().ok, true, 'a save with a ship receipt is still valid');
+  assert.equal(restored.purchase({transactionId: 'ship:vertice', sku: 'ship-vertice'}).duplicate, true);
+  assert.equal(restored.getBalance(), 500);
+  assert.deepEqual(classicWorkshopState(restored.getState()).weaponIds, []);
+  assert.equal(Object.hasOwn(SCRAP_UPGRADES, 'ship-vertice'), false, 'the C9 workshop lists SCRAP_UPGRADES only');
 });
 
 test('repeated purchase and reload never charge twice even when UI retries with a new transaction ID', () => {

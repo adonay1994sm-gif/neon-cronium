@@ -37,6 +37,7 @@ var NeonCampaign = (() => {
     PLAYABLE_VOYAGES: () => PLAYABLE_VOYAGES,
     SCRAP_CONSUMABLES: () => SCRAP_CONSUMABLES,
     SCRAP_ECONOMY_KEY: () => SCRAP_ECONOMY_KEY,
+    SCRAP_SHIPS: () => SCRAP_SHIPS,
     SCRAP_UPGRADES: () => SCRAP_UPGRADES,
     SECTORS: () => SECTORS,
     SECTOR_MAPS: () => SECTOR_MAPS,
@@ -1317,6 +1318,53 @@ var NeonCampaign = (() => {
     return Object.freeze({ complete, recover, journalKey });
   }
 
+  // src/game/ship/ship-roster.js
+  var SHIP_ROSTER_KEY = "neonCronium.ships.v1";
+  var DEFAULT_SHIP = "aster";
+  var FREE = (sector) => ({ type: "free", sector });
+  var SCRAP = (price) => ({ type: "scrap", price });
+  var PAID = { type: "paid" };
+  var ship = (number, id, name, role, access, exclusive, cooldown, exclusiveText, ultimate, ultimateText) => Object.freeze({
+    number,
+    id,
+    name,
+    role,
+    access: Object.freeze({ ...access }),
+    exclusive: Object.freeze({ name: exclusive, cooldown, text: exclusiveText }),
+    ultimate: Object.freeze({ name: ultimate, text: ultimateText })
+  });
+  var SHIP_ROSTER = Object.freeze([
+    ship("01", "aster", "Ast\xE9r", "Exploradora", FREE(0), "Salto de fase", 8, "Esquiva lateral instant\xE1nea: durante 0,4 s no recibe da\xF1o.", "Lluvia de estrellas", "Caen del cielo 24 dardos de luz que buscan a cada enemigo en pantalla."),
+    ship("02", "bastion", "Basti\xF3n", "Acorazada", FREE(1), "Muralla", 14, "Escudo frontal que detiene los disparos de delante durante 3 s.", "Fortaleza", "Una c\xFApula de 6 s que devuelve cada proyectil enemigo a quien lo dispar\xF3."),
+    ship("03", "vertice", "V\xE9rtice", "Perforadora", SCRAP(2500), "Lanza", 10, "Disparo cargado que atraviesa toda la columna.", "Prisma", "Un rayo que se abre en 5 haces y barre la pantalla durante 4 s."),
+    ship("04", "mantarraya", "Mantarraya", "Guardiana de cola", SCRAP(8e3), "Estela", 12, "Deja detr\xE1s una estela que da\xF1a a lo que llega por la retaguardia.", "Marea", "Una onda saca de la pantalla proyectiles y meteoritos y aturde 2 s."),
+    ship("05", "arpon", "Arp\xF3n", "Cazadora", SCRAP(2e4), "Arp\xF3n", 12, "Engancha a un enemigo y lo arrastra; suelta el doble de chatarra.", "Riel", "Un ca\xF1\xF3n de riel atraviesa la pantalla con un da\xF1o enorme a los jefes."),
+    ship("06", "orion", "Ori\xF3n", "Comandante", PAID, "Alas", 16, "Dos drones disparan contigo durante 8 s.", "Constelaci\xF3n", "Seis drones forman una estrella y disparan en todas las direcciones 6 s."),
+    ship("07", "quimera", "Quimera", "Enga\xF1o", PAID, "Se\xF1uelo", 14, "Un holograma de tu nave atrae los disparos durante 4 s.", "Enjambre", "Doce mininaves buscan a los enemigos y estallan al alcanzarlos."),
+    ship("08", "nomada", "N\xF3mada", "Recolectora", PAID, "Im\xE1n", 15, "Atrae CRONIUM y chatarra de toda la pantalla y repara 5 de casco.", "Forja m\xF3vil", "Repara el 40 % del casco y llena munici\xF3n y misiles."),
+    ship("09", "eclipse", "Eclipse", "Sombra", PAID, "Sombra", 15, "Durante 2 s es invisible: los enemigos pierden el blanco.", "Eclipse total", "La pantalla se oscurece y todo se detiene 3 s, salvo tu nave."),
+    ship("10", "titan", "Tit\xE1n", "Artillera", PAID, "Andanada", 16, "Una salva de 8 misiles peque\xF1os que buscan a los enemigos cercanos.", "Supernova", "Carga 1,5 s y estalla en una onda que borra lo peque\xF1o.")
+  ]);
+  var byId = (id) => SHIP_ROSTER.find((entry) => entry.id === id);
+  var isScrapShip = (id) => byId(id)?.access.type === "scrap";
+  function ownedShips(sectorSave, shipSave) {
+    return SHIP_ROSTER.filter(({ id, access }) => access.type === "free" ? access.sector === 0 || sectorSave.sectors[access.sector]?.completed === true : access.type === "scrap" && shipSave.bought.includes(id)).map((entry) => entry.id);
+  }
+  function normalizeShipSave(raw, sectorSave) {
+    const valid = Boolean(raw) && typeof raw === "object" && raw.version === 1 && Array.isArray(raw.bought);
+    const bought = valid ? [...new Set(raw.bought.filter(isScrapShip))] : [];
+    const selected = valid && ownedShips(sectorSave, { bought }).includes(raw.selected) ? raw.selected : DEFAULT_SHIP;
+    return { version: 1, selected, bought };
+  }
+  function chooseShip(shipSave, id, sectorSave) {
+    return ownedShips(sectorSave, shipSave).includes(id) ? { version: 1, selected: id, bought: [...shipSave.bought] } : null;
+  }
+  function buyShipWithScrap(shipSave, id, scrap) {
+    const price = isScrapShip(id) ? byId(id).access.price : null;
+    if (price === null || shipSave.bought.includes(id) || scrap < price) return null;
+    return { save: { version: 1, selected: shipSave.selected, bought: [...shipSave.bought, id] }, price };
+  }
+
   // src/game/progression/scrap-economy.js
   var SCRAP_ECONOMY_KEY = "neonCronium.classicSalvage.v1";
   var SCRAP_ECONOMY_RULES = Object.freeze({
@@ -1425,6 +1473,9 @@ var NeonCampaign = (() => {
       tradeoff: "Mantiene el da\xF1o directo de 2: destaca frente a objetivos alineados."
     })
   });
+  var SCRAP_SHIPS = Object.freeze(Object.fromEntries(SHIP_ROSTER.filter((ship2) => ship2.access.type === "scrap").map((ship2) => [`ship-${ship2.id}`, upgrade({ id: `ship-${ship2.id}`, shipId: ship2.id, price: ship2.access.price, label: ship2.name })])));
+  var catalogue = (sku) => SCRAP_UPGRADES[sku] || SCRAP_SHIPS[sku];
+  var inCatalogue = (sku) => has(SCRAP_UPGRADES, sku) || has(SCRAP_SHIPS, sku);
   var SCRAP_CONSUMABLES = Object.freeze({ "sector-beacon": Object.freeze({ price: 40 }) });
   var integer = (value) => Number.isSafeInteger(value) && value >= 0;
   var object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -1521,7 +1572,7 @@ var NeonCampaign = (() => {
       "lastMissileRefill"
     ].every((key) => !has(value, key));
     const upgrades = Array.isArray(value?.upgrades) ? value.upgrades.map(upgradeName) : [];
-    if (!object(value) || value.version !== 1 || !legacy && value.revision !== SCRAP_ECONOMY_RULES.revision || !["balance", "earned", "spent", "runSequence"].every((key) => integer(value[key])) || value.earned < value.spent || value.balance !== value.earned - value.spent || !Array.isArray(value.upgrades) || value.upgrades.length > Object.keys(SCRAP_UPGRADES).length || upgrades.some((sku) => typeof sku !== "string" || !has(SCRAP_UPGRADES, sku)) || new Set(upgrades).size !== upgrades.length || !Array.isArray(value.purchases) || value.purchases.length > SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return null;
+    if (!object(value) || value.version !== 1 || !legacy && value.revision !== SCRAP_ECONOMY_RULES.revision || !["balance", "earned", "spent", "runSequence"].every((key) => integer(value[key])) || value.earned < value.spent || value.balance !== value.earned - value.spent || !Array.isArray(value.upgrades) || value.upgrades.length > Object.keys(SCRAP_UPGRADES).length + Object.keys(SCRAP_SHIPS).length || upgrades.some((sku) => typeof sku !== "string" || !inCatalogue(sku)) || new Set(upgrades).size !== upgrades.length || !Array.isArray(value.purchases) || value.purchases.length > SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return null;
     const missileAmmo = legacy ? 3 : value.missileAmmo;
     const missileShotsSpent = legacy ? 0 : value.missileShotsSpent;
     const missileRoundsPurchased = legacy ? 0 : value.missileRoundsPurchased;
@@ -1541,12 +1592,12 @@ var NeonCampaign = (() => {
     let spent = 0;
     for (const receipt of value.purchases) {
       const sku = upgradeName(receipt?.sku);
-      if (!object(receipt) || !identifier(receipt.id) || transactionIds.has(receipt.id) || typeof sku !== "string" || !has(SCRAP_UPGRADES, sku) || purchased.has(sku) || !SCRAP_UPGRADES[sku].receiptPrices.includes(receipt.price)) return null;
+      if (!object(receipt) || !identifier(receipt.id) || transactionIds.has(receipt.id) || typeof sku !== "string" || !inCatalogue(sku) || purchased.has(sku) || !catalogue(sku).receiptPrices.includes(receipt.price)) return null;
       transactionIds.add(receipt.id);
       purchased.add(sku);
       spent += receipt.price;
     }
-    if ([...purchased].some((sku) => SCRAP_UPGRADES[sku].requires.some((required) => !purchased.has(required)))) return null;
+    if ([...purchased].some((sku) => catalogue(sku).requires.some((required) => !purchased.has(required)))) return null;
     if (spent + missileRoundsPurchased * SCRAP_ECONOMY_RULES.missileUnitPrice + consumableSpent !== value.spent || upgrades.length !== purchased.size || upgrades.some((sku) => !purchased.has(sku))) return null;
     if (value.activeRun !== null) {
       const run = value.activeRun;
@@ -1796,7 +1847,7 @@ var NeonCampaign = (() => {
     }
     function purchase({ transactionId, sku: requestedSku } = {}) {
       const sku = upgradeName(requestedSku);
-      if (!identifier(transactionId) || typeof sku !== "string" || !has(SCRAP_UPGRADES, sku) && sku !== "missile-refill") throw new TypeError("A stable transaction ID and catalogue SKU are required");
+      if (!identifier(transactionId) || typeof sku !== "string" || !inCatalogue(sku) && sku !== "missile-refill") throw new TypeError("A stable transaction ID and catalogue SKU are required");
       if (sku === "missile-refill") return refillMissiles(transactionId);
       if (transactionId.startsWith("c9:missiles:")) throw new TypeError("Missile refill transaction IDs are reserved");
       const loaded = readState();
@@ -1806,7 +1857,7 @@ var NeonCampaign = (() => {
       if (current.lastConsumable?.id === transactionId) return blocked("transaction-id-conflict");
       if (current.upgrades.includes(sku)) return { ok: false, status: "unavailable", reason: "already-owned", state: copy(current) };
       if (current.purchases.length >= SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return blocked("purchase-receipt-capacity");
-      const requires = SCRAP_UPGRADES[sku].requires.filter((required) => !current.upgrades.includes(required));
+      const requires = catalogue(sku).requires.filter((required) => !current.upgrades.includes(required));
       if (requires.length) return {
         ok: false,
         status: "unavailable",
@@ -1814,7 +1865,7 @@ var NeonCampaign = (() => {
         requires,
         state: copy(current)
       };
-      const price = SCRAP_UPGRADES[sku].price;
+      const price = catalogue(sku).price;
       if (current.balance < price) return {
         ok: false,
         status: "unavailable",
@@ -3465,8 +3516,8 @@ var NeonCampaign = (() => {
 
   // src/game/progression/sectors/index.js
   var SECTORS = Object.freeze([S1_GAIA]);
-  var byId = new Map(SECTORS.map((ficha) => [ficha.id, ficha]));
-  var getSectorFicha = (id) => byId.get(id) || null;
+  var byId2 = new Map(SECTORS.map((ficha) => [ficha.id, ficha]));
+  var getSectorFicha = (id) => byId2.get(id) || null;
 
   // src/game/progression/voyages/index.js
   var VOYAGES = Object.freeze([
@@ -3521,53 +3572,6 @@ var NeonCampaign = (() => {
   }
   function markMenuSeen(unlocks, button) {
     return { version: 1, hangar: unlocks.hangar, seen: { ...unlocks.seen, [button]: true } };
-  }
-
-  // src/game/ship/ship-roster.js
-  var SHIP_ROSTER_KEY = "neonCronium.ships.v1";
-  var DEFAULT_SHIP = "aster";
-  var FREE = (sector) => ({ type: "free", sector });
-  var SCRAP = (price) => ({ type: "scrap", price });
-  var PAID = { type: "paid" };
-  var ship = (number, id, name, role, access, exclusive, cooldown, exclusiveText, ultimate, ultimateText) => Object.freeze({
-    number,
-    id,
-    name,
-    role,
-    access: Object.freeze({ ...access }),
-    exclusive: Object.freeze({ name: exclusive, cooldown, text: exclusiveText }),
-    ultimate: Object.freeze({ name: ultimate, text: ultimateText })
-  });
-  var SHIP_ROSTER = Object.freeze([
-    ship("01", "aster", "Ast\xE9r", "Exploradora", FREE(0), "Salto de fase", 8, "Esquiva lateral instant\xE1nea: durante 0,4 s no recibe da\xF1o.", "Lluvia de estrellas", "Caen del cielo 24 dardos de luz que buscan a cada enemigo en pantalla."),
-    ship("02", "bastion", "Basti\xF3n", "Acorazada", FREE(1), "Muralla", 14, "Escudo frontal que detiene los disparos de delante durante 3 s.", "Fortaleza", "Una c\xFApula de 6 s que devuelve cada proyectil enemigo a quien lo dispar\xF3."),
-    ship("03", "vertice", "V\xE9rtice", "Perforadora", SCRAP(1e4), "Lanza", 10, "Disparo cargado que atraviesa toda la columna.", "Prisma", "Un rayo que se abre en 5 haces y barre la pantalla durante 4 s."),
-    ship("04", "mantarraya", "Mantarraya", "Guardiana de cola", SCRAP(5e4), "Estela", 12, "Deja detr\xE1s una estela que da\xF1a a lo que llega por la retaguardia.", "Marea", "Una onda saca de la pantalla proyectiles y meteoritos y aturde 2 s."),
-    ship("05", "arpon", "Arp\xF3n", "Cazadora", SCRAP(15e4), "Arp\xF3n", 12, "Engancha a un enemigo y lo arrastra; suelta el doble de chatarra.", "Riel", "Un ca\xF1\xF3n de riel atraviesa la pantalla con un da\xF1o enorme a los jefes."),
-    ship("06", "orion", "Ori\xF3n", "Comandante", PAID, "Alas", 16, "Dos drones disparan contigo durante 8 s.", "Constelaci\xF3n", "Seis drones forman una estrella y disparan en todas las direcciones 6 s."),
-    ship("07", "quimera", "Quimera", "Enga\xF1o", PAID, "Se\xF1uelo", 14, "Un holograma de tu nave atrae los disparos durante 4 s.", "Enjambre", "Doce mininaves buscan a los enemigos y estallan al alcanzarlos."),
-    ship("08", "nomada", "N\xF3mada", "Recolectora", PAID, "Im\xE1n", 15, "Atrae CRONIUM y chatarra de toda la pantalla y repara 5 de casco.", "Forja m\xF3vil", "Repara el 40 % del casco y llena munici\xF3n y misiles."),
-    ship("09", "eclipse", "Eclipse", "Sombra", PAID, "Sombra", 15, "Durante 2 s es invisible: los enemigos pierden el blanco.", "Eclipse total", "La pantalla se oscurece y todo se detiene 3 s, salvo tu nave."),
-    ship("10", "titan", "Tit\xE1n", "Artillera", PAID, "Andanada", 16, "Una salva de 8 misiles peque\xF1os que buscan a los enemigos cercanos.", "Supernova", "Carga 1,5 s y estalla en una onda que borra lo peque\xF1o.")
-  ]);
-  var byId2 = (id) => SHIP_ROSTER.find((entry) => entry.id === id);
-  var isScrapShip = (id) => byId2(id)?.access.type === "scrap";
-  function ownedShips(sectorSave, shipSave) {
-    return SHIP_ROSTER.filter(({ id, access }) => access.type === "free" ? access.sector === 0 || sectorSave.sectors[access.sector]?.completed === true : access.type === "scrap" && shipSave.bought.includes(id)).map((entry) => entry.id);
-  }
-  function normalizeShipSave(raw, sectorSave) {
-    const valid = Boolean(raw) && typeof raw === "object" && raw.version === 1 && Array.isArray(raw.bought);
-    const bought = valid ? [...new Set(raw.bought.filter(isScrapShip))] : [];
-    const selected = valid && ownedShips(sectorSave, { bought }).includes(raw.selected) ? raw.selected : DEFAULT_SHIP;
-    return { version: 1, selected, bought };
-  }
-  function chooseShip(shipSave, id, sectorSave) {
-    return ownedShips(sectorSave, shipSave).includes(id) ? { version: 1, selected: id, bought: [...shipSave.bought] } : null;
-  }
-  function buyShipWithScrap(shipSave, id, scrap) {
-    const price = isScrapShip(id) ? byId2(id).access.price : null;
-    if (price === null || shipSave.bought.includes(id) || scrap < price) return null;
-    return { save: { version: 1, selected: shipSave.selected, bought: [...shipSave.bought, id] }, price };
   }
 
   // src/game/progression/sector-map.js
