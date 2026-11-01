@@ -400,8 +400,9 @@ test('twenty rounds refill in played time outside Atlas while only the boss perm
   assert.equal(h.snapshot().weapons.charges,20);
 });
 
-test('Atlas receives the advertised ×1, ×2 and ×3 damage only when physical projectiles reach its core', t => {
-  for (const [selected, multiplier, bolts] of [['pulse', 1, 1], ['twin', 2, 2], ['lance', 3, 1]]) {
+// Lanza salió con dec-armas-plan (01/11/2026): quedan Pulso y Gemelo.
+test('Atlas receives the advertised ×1 and ×2 damage only when physical projectiles reach its core', t => {
+  for (const [selected, multiplier, bolts] of [['pulse', 1, 1], ['twin', 2, 2]]) {
     const saved = JSON.stringify({version: 1, recoveredTwin: selected !== 'pulse',
       unlocked: selected === 'pulse' ? ['pulse'] : selected === 'twin' ? ['pulse', 'twin'] : ['pulse', 'twin', 'lance'],
       selected, ...(selected === 'lance' ? {lanceCalibrated: true} : {})});

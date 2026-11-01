@@ -360,30 +360,23 @@ test('Atlas blocks the onboard workshop instead of permitting combat avoidance b
   assert.equal(h.pending.size, 1);
 });
 
-test('Forja connects paid weapon ranks to real loadouts and preserves them after interruption', t => {
+// dec-armas-plan (01/11/2026): la Forja ya no vende armas (Abanico y Aguja
+// salieron) ni cambia el arma; sus ramas de casco y refrigeración siguen.
+test('Forja keeps hull and cooling ranks, no longer sells weapons and preserves them after interruption', t => {
   const equipment={version:1,recoveredTwin:true,unlocked:['pulse'],selected:'pulse'};
   const h=harness(t,{salvage:fundedRecord(1000),equipment});h.api.prepare();h.node('classicC9').click();
   const sku=id=>h.document.querySelector(`[data-c9-sku="${id}"]`);
   assert.equal(h.node('c9Title').textContent,'FORJA C9');
-  assert.equal(sku('weapon-scatter').disabled,true,'recovered emitter must be prepared explicitly');
-  h.node('flightInstallTwin').click();
-  assert.equal(sku('weapon-scatter').disabled,false);
-  assert.equal(sku('scatter-focus').disabled,true,'rank II cannot skip its weapon');
-  sku('weapon-scatter').click();sku('scatter-focus').click();
-  h.document.querySelector('[data-flight-loadout="scatter"]').click();
-  assert.equal(h.snapshot().weapons.selected,'scatter');
-  assert.equal(h.snapshot().weapons.weaponRanks.scatter,2);
-  assert.match(h.node('flightDockStatus').textContent,/Abanico II equipado/);
-  assert.match(h.document.querySelector('[data-flight-loadout="scatter"] small').textContent,/alcance ampliado/);
+  for(const retired of ['weapon-scatter','scatter-focus','weapon-needle','needle-resonance'])assert.equal(sku(retired),null,retired);
+  assert.deepEqual([...h.document.querySelectorAll('[data-flight-loadout]')].map(button=>button.dataset.flightLoadout),['pulse','twin']);
   assert.equal(h.document.querySelector('[data-flight-loadout="twin"]').disabled,true,'Gemelo still belongs to Atlas');
+  h.node('flightInstallTwin').click();
   h.node('c9BuyShield').click();sku('hull-plating-ii').click();
   h.node('c9BuyCoolant').click();sku('coolant-feed-ii').click();
   const q=h.snapshot();assert.equal(q.reserveCapacity,65);assert.equal(q.weapons.rechargeSeconds,1);
-  const raw=h.stored(SALVAGE_KEY);sku('scatter-focus').click();assert.equal(h.stored(SALVAGE_KEY),raw);
+  const raw=h.stored(SALVAGE_KEY);sku('coolant-feed-ii').click();assert.equal(h.stored(SALVAGE_KEY),raw);
   const resumed=harness(t,{salvage:JSON.parse(raw),equipment:JSON.parse(h.stored('neonCronium.flightEquipment.v1'))});
-  resumed.api.prepare();assert.equal(resumed.snapshot().weapons.selected,'scatter');
-  assert.equal(resumed.snapshot().weapons.weaponRanks.scatter,2);
+  resumed.api.prepare();assert.equal(resumed.snapshot().weapons.selected,'pulse');
   assert.equal(resumed.snapshot().reserveCapacity,65);assert.equal(resumed.snapshot().weapons.rechargeSeconds,1);
   assert.equal(resumed.snapshot().salvage.balance,q.salvage.balance);
-  assert.equal(resumed.pending.size,1);
 });

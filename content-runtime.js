@@ -36,10 +36,12 @@ var NeonCampaign = (() => {
     HORDE_RULES: () => HORDE_RULES,
     MENU_UNLOCKS_KEY: () => MENU_UNLOCKS_KEY,
     PLAYABLE_VOYAGES: () => PLAYABLE_VOYAGES,
+    RETIRED_UPGRADES: () => RETIRED_UPGRADES,
     SCRAP_CONSUMABLES: () => SCRAP_CONSUMABLES,
     SCRAP_ECONOMY_KEY: () => SCRAP_ECONOMY_KEY,
     SCRAP_SHIPS: () => SCRAP_SHIPS,
     SCRAP_UPGRADES: () => SCRAP_UPGRADES,
+    SCRAP_WEAPON_LEVELS: () => SCRAP_WEAPON_LEVELS,
     SECTORS: () => SECTORS,
     SECTOR_MAPS: () => SECTOR_MAPS,
     SECTOR_SAVE_KEY: () => SECTOR_SAVE_KEY,
@@ -1432,6 +1434,7 @@ var NeonCampaign = (() => {
     }),
     "weapon-scatter": upgrade({
       id: "weapon-scatter",
+      retired: true,
       price: 70,
       weaponId: "scatter",
       branch: "scatter",
@@ -1443,6 +1446,7 @@ var NeonCampaign = (() => {
     }),
     "scatter-focus": upgrade({
       id: "scatter-focus",
+      retired: true,
       price: 120,
       weaponId: "scatter",
       branch: "scatter",
@@ -1454,6 +1458,7 @@ var NeonCampaign = (() => {
     }),
     "weapon-needle": upgrade({
       id: "weapon-needle",
+      retired: true,
       price: 95,
       weaponId: "needle",
       branch: "needle",
@@ -1465,6 +1470,7 @@ var NeonCampaign = (() => {
     }),
     "needle-resonance": upgrade({
       id: "needle-resonance",
+      retired: true,
       price: 140,
       weaponId: "needle",
       branch: "needle",
@@ -1475,9 +1481,18 @@ var NeonCampaign = (() => {
       tradeoff: "Mantiene el da\xF1o directo de 2: destaca frente a objetivos alineados."
     })
   });
+  var RETIRED_UPGRADES = Object.freeze(Object.keys(SCRAP_UPGRADES).filter((sku) => SCRAP_UPGRADES[sku].retired));
+  var SCRAP_WEAPON_LEVELS = Object.freeze(Object.fromEntries(["pulse", "twin"].flatMap((weaponId) => [[2, 300], [3, 800], [4, 1800]].map(([level2, price]) => [`level-${weaponId}-${level2}`, upgrade({
+    id: `level-${weaponId}-${level2}`,
+    weaponId,
+    level: level2,
+    price,
+    requires: level2 > 2 ? [`level-${weaponId}-${level2 - 1}`] : [],
+    label: `Nivel ${level2}`
+  })]))));
   var SCRAP_SHIPS = Object.freeze(Object.fromEntries(SHIP_ROSTER.filter((ship2) => ship2.access.type === "scrap").map((ship2) => [`ship-${ship2.id}`, upgrade({ id: `ship-${ship2.id}`, shipId: ship2.id, price: ship2.access.price, label: ship2.name })])));
-  var catalogue = (sku) => SCRAP_UPGRADES[sku] || SCRAP_SHIPS[sku];
-  var inCatalogue = (sku) => has(SCRAP_UPGRADES, sku) || has(SCRAP_SHIPS, sku);
+  var catalogue = (sku) => SCRAP_UPGRADES[sku] || SCRAP_SHIPS[sku] || SCRAP_WEAPON_LEVELS[sku];
+  var inCatalogue = (sku) => has(SCRAP_UPGRADES, sku) || has(SCRAP_SHIPS, sku) || has(SCRAP_WEAPON_LEVELS, sku);
   var SCRAP_CONSUMABLES = Object.freeze({ "sector-beacon": Object.freeze({ price: 40 }) });
   var integer = (value) => Number.isSafeInteger(value) && value >= 0;
   var object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -1511,7 +1526,8 @@ var NeonCampaign = (() => {
       rechargeSeconds: owns2("coolant-feed-ii") ? 1 : owns2("coolant-feed") ? 1.5 : 2,
       defenseRank: owns2("hull-plating-ii") ? 2 : owns2("hull-reinforcement") ? 1 : 0,
       coolingRank: owns2("coolant-feed-ii") ? 2 : owns2("coolant-feed") ? 1 : 0,
-      weaponIds: ["scatter", "needle"].filter((id) => owns2(`weapon-${id}`)),
+      weaponIds: [],
+      weaponLevels: Object.fromEntries(["pulse", "twin"].map((id) => [id, owns2(`level-${id}-4`) ? 4 : owns2(`level-${id}-3`) ? 3 : owns2(`level-${id}-2`) ? 2 : 1])),
       weaponRanks: {
         scatter: owns2("scatter-focus") ? 2 : owns2("weapon-scatter") ? 1 : 0,
         needle: owns2("needle-resonance") ? 2 : owns2("weapon-needle") ? 1 : 0
@@ -1574,7 +1590,7 @@ var NeonCampaign = (() => {
       "lastMissileRefill"
     ].every((key) => !has(value, key));
     const upgrades = Array.isArray(value?.upgrades) ? value.upgrades.map(upgradeName) : [];
-    if (!object(value) || value.version !== 1 || !legacy && value.revision !== SCRAP_ECONOMY_RULES.revision || !["balance", "earned", "spent", "runSequence"].every((key) => integer(value[key])) || value.earned < value.spent || value.balance !== value.earned - value.spent || !Array.isArray(value.upgrades) || value.upgrades.length > Object.keys(SCRAP_UPGRADES).length + Object.keys(SCRAP_SHIPS).length || upgrades.some((sku) => typeof sku !== "string" || !inCatalogue(sku)) || new Set(upgrades).size !== upgrades.length || !Array.isArray(value.purchases) || value.purchases.length > SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return null;
+    if (!object(value) || value.version !== 1 || !legacy && value.revision !== SCRAP_ECONOMY_RULES.revision || !["balance", "earned", "spent", "runSequence"].every((key) => integer(value[key])) || value.earned < value.spent || value.balance !== value.earned - value.spent || !Array.isArray(value.upgrades) || value.upgrades.length > Object.keys(SCRAP_UPGRADES).length + Object.keys(SCRAP_SHIPS).length + Object.keys(SCRAP_WEAPON_LEVELS).length || upgrades.some((sku) => typeof sku !== "string" || !inCatalogue(sku)) || new Set(upgrades).size !== upgrades.length || !Array.isArray(value.purchases) || value.purchases.length > SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return null;
     const missileAmmo = legacy ? 3 : value.missileAmmo;
     const missileShotsSpent = legacy ? 0 : value.missileShotsSpent;
     const missileRoundsPurchased = legacy ? 0 : value.missileRoundsPurchased;
@@ -1719,7 +1735,18 @@ var NeonCampaign = (() => {
       }
       current = normalizeScrapRecord(parsed);
       if (current === null) return { error: preserveInvalid(loaded.value) };
-      const migrating = !has(parsed, "revision") || parsed.upgrades.includes("shield-cell") || parsed.purchases.some((receipt) => receipt.sku === "shield-cell");
+      const retired = current.purchases.filter((receipt) => RETIRED_UPGRADES.includes(receipt.sku));
+      const migrating = !has(parsed, "revision") || parsed.upgrades.includes("shield-cell") || parsed.purchases.some((receipt) => receipt.sku === "shield-cell") || retired.length > 0;
+      if (retired.length) {
+        const refund = retired.reduce((total, receipt) => total + receipt.price, 0);
+        current = {
+          ...current,
+          balance: current.balance + refund,
+          spent: current.spent - refund,
+          upgrades: current.upgrades.filter((sku) => !RETIRED_UPGRADES.includes(sku)),
+          purchases: current.purchases.filter((receipt) => !RETIRED_UPGRADES.includes(receipt.sku))
+        };
+      }
       if (migrating) {
         const backup = backupRaw(loaded.value, migrationBackupKey);
         if (!backup.ok) {
@@ -1858,6 +1885,7 @@ var NeonCampaign = (() => {
       if (prior) return prior.sku === sku ? success("duplicate", { duplicate: true, sku, price: 0 }) : blocked("transaction-id-conflict");
       if (current.lastConsumable?.id === transactionId) return blocked("transaction-id-conflict");
       if (current.upgrades.includes(sku)) return { ok: false, status: "unavailable", reason: "already-owned", state: copy(current) };
+      if (catalogue(sku).retired) return { ok: false, status: "unavailable", reason: "retired", state: copy(current) };
       if (current.purchases.length >= SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return blocked("purchase-receipt-capacity");
       const requires = catalogue(sku).requires.filter((required) => !current.upgrades.includes(required));
       if (requires.length) return {
@@ -4012,15 +4040,17 @@ var NeonCampaign = (() => {
   // src/game/progression/classic-arsenal.js
   var WEAPON_IDS = Object.freeze(["pulse", "twin", "lance", "scatter", "needle"]);
   var BOSS_WEAPONS = Object.freeze({ "guardian-atlas": "twin" });
+  var RETIRED_WEAPONS = Object.freeze(["lance", "scatter", "needle"]);
   var owns = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
   function normalizeClassicEquipment(value) {
     if (!value || typeof value !== "object" || Array.isArray(value) || value.version !== 1 || typeof value.recoveredTwin !== "boolean" || !Array.isArray(value.unlocked) || !value.unlocked.includes("pulse") || [...value.unlocked].some((id) => !WEAPON_IDS.includes(id)) || !WEAPON_IDS.includes(value.selected) || !value.unlocked.includes(value.selected) || value.unlocked.includes("twin") && !value.recoveredTwin || owns(value, "lanceCalibrated") && typeof value.lanceCalibrated !== "boolean" || value.unlocked.includes("lance") && (!value.lanceCalibrated || !value.unlocked.includes("twin")) || owns(value, "twinPrepared") && typeof value.twinPrepared !== "boolean" || value.twinPrepared && !value.recoveredTwin || owns(value, "bossRewards") && (!Array.isArray(value.bossRewards) || [...value.bossRewards].some((id) => typeof id !== "string" || !owns(BOSS_WEAPONS, id)))) return null;
     if (value.bossRewards?.some((id) => !value.unlocked.includes(BOSS_WEAPONS[id]))) return null;
+    const unlocked = [...new Set(value.unlocked)].filter((id) => !RETIRED_WEAPONS.includes(id));
     return {
       version: 1,
       recoveredTwin: value.recoveredTwin,
-      unlocked: [...new Set(value.unlocked)],
-      selected: value.selected,
+      unlocked,
+      selected: unlocked.includes(value.selected) ? value.selected : "pulse",
       ...owns(value, "lanceCalibrated") ? { lanceCalibrated: value.lanceCalibrated } : {},
       ...owns(value, "twinPrepared") ? { twinPrepared: value.twinPrepared } : {},
       ...owns(value, "bossRewards") ? { bossRewards: [...new Set(value.bossRewards)] } : {}

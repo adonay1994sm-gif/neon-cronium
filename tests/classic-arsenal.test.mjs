@@ -23,13 +23,17 @@ test('fresh equipment has only the central pulse and no inferred boss victory', 
   assert.deepEqual(second.bossRewards, []);
 });
 
-test('valid historical Twin and Lance saves keep every owned weapon and selection', () => {
+// dec-armas-plan (01/11/2026): Lanza, Abanico y Aguja salen; un guardado
+// antiguo las pierde y vuelve a Pulso (Gemelo se queda).
+const withoutLance = equipment => equipment === oldLance ? {...oldLance, unlocked: oldLance.unlocked.filter(id => id !== 'lance'), selected: oldLance.selected === 'lance' ? 'pulse' : oldLance.selected} : equipment;
+test('valid historical Twin saves keep their weapon; an old Lance falls back to Pulse', () => {
   for (const equipment of [oldTwin, oldLance]) {
     const normalized = normalizeClassicEquipment(equipment);
-    assert.deepEqual(normalized, equipment);
+    assert.deepEqual(normalized, withoutLance(equipment));
     assert.notEqual(normalized, equipment);
     assert.notEqual(normalized.unlocked, equipment.unlocked);
-    assert.equal(canEquipClassicWeapon(normalized, equipment.selected), true);
+    assert.equal(canEquipClassicWeapon(normalized, normalized.selected), true);
+    assert.equal(canEquipClassicWeapon(normalized, 'lance'), false);
     assert.equal('bossRewards' in normalized, false, 'old equipment is not proof of an Atlas victory');
   }
 });
@@ -111,13 +115,13 @@ test('defeating Atlas grants Twin once, records the actual guardian and leaves P
   assert.deepEqual(equipment, before);
 });
 
-test('Atlas victory preserves legitimate old Twin or Lance and does not grant it twice', () => {
+test('Atlas victory preserves a legitimate old Twin and does not grant it twice', () => {
   for (const equipment of [oldTwin, oldLance]) {
     const before = structuredClone(equipment);
     const result = awardClassicBossWeapon(equipment, 'guardian-atlas');
     assert.equal(result.granted, false);
-    assert.equal(result.equipment.selected, equipment.selected);
-    assert.deepEqual(result.equipment.unlocked, equipment.unlocked);
+    assert.equal(result.equipment.selected, withoutLance(equipment).selected);
+    assert.deepEqual(result.equipment.unlocked, withoutLance(equipment).unlocked);
     assert.deepEqual(result.equipment.bossRewards, ['guardian-atlas']);
     assert.deepEqual(equipment, before);
     if (equipment.lanceCalibrated) assert.equal(result.equipment.lanceCalibrated, true);
@@ -145,35 +149,25 @@ test('the arsenal model owns no storage, renderer, random source or update clock
   assert.doesNotMatch(source, /requestAnimationFrame|setInterval|setTimeout|Math\.random|Date\.now|localStorage|document\.|window\./);
 });
 
-test('paid workshop weapons replay into equipment after interrupted projection without granting Gemelo or switching selection', () => {
+test('the workshop no longer grants weapons: old Abanico and Aguja purchases are refunded, not projected', () => {
   const map = new Map(), log = createScrapLedger({storage: {
     readRaw: key => ({ok: true, value: map.get(key) ?? null}),
     setJSON: (key, value) => { map.set(key, JSON.stringify(value)); return true; }
   }});
   const run = log.beginRun({scope: 'classic:1'});
   for (let index = 0; index < 25; index++) log.claimDrop({runId: run.runId, dropId: `enemy:${index}`, enemyType: 'scout'});
-  for (const sku of ['twin-preparation', 'weapon-scatter', 'weapon-needle']) {
-    assert.equal(log.purchase({transactionId: `buy:${sku}`, sku}).ok, true);
-  }
-  const fresh = createClassicEquipment(), paid = log.getState();
-  const projected = syncClassicWorkshopWeapons(fresh, paid);
-  assert.deepEqual(projected.unlocked, ['pulse', 'scatter', 'needle']);
-  assert.equal(projected.selected, 'pulse'); assert.equal(projected.recoveredTwin, false);
-  assert.deepEqual(projected.bossRewards, []);
-  assert.equal(canEquipClassicWeapon(projected, 'twin'), false);
-  assert.equal(canEquipClassicWeapon(projected, 'scatter'), true);
-  assert.equal(canEquipClassicWeapon(projected, 'needle'), true);
-  assert.deepEqual(syncClassicWorkshopWeapons(projected, paid), projected);
-  assert.deepEqual(normalizeClassicEquipment(projected), projected);
-  assert.deepEqual(fresh.unlocked, ['pulse']);
-  const selected = {...projected, selected: 'needle'};
-  assert.equal(syncClassicWorkshopWeapons(selected, paid).selected, 'needle');
+  assert.equal(log.purchase({transactionId: 'buy:twin-preparation', sku: 'twin-preparation'}).ok, true);
+  for (const sku of ['weapon-scatter', 'weapon-needle']) assert.equal(log.purchase({transactionId: `buy:${sku}`, sku}).reason, 'retired');
+  const fresh = createClassicEquipment();
+  assert.deepEqual(syncClassicWorkshopWeapons(fresh, log.getState()), fresh);
+  const old = {version: 1, recoveredTwin: false, unlocked: ['pulse', 'scatter', 'needle'], selected: 'needle'};
+  assert.deepEqual(normalizeClassicEquipment(old), {version: 1, recoveredTwin: false, unlocked: ['pulse'], selected: 'pulse'});
 });
 
 test('missing or forged workshop rights never unlock new weapons and historical equipment remains recoverable', () => {
   const fresh = createClassicEquipment();
   for (const record of [null, undefined, {}, {...createScrapRecord(), upgrades: ['weapon-scatter']}]) {
     assert.deepEqual(syncClassicWorkshopWeapons(fresh, record), fresh);
-    assert.deepEqual(syncClassicWorkshopWeapons(oldLance, record), oldLance);
+    assert.deepEqual(syncClassicWorkshopWeapons(oldLance, record), withoutLance(oldLance));
   }
 });

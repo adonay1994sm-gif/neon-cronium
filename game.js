@@ -1151,6 +1151,7 @@
     if(classicWeapons){
       NeonCampaign.setClassicRechargeInterval(classicWeapons,workshop.rechargeSeconds);
       NeonCampaign.setClassicWeaponTuning(classicWeapons,workshop.weaponRanks);
+      NeonCampaign.setClassicWeaponLevels(classicWeapons,workshop.weaponLevels);
     }
     const capacity=workshop.reserveCapacity;
     if(capacity>classicHullReserveCapacity)classicHullReserve+=capacity-classicHullReserveCapacity;
@@ -1319,25 +1320,19 @@
     loadout.setAttribute("role","group");loadout.setAttribute("aria-label","Arma al salir de C9");
     ui.flightDockStatus.closest('.c9-preview').after(loadout);
     setupClassicWorkshopSections(loadout,calibrate);
-    for(const [type,weapon] of Object.entries(NeonCampaign.CLASSIC_WEAPON_RULES.types)) {
+    // Se vuela con una arma por partida; se elige y se sube de nivel en el
+    // hangar (dec-armas-plan, 01/11/2026). Aquí solo se muestra.
+    for(const [type,weapon] of Object.entries(NeonCampaign.CLASSIC_WEAPON_RULES.types).filter(([type])=>type==="pulse"||type==="twin")) {
       const button=document.createElement("button");button.type="button";button.dataset.flightLoadout=type;
       button.className="cockpit-loadout-card";
       const roles={pulse:"Precisión · una carga",twin:"Dos pulsos centrados",lance:"Perfora dos objetivos",scatter:"Tres pulsos · corta distancia",needle:"Perfora tres objetivos"};
       const art={pulse:"emitter",twin:"emitter",lance:"needle",scatter:"scatter",needle:"needle"};
       button.innerHTML=`<span class="c9-upgrade-art" data-upgrade="${art[type]}" aria-hidden="true"></span><span class="cockpit-loadout-copy"><b>${weapon.label} ×${weapon.damageMultiplier}</b><small>${roles[type]}</small><em data-loadout-state></em></span>`;
-      button.onclick=()=>{
-        if(!classicEquipment.unlocked.includes(type))return;
-        if(persistClassicEquipment({...classicEquipment,selected:type})) {
-          updateClassicDock();syncClassicFlightHud();uiSound("weapon-switch");
-        }
-      };
+      button.onclick=()=>{if(ui.c9PurchaseStatus)ui.c9PurchaseStatus.textContent="El arma se elige y se mejora en el hangar, antes de salir.";};
       loadout.append(button);
     }
-    ui.flightWeapon.onclick = () => {
-      if (classicEquipment.unlocked.length < 2) { toast("El segundo cañón se desbloquea al vencer a Atlas"); return; }
-      const selected = classicEquipment.unlocked[(classicEquipment.unlocked.indexOf(classicEquipment.selected)+1)%classicEquipment.unlocked.length];
-      if (persistClassicEquipment({...classicEquipment, selected})) { uiSound("weapon-switch"); syncClassicFlightHud(); }
-    };
+    // Una arma por partida: en vuelo no se cambia (dec-armas-plan).
+    ui.flightWeapon.onclick = () => toast("El arma se elige y se mejora en el hangar.");
     $("beaconBuy").onclick=()=>buySectorBeacon();$("beaconSkip").onclick=()=>closeSectorBeacon();
     ui.flightInstallTwin.onclick = () => buyClassicC9Upgrade("twin-preparation");
     ui.c9BuyShield.onclick=()=>buyClassicC9Upgrade("hull-reinforcement");
@@ -1404,7 +1399,7 @@
     sections.supplies.grid.append(ui.c9BuyMissiles);
     oldGrid.remove();
     for(const [sku,definition] of Object.entries(NeonCampaign.SCRAP_UPGRADES)) {
-      if(['twin-preparation','hull-reinforcement','coolant-feed'].includes(sku))continue;
+      if(['twin-preparation','hull-reinforcement','coolant-feed'].includes(sku)||definition.retired)continue;
       const weapon=sku.startsWith('weapon-'),kind=sku.includes('scatter')?'scatter':sku.includes('needle')?'needle':sku.includes('hull')?'hull-ii':'coolant-ii';
       const button=document.createElement('button');button.type='button';button.className='secondary c9-tree-node';button.dataset.c9Sku=sku;
       const art=document.createElement('span');art.className='c9-upgrade-art';art.dataset.upgrade=kind;art.setAttribute('aria-hidden','true');
@@ -1427,8 +1422,7 @@
     };
     const tree=sections.systems.grid;tree.classList.add('c9-skill-tree');
     for(const [label,first,next] of [
-      ['BLINDAJE','hull-reinforcement','hull-plating-ii'],['REFRIGERACIÓN','coolant-feed','coolant-feed-ii'],
-      ['ABANICO · CONVERGENCIA',null,'scatter-focus'],['AGUJA · RESONANCIA',null,'needle-resonance']]) {
+      ['BLINDAJE','hull-reinforcement','hull-plating-ii'],['REFRIGERACIÓN','coolant-feed','coolant-feed-ii']]) {
       const branch=document.createElement('div');branch.className='c9-branch';
       const name=document.createElement('h4');name.textContent=label;branch.append(name);
       if(first)branch.append(first==='hull-reinforcement'?ui.c9BuyShield:ui.c9BuyCoolant);
@@ -1658,27 +1652,17 @@
     loadClassicSalvage();
     const installed=classicEquipment.unlocked.includes("twin");
     const weapon=NeonCampaign.CLASSIC_WEAPON_RULES.types[classicEquipment.selected];
-    const ownedUpgrades=classicSalvageState?.upgrades||[];
-    const tuning={scatter:ownedUpgrades.includes('scatter-focus'),needle:ownedUpgrades.includes('needle-resonance')};
-    const selectedUpgrade=tuning[classicEquipment.selected]?NeonCampaign.SCRAP_UPGRADES[classicEquipment.selected==='scatter'?'scatter-focus':'needle-resonance']:null;
-    const purchasedWeapon=classicEquipment.unlocked.some(id=>id==='scatter'||id==='needle');
-    ui.flightDockStatus.textContent=installed||purchasedWeapon
-      ? `${weapon.label}${selectedUpgrade?' II':''} equipado. ${selectedUpgrade?.description||weapon.description} Puedes cambiar de arma antes de volver al vuelo.`
+    const weaponLevel=NeonCampaign.classicWorkshopState(classicSalvageState).weaponLevels[classicEquipment.selected]||1;
+    ui.flightDockStatus.textContent=installed
+      ? `${weapon.label} nivel ${weaponLevel} equipado. El arma se elige y se sube de nivel en el hangar.`
       : classicEquipment.twinPrepared ? "Emisor preparado. Conservas Pulso hasta vencer a Atlas: su autorización desbloquea el segundo cañón."
       : classicEquipment.recoveredTwin ? "Emisor recuperado. Prepáralo por 24 de chatarra; vencer a Atlas autoriza el segundo cañón."
       : "Pulso central equipado. Recupera el módulo de Chronos para desarrollar tu nave.";
     for(const button of $("flightLoadoutChoices").querySelectorAll("button")) {
       const type=button.dataset.flightLoadout,unlocked=classicEquipment.unlocked.includes(type);
       button.disabled=!unlocked;button.setAttribute("aria-pressed",String(type===classicEquipment.selected));
-      button.querySelector('[data-loadout-state]').textContent=type===classicEquipment.selected?'EQUIPADA':unlocked?'EQUIPAR':type==='twin'?'REQUIERE ATLAS':'SIN ADQUIRIR';
-      button.title=unlocked?NeonCampaign.CLASSIC_WEAPON_RULES.types[type].description:type==="twin"?"Supera a Guardian Atlas":"Una frontera posterior desbloquea esta arma";
-      button.classList.toggle('hidden',type==='lance'&&!unlocked);
-      button.title=type==='scatter'||type==='needle' ? unlocked?NeonCampaign.CLASSIC_WEAPON_RULES.types[type].description:'Disponible en el arsenal de la Forja':button.title;
-      if(type==='scatter'||type==='needle') {
-        button.querySelector('b').textContent=`${NeonCampaign.CLASSIC_WEAPON_RULES.types[type].label}${tuning[type]?' II':''} ×${NeonCampaign.CLASSIC_WEAPON_RULES.types[type].damageMultiplier}`;
-        button.querySelector('small').textContent=type==='scatter'?(tuning[type]?'Tres pulsos · alcance ampliado':'Tres pulsos · corta distancia'):
-          tuning[type]?'Perfora cuatro · cadencia mejorada':'Perfora tres objetivos';
-      }
+      button.querySelector('[data-loadout-state]').textContent=type===classicEquipment.selected?'EQUIPADA':unlocked?'EN EL HANGAR':type==='twin'?'REQUIERE ATLAS':'SIN ADQUIRIR';
+      button.title=unlocked?"Se elige y se mejora en el hangar":"Supera a Guardian Atlas";
     }
     const balance=classicSalvageState?.balance??0,upgrades=classicSalvageState?.upgrades||[];
     ui.c9Balance.textContent=classicSalvageState ? NeonCampaign.formatDenominations(balance).label : "Bodega no disponible · compras protegidas";
@@ -1759,13 +1743,14 @@
     ui.flightDistance.value=view ? view.routeProgress : collected/level().goal;
     ui.flightDistance.setAttribute("aria-label",view ? "Recorrido hasta el destino" : "CRONIUM recuperado");
     ui.flightDistance.setAttribute("aria-valuetext",view ? `Etapa ${view.stageNumber||1} de ${view.distance?.stages||10}. ${Math.round(view.routeProgress*100)}% del recorrido` : `${collected} de ${level().goal} fragmentos`);
-    const weapon=NeonCampaign.CLASSIC_WEAPON_RULES.types[classicEquipment.selected];
+    const weapon=classicWeapons&&classicWeapons.selected===classicEquipment.selected?NeonCampaign.classicWeaponSnapshot(classicWeapons)
+      :NeonCampaign.CLASSIC_WEAPON_RULES.types[classicEquipment.selected];
     ui.flightWeaponName.textContent=weapon.label.toUpperCase();
-    ui.flightWeaponDamage.textContent=`DAÑO ×${weapon.damageMultiplier}`;
+    ui.flightWeaponDamage.textContent=`DAÑO ×${String(+weapon.damageMultiplier.toFixed(1)).replace(".",",")}`;
     ui.flightWeapon.title=weapon.description;
-    ui.flightWeapon.dataset.switchable=String(classicEquipment.unlocked.length>1);
+    ui.flightWeapon.dataset.switchable="false";
     ui.flightWeapon.classList.toggle("hidden",classicEquipment.unlocked.length<2);
-    ui.flightWeapon.setAttribute("aria-label",`Cambiar arma. ${weapon.label}. ${weapon.description}`);
+    ui.flightWeapon.setAttribute("aria-label",`Arma. ${weapon.label}. ${weapon.description}`);
     updateAmmoHud();
   }
 

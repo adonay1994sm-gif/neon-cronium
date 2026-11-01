@@ -726,17 +726,16 @@ test('a blocked C9 monetary write cannot grant its cooling entitlement or consum
   assert.match(h.node('c9PurchaseStatus').textContent,/guardar|guardado|persist|bloque|reintent/i);
 });
 
-test('historical twin owners keep their weapon and switching never duplicates ammunition or an emitted projectile', t => {
+// dec-armas-plan (01/11/2026): una arma por partida; en vuelo no se cambia.
+test('historical twin owners keep their weapon and the in-flight weapon button cannot switch it', t => {
   const saved=JSON.stringify({version:1,recoveredTwin:true,unlocked:['pulse','twin'],selected:'twin'});
   const h=harness(t,{saved});h.api.prepare(1);
   assert.equal(h.snapshot().weapons.selected,'twin');
   assert.equal(h.api.fireManualShot(),true);const fired=h.snapshot().weapons;
   assert.equal(fired.charges,19);assert.equal(fired.projectiles.length,2);
-  for(const selected of ['pulse','twin']) {
-    h.node('flightWeapon').click();const switched=h.snapshot().weapons;
-    assert.equal(switched.selected,selected);assert.equal(switched.charges,fired.charges);
-    assert.equal(switched.cooldown,fired.cooldown);assert.equal(switched.recharge,fired.recharge);
-    assert.equal(switched.shotSequence,fired.shotSequence);assert.deepEqual(switched.projectiles,fired.projectiles);
+  for(let click=0;click<2;click++) {
+    h.node('flightWeapon').click();
+    assert.deepEqual(h.snapshot().weapons,fired,'the weapon and its battery stay as they were');
   }
   const restored=harness(t,{saved:h.stored(EQUIPMENT_KEY)});restored.api.prepare();
   assert.equal(restored.snapshot().weapons.selected,'twin');assert.equal(restored.pending.size,1);assert.equal(h.pending.size,1);
@@ -764,58 +763,21 @@ test('invalid equipment is backed up once before replacement and a failed backup
   assert.equal(blocked.stored('neon-n7-unlocked-v1'), '37');
 });
 
-test('C9 selects a genuinely owned historical lance without granting a new tier and cycling retains battery state', t => {
+test('an old Lance save flies with Pulse and keeps Gemelo; C9 shows the weapon but cannot switch it', t => {
   const savedProfile=JSON.stringify({version:1,recoveredTwin:true,unlocked:['pulse','twin','lance'],
-    selected:'pulse',lanceCalibrated:true});
+    selected:'lance',lanceCalibrated:true});
   const h=harness(t,{saved:savedProfile});h.api.prepare();
+  assert.equal(h.snapshot().weapons.selected,'pulse');
+  assert.deepEqual(h.snapshot().weapons.unlocked,['pulse','twin']);
   assert.equal(h.node('flightWeaponDamage').textContent,'DAÑO ×1');
-  h.api.fireManualShot();h.advance(.3);const beforeEquipment=h.snapshot().weapons;
   h.api.goHome();h.node('openFlightDock').click();
-  assert.equal(h.node('flightCalibrateLance').classList.contains('hidden'),false);
-  h.node('flightCalibrateLance').click();const equipped=h.snapshot();
-  assert.equal(h.equipment().selected,'lance');assert.equal(h.equipment().lanceCalibrated,true);
-  assert.deepEqual(h.equipment().unlocked,['pulse','twin','lance']);
-  assert.equal(equipped.weapons.charges,beforeEquipment.charges);
-  assert.equal(equipped.weapons.recharge,beforeEquipment.recharge);
-  assert.equal(equipped.weapons.cooldown,beforeEquipment.cooldown);
-  assert.equal(h.node('flightCalibrateLance').disabled,true);
-  const saved=h.stored(EQUIPMENT_KEY);h.node('flightCalibrateLance').click();
-  assert.equal(h.stored(EQUIPMENT_KEY),saved,'Selecting the same historical weapon is idempotent');
+  assert.equal(h.node('flightCalibrateLance').classList.contains('hidden'),true);
   const choices=h.node('flightLoadoutChoices');
-  for(const type of ['pulse','twin','lance']) {
-    choices.querySelector(`[data-flight-loadout="${type}"]`).click();
-    assert.equal(h.equipment().selected,type,'C9 selection persists the actual weapon');
-    assert.equal(choices.querySelector(`[data-flight-loadout="${type}"]`).getAttribute('aria-pressed'),'true');
-    assert.equal(h.snapshot().weapons.charges,equipped.weapons.charges,'C9 comparison cannot manufacture ammunition');
-    assert.equal(h.snapshot().weapons.recharge,equipped.weapons.recharge);
-  }
-
-  h.api.prepare(1);
-  assert.equal(h.node('flightWeaponName').textContent, 'LANZA');
-  assert.equal(h.node('flightWeaponDamage').textContent, 'DAÑO ×3');
-  assert.equal(h.api.fireManualShot(), true);
-  const fired = h.snapshot().weapons;
-  assert.equal(fired.charges, 19); assert.equal(fired.projectiles.length, 1);
-  assert.equal(fired.projectiles[0].damage, 3); assert.equal(fired.projectiles[0].pierce, 2);
-  for (const [selected, multiplier] of [['pulse', 1], ['twin', 2], ['lance', 3]]) {
-    h.node('flightWeapon').click(); const switched = h.snapshot().weapons;
-    assert.equal(switched.selected, selected);
-    assert.equal(h.node('flightWeaponDamage').textContent, `DAÑO ×${multiplier}`);
-    assert.match(h.node('flightWeapon').getAttribute('aria-label'), new RegExp(`Daño ×${multiplier}`));
-    assert.equal(switched.charges, fired.charges);
-    assert.equal(switched.recharge, fired.recharge);
-    assert.equal(switched.cooldown, fired.cooldown);
-    assert.equal(switched.shotSequence, fired.shotSequence);
-    assert.deepEqual(switched.projectiles, fired.projectiles);
-    assert.equal(h.api.fireManualShot(), false, 'Switching cannot bypass the lance cooldown');
-  }
-  const restored = harness(t, {saved: h.stored(EQUIPMENT_KEY)}); restored.api.prepare();
-  assert.equal(restored.snapshot().equipment.lanceCalibrated, true);
-  assert.equal(restored.snapshot().weapons.selected, 'lance');
-  assert.equal(restored.node('flightWeaponDamage').textContent, 'DAÑO ×3');
-  assert.equal(h.stored('neon-n7-unlocked-v1'), '37');
-  assert.equal(h.stored('neon-n7-best-v1'), '2037');
-  assert.equal(h.pending.size, 1); assert.equal(restored.pending.size, 1);
+  assert.deepEqual([...choices.querySelectorAll('[data-flight-loadout]')].map(button=>button.dataset.flightLoadout),['pulse','twin']);
+  const saved=h.stored(EQUIPMENT_KEY);
+  choices.querySelector('[data-flight-loadout="twin"]').click();
+  assert.equal(h.stored(EQUIPMENT_KEY),saved,'C9 no longer switches the weapon');
+  assert.match(h.node('c9PurchaseStatus').textContent,/hangar/);
 });
 
 test('malformed lance unlocks are preserved as backups instead of granting uncalibrated weapons', t => {
@@ -948,7 +910,7 @@ test('measured compact bounds ignore the hidden one-weapon switch and side contr
   assert.equal(h.pending.size, 1);
 });
 
-test('the compact HUD and weapon share menu, completion, death and Atlas visibility while switching preserves ammunition', t => {
+test('the compact HUD and weapon share menu, completion, death and Atlas visibility and the weapon cannot be switched in flight', t => {
   const saved = JSON.stringify({version: 1, recoveredTwin: true,
     unlocked: ['pulse', 'twin'], selected: 'twin'});
   const h = harness(t, {saved, unlocked: 3, rects: {
@@ -968,16 +930,11 @@ test('the compact HUD and weapon share menu, completion, death and Atlas visibil
   assert.equal(h.node('flightHud').classList.contains('hidden'), false);
   assert.equal(h.node('flightRoute').classList.contains('hidden'), false);
   assert.equal(h.api.fireManualShot(), true); const fired = h.snapshot().weapons;
-  for (const selected of ['pulse', 'twin']) {
-    h.node('flightWeapon').click(); const switched = h.snapshot().weapons;
-    assert.equal(switched.selected, selected);
-    assert.equal(switched.charges, fired.charges);
-    assert.equal(switched.recharge, fired.recharge);
-    assert.equal(switched.cooldown, fired.cooldown);
-    assert.equal(switched.projectiles.length, fired.projectiles.length);
-    assert.equal(h.node('flightWeaponName').textContent, selected === 'twin' ? 'GEMELO' : 'PHASER');
-    assert.equal(h.node('flightWeaponDamage').textContent, selected === 'twin' ? 'DAÑO ×2' : 'DAÑO ×1');
-  }
+  // Una arma por partida (dec-armas-plan): el botón solo informa.
+  h.node('flightWeapon').click();
+  assert.deepEqual(h.snapshot().weapons, fired);
+  assert.equal(h.node('flightWeaponName').textContent, 'GEMELO');
+  assert.equal(h.node('flightWeaponDamage').textContent, 'DAÑO ×2');
   const normalBounds = h.snapshot().bounds;
   h.api.finishGame('hull');
   assert.equal(h.snapshot().state, 'gameover'); hidden();

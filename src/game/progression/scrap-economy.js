@@ -29,29 +29,36 @@ export const SCRAP_UPGRADES = Object.freeze({
   'coolant-feed-ii': upgrade({id: 'coolant-feed-ii', price: 110, branch: 'cooling', rank: 2,
     requires: ['coolant-feed'], label: 'Refrigeración II',
     description: 'Recupera un proyectil cada segundo de vuelo; conserva la carga y recuperación en curso.'}),
-  'weapon-scatter': upgrade({id: 'weapon-scatter', price: 70, weaponId: 'scatter', branch: 'scatter', rank: 1,
+  'weapon-scatter': upgrade({id: 'weapon-scatter', retired: true, price: 70, weaponId: 'scatter', branch: 'scatter', rank: 1,
     requires: ['twin-preparation'], label: 'Abanico I',
     description: 'Tres pulsos divergentes de 1 de daño; alcance corto para interceptar grupos cercanos.',
     tradeoff: 'Exige acercarse: sus pulsos se disipan antes que un Phaser.'}),
-  'scatter-focus': upgrade({id: 'scatter-focus', price: 120, weaponId: 'scatter', branch: 'scatter', rank: 2,
+  'scatter-focus': upgrade({id: 'scatter-focus', retired: true, price: 120, weaponId: 'scatter', branch: 'scatter', rank: 2,
     requires: ['weapon-scatter'], label: 'Abanico II · convergencia',
     description: 'Concentra la apertura de 18° a 13° y amplía el alcance de 224 a 317; mantiene tres pulsos.',
     tradeoff: 'Gana alcance pero cubre menos anchura.'}),
-  'weapon-needle': upgrade({id: 'weapon-needle', price: 95, weaponId: 'needle', branch: 'needle', rank: 1,
+  'weapon-needle': upgrade({id: 'weapon-needle', retired: true, price: 95, weaponId: 'needle', branch: 'needle', rank: 1,
     requires: ['twin-preparation'], label: 'Aguja I',
     description: 'Proyectil estrecho de 2 de daño que perfora hasta tres objetivos alineados.',
     tradeoff: 'Menor anchura de impacto y cadencia más lenta que el Phaser.'}),
-  'needle-resonance': upgrade({id: 'needle-resonance', price: 140, weaponId: 'needle', branch: 'needle', rank: 2,
+  'needle-resonance': upgrade({id: 'needle-resonance', retired: true, price: 140, weaponId: 'needle', branch: 'needle', rank: 2,
     requires: ['weapon-needle'], label: 'Aguja II · resonancia',
     description: 'Perfora cuatro objetivos y dispara cada 0,46 s en lugar de cada 0,56 s.',
     tradeoff: 'Mantiene el daño directo de 2: destaca frente a objetivos alineados.'})
 });
+// Abanico y Aguja salieron de la Forja (dec-armas-plan, 01/11/2026): siguen
+// aquí solo para leer guardados antiguos; al cargar se devuelve su chatarra.
+export const RETIRED_UPGRADES = Object.freeze(Object.keys(SCRAP_UPGRADES).filter(sku => SCRAP_UPGRADES[sku].retired));
+// Niveles 2 a 4 de Pulso y Gemelo, comprados en el hangar (dec-armas-plan).
+export const SCRAP_WEAPON_LEVELS = Object.freeze(Object.fromEntries(['pulse', 'twin'].flatMap(weaponId =>
+  [[2, 300], [3, 800], [4, 1800]].map(([level, price]) => [`level-${weaponId}-${level}`, upgrade({id: `level-${weaponId}-${level}`,
+    weaponId, level, price, requires: level > 2 ? [`level-${weaponId}-${level - 1}`] : [], label: `Nivel ${level}`})]))));
 // Naves de chatarra del hangar (01/11/2026): la compra se apunta aquí, en el
 // mismo guardado que resta la chatarra. No salen en la Forja C9.
 export const SCRAP_SHIPS = Object.freeze(Object.fromEntries(SHIP_ROSTER.filter(ship => ship.access.type === 'scrap')
   .map(ship => [`ship-${ship.id}`, upgrade({id: `ship-${ship.id}`, shipId: ship.id, price: ship.access.price, label: ship.name})])));
-const catalogue = sku => SCRAP_UPGRADES[sku] || SCRAP_SHIPS[sku];
-const inCatalogue = sku => has(SCRAP_UPGRADES, sku) || has(SCRAP_SHIPS, sku);
+const catalogue = sku => SCRAP_UPGRADES[sku] || SCRAP_SHIPS[sku] || SCRAP_WEAPON_LEVELS[sku];
+const inCatalogue = sku => has(SCRAP_UPGRADES, sku) || has(SCRAP_SHIPS, sku) || has(SCRAP_WEAPON_LEVELS, sku);
 
 // Consumibles: se gastan y se pueden volver a comprar. No ocupan recibos de
 // mejoras: el registro guarda lo gastado en ellos y el último recibo (como los
@@ -91,7 +98,8 @@ export function classicWorkshopState(record) {
     rechargeSeconds: owns('coolant-feed-ii') ? 1 : owns('coolant-feed') ? 1.5 : 2,
     defenseRank: owns('hull-plating-ii') ? 2 : owns('hull-reinforcement') ? 1 : 0,
     coolingRank: owns('coolant-feed-ii') ? 2 : owns('coolant-feed') ? 1 : 0,
-    weaponIds: ['scatter', 'needle'].filter(id => owns(`weapon-${id}`)),
+    weaponIds: [],
+    weaponLevels: Object.fromEntries(['pulse', 'twin'].map(id => [id, owns(`level-${id}-4`) ? 4 : owns(`level-${id}-3`) ? 3 : owns(`level-${id}-2`) ? 2 : 1])),
     weaponRanks: {scatter: owns('scatter-focus') ? 2 : owns('weapon-scatter') ? 1 : 0,
       needle: owns('needle-resonance') ? 2 : owns('weapon-needle') ? 1 : 0}};
 }
@@ -142,7 +150,7 @@ export function normalizeScrapRecord(value) {
       (!legacy&&value.revision!==SCRAP_ECONOMY_RULES.revision) ||
       !['balance', 'earned', 'spent', 'runSequence'].every(key => integer(value[key])) ||
       value.earned < value.spent || value.balance !== value.earned - value.spent ||
-      !Array.isArray(value.upgrades) || value.upgrades.length > Object.keys(SCRAP_UPGRADES).length + Object.keys(SCRAP_SHIPS).length ||
+      !Array.isArray(value.upgrades) || value.upgrades.length > Object.keys(SCRAP_UPGRADES).length + Object.keys(SCRAP_SHIPS).length + Object.keys(SCRAP_WEAPON_LEVELS).length ||
       upgrades.some(sku => typeof sku !== 'string' || !inCatalogue(sku)) ||
       new Set(upgrades).size !== upgrades.length ||
       !Array.isArray(value.purchases) || value.purchases.length > SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return null;
@@ -281,8 +289,16 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
     }
     current = normalizeScrapRecord(parsed);
     if(current===null)return {error:preserveInvalid(loaded.value)};
+    const retired=current.purchases.filter(receipt=>RETIRED_UPGRADES.includes(receipt.sku));
     const migrating=!has(parsed,'revision')||parsed.upgrades.includes('shield-cell')||
-      parsed.purchases.some(receipt=>receipt.sku==='shield-cell');
+      parsed.purchases.some(receipt=>receipt.sku==='shield-cell')||retired.length>0;
+    if(retired.length) {
+      // Devolución de Abanico y Aguja: se quitan con sus recibos y se devuelve lo pagado.
+      const refund=retired.reduce((total,receipt)=>total+receipt.price,0);
+      current={...current,balance:current.balance+refund,spent:current.spent-refund,
+        upgrades:current.upgrades.filter(sku=>!RETIRED_UPGRADES.includes(sku)),
+        purchases:current.purchases.filter(receipt=>!RETIRED_UPGRADES.includes(receipt.sku))};
+    }
     if(migrating) {
       const backup=backupRaw(loaded.value,migrationBackupKey);
       if(!backup.ok){current=null;return {error:backup};}
@@ -394,6 +410,7 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
       : blocked('transaction-id-conflict');
     if (current.lastConsumable?.id === transactionId) return blocked('transaction-id-conflict');
     if (current.upgrades.includes(sku)) return {ok: false, status: 'unavailable', reason: 'already-owned', state: copy(current)};
+    if (catalogue(sku).retired) return {ok: false, status: 'unavailable', reason: 'retired', state: copy(current)};
     if (current.purchases.length >= SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return blocked('purchase-receipt-capacity');
     const requires = catalogue(sku).requires.filter(required => !current.upgrades.includes(required));
     if (requires.length) return {ok: false, status: 'unavailable', reason: 'prerequisite-required',
