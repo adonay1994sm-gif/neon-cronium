@@ -945,6 +945,27 @@
     if(ui.atlasHealth.value!==health)ui.atlasHealth.value=health;
     if(ui.atlasStatus.textContent!==status)ui.atlasStatus.textContent=status;
   }
+  // Chocar contra un jefe o un subjefe hace mucho daño (propietario, 01/11):
+  // 30 de casco, como mucho uno por segundo, y la nave sale despedida fuera
+  // del cuerpo para no quedarse dentro. Con Atlas no hace falta: la zona de
+  // vuelo acaba antes de su cuerpo (refreshClassicFlightBounds).
+  const BOSS_RAM_DAMAGE=30,BOSS_RAM_COOLDOWN=1;
+  let bossRamCooldown=0;
+  function bossRam(x,y,radius,dt) {
+    bossRamCooldown=Math.max(0,bossRamCooldown-dt);
+    // La gracia (tras un golpe o al reanudar) también protege del choque.
+    if(state!=="playing"||bossRamCooldown>0||hullGrace>0)return false;
+    const dx=player.x-x,dy=player.y-y,reach=radius+SHIP_COLLISION_HALF_WIDTH,distance=Math.hypot(dx,dy);
+    if(distance>=reach)return false;
+    bossRamCooldown=BOSS_RAM_COOLDOWN;
+    damageShip(BOSS_RAM_DAMAGE,player.x,player.y);
+    shake=Math.max(shake,7);cameraKickY=Math.max(cameraKickY,5);
+    const nx=distance?dx/distance:0,ny=distance?dy/distance:1;
+    player.x=player.target=clamp(x+nx*(reach+12),player.w/2+18,W-player.w/2-18);
+    player.y=player.targetY=y+ny*(reach+12);
+    if(classicFlightBounds)player.y=player.targetY=clamp(player.y,classicFlightBounds.minY,classicFlightBounds.maxY);
+    return true;
+  }
   function maybeStartSubBoss() {
     const view=classicFlightView;
     if(subBoss||subBossBeaten||!isSectorRun()||state!=="playing"||!view)return;
@@ -985,6 +1006,7 @@
       subBoss.lastHitKey=hitKey;damageShip(damage,player.x,player.y);subBossBurn={x:player.x,y:player.y,age:0};
     }
     if(subBossBurn&&(subBossBurn.age+=dt)>.5)subBossBurn=null;
+    if(subBoss.state!=="entry"&&subBoss.state!=="defeated")bossRam(subBoss.x,subBoss.y,SUB_BOSS_HIT_RADIUS*.8,dt);
     if(subBoss.resolved){subBoss=null;ui.atlasEncounter?.classList.add("hidden");return;}
     const status=subBoss.state==="warning"?(subBoss.attack==="laser"?"LÁSER · sal de la franja roja":"CARGANDO · prepárate para esquivar")
       :subBoss.state==="defeated"?"SUBGUARDIÁN ABATIDO":"Dispárale y esquiva su láser.";

@@ -596,6 +596,28 @@ test('dying during the subguardian and reviving keeps its damage; retrying resta
   assert.deepEqual([T.stage(), T.ev('subBoss')], [1, null]);
 });
 
+// Propietario (01/11): chocar contra un jefe o un subjefe hace mucho daño.
+test('ramming the subguardian costs 30 hull once and throws the ship out of its body', () => {
+  const {T} = harness();
+  startAt(T, 5); T.adv(9);
+  T.ev("hullGrace=0;classicHullReserve=0;items=[];Object.assign(subBoss,{state:'idle',stateTime:0,attack:null,beam:null});player.x=player.target=subBoss.x;player.y=player.targetY=subBoss.y+20");
+  const before = T.hull();
+  T.adv(1 / 60);
+  assert.equal(before - T.hull(), 30);
+  assert.ok(Math.hypot(T.ev('player.x-subBoss.x'), T.ev('player.y-subBoss.y')) > 80, 'pushed out of the body');
+  T.ev("hullGrace=0;player.x=player.target=subBoss.x;player.y=player.targetY=subBoss.y+20");
+  const mid = T.hull();
+  T.adv(1 / 60);
+  assert.equal(mid, T.hull(), 'at most one ram per second');
+});
+
+test('the ship cannot fly into Atlas: its flight area ends below the boss body', () => {
+  const {T} = harness();
+  startAt(T, 10); toFinish(T); T.adv(4);
+  // El cuerpo sólido de Atlas (su radio r) queda muy por encima del techo del vuelo.
+  assert.ok(T.ev('classicFlightBounds.minY-atlasBoss.y') > T.ev('atlasBoss.r+SHIP_COLLISION_HALF_WIDTH') * 1.5);
+});
+
 test('the subguardian only fights in the sector', () => {
   const {T} = harness();
   T.startSideVoyage('S1-V2'); T.toStage(5); T.adv(10);
