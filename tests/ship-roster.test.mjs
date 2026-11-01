@@ -29,9 +29,11 @@ test('a new player owns only Astér; beating Atlas gives Bastión', () => {
 });
 
 test('scrap ships are bought with enough scrap, once, and never the paid ones', () => {
-  assert.equal(buyShipWithScrap(save(), 'vertice', 9999), null);
-  const bought = buyShipWithScrap(save(), 'vertice', 10000);
-  assert.deepEqual(bought, {save: save('aster', ['vertice']), price: 10000});
+  // Precios elegidos el 01/11 (dec-precios-naves).
+  assert.deepEqual(SHIP_ROSTER.filter(ship => ship.access.type === 'scrap').map(ship => ship.access.price), [2500, 8000, 20000]);
+  assert.equal(buyShipWithScrap(save(), 'vertice', 2499), null);
+  const bought = buyShipWithScrap(save(), 'vertice', 2500);
+  assert.deepEqual(bought, {save: save('aster', ['vertice']), price: 2500});
   assert.deepEqual(ownedShips(fresh, bought.save), ['aster', 'vertice']);
   assert.equal(buyShipWithScrap(bought.save, 'vertice', 1e9), null, 'already owned');
   assert.equal(buyShipWithScrap(save(), 'titan', 1e9), null, 'paid ship');

@@ -3,8 +3,9 @@
  * del hangar de GPT (Hangar.dc.html). Cómo se consiguen (decisión del
  * propietario, 24/10/2026): Astér de serie y Bastión al vencer a Atlas; tres
  * con chatarra, cada una más cara y con mejor habilidad; el resto, de pago con
- * skins, con habilidades más vistosas pero no más fuertes. Los precios son
- * provisionales hasta la revisión de la economía; el pago aún no existe.
+ * skins, con habilidades más vistosas pero no más fuertes. Precios de
+ * chatarra elegidos el 01/11 (dec-precios-naves, docs/design/ECONOMIA_2026-11-01.md):
+ * ≈ 2, 7 y 18 sectores; se revisan cuando haya más sectores. El pago aún no existe.
  * Clave propia: no toca el guardado del sector. Funciones puras.
  */
 export const SHIP_ROSTER_KEY = 'neonCronium.ships.v1';
@@ -20,9 +21,9 @@ const ship = (number, id, name, role, access, exclusive, cooldown, exclusiveText
 export const SHIP_ROSTER = Object.freeze([
   ship('01', 'aster', 'Astér', 'Exploradora', FREE(0), 'Salto de fase', 8, 'Esquiva lateral instantánea: durante 0,4 s no recibe daño.', 'Lluvia de estrellas', 'Caen del cielo 24 dardos de luz que buscan a cada enemigo en pantalla.'),
   ship('02', 'bastion', 'Bastión', 'Acorazada', FREE(1), 'Muralla', 14, 'Escudo frontal que detiene los disparos de delante durante 3 s.', 'Fortaleza', 'Una cúpula de 6 s que devuelve cada proyectil enemigo a quien lo disparó.'),
-  ship('03', 'vertice', 'Vértice', 'Perforadora', SCRAP(10000), 'Lanza', 10, 'Disparo cargado que atraviesa toda la columna.', 'Prisma', 'Un rayo que se abre en 5 haces y barre la pantalla durante 4 s.'),
-  ship('04', 'mantarraya', 'Mantarraya', 'Guardiana de cola', SCRAP(50000), 'Estela', 12, 'Deja detrás una estela que daña a lo que llega por la retaguardia.', 'Marea', 'Una onda saca de la pantalla proyectiles y meteoritos y aturde 2 s.'),
-  ship('05', 'arpon', 'Arpón', 'Cazadora', SCRAP(150000), 'Arpón', 12, 'Engancha a un enemigo y lo arrastra; suelta el doble de chatarra.', 'Riel', 'Un cañón de riel atraviesa la pantalla con un daño enorme a los jefes.'),
+  ship('03', 'vertice', 'Vértice', 'Perforadora', SCRAP(2500), 'Lanza', 10, 'Disparo cargado que atraviesa toda la columna.', 'Prisma', 'Un rayo que se abre en 5 haces y barre la pantalla durante 4 s.'),
+  ship('04', 'mantarraya', 'Mantarraya', 'Guardiana de cola', SCRAP(8000), 'Estela', 12, 'Deja detrás una estela que daña a lo que llega por la retaguardia.', 'Marea', 'Una onda saca de la pantalla proyectiles y meteoritos y aturde 2 s.'),
+  ship('05', 'arpon', 'Arpón', 'Cazadora', SCRAP(20000), 'Arpón', 12, 'Engancha a un enemigo y lo arrastra; suelta el doble de chatarra.', 'Riel', 'Un cañón de riel atraviesa la pantalla con un daño enorme a los jefes.'),
   ship('06', 'orion', 'Orión', 'Comandante', PAID, 'Alas', 16, 'Dos drones disparan contigo durante 8 s.', 'Constelación', 'Seis drones forman una estrella y disparan en todas las direcciones 6 s.'),
   ship('07', 'quimera', 'Quimera', 'Engaño', PAID, 'Señuelo', 14, 'Un holograma de tu nave atrae los disparos durante 4 s.', 'Enjambre', 'Doce mininaves buscan a los enemigos y estallan al alcanzarlos.'),
   ship('08', 'nomada', 'Nómada', 'Recolectora', PAID, 'Imán', 15, 'Atrae CRONIUM y chatarra de toda la pantalla y repara 5 de casco.', 'Forja móvil', 'Repara el 40 % del casco y llena munición y misiles.'),
