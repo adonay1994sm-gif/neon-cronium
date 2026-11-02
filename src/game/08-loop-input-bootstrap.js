@@ -28,6 +28,7 @@
     drawGuardianAtlas();
     if (typeof drawSubguardian === "function") drawSubguardian();
     drawPlayer(t);
+    if (typeof drawC9Docking === "function") drawC9Docking();
     drawShots();
     drawClassicProjectiles();
     drawExplosions();

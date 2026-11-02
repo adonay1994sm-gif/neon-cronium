@@ -451,10 +451,12 @@
   }
 
   // Parada de C9 en el tramo 6 (dec-hangar-acceso y propietario, 02/11/2026):
-  // se repara el casco y se abre la Forja con la estación de fondo; el viaje
-  // sigue al pulsar VOLVER A PILOTAR (resumeClassicVoyageService).
+  // alto el fuego, C9 llega y abre la compuerta, la nave atraca (escena de
+  // presentation/c9-docking.js), se repara el casco y se abre la Forja con la
+  // estación de fondo. Al pulsar VOLVER A PILOTAR, C9 suelta la nave y se va.
+  let c9Scene=null;
   function beginClassicVoyageService() {
-    if(state!=="playing"||classicFlightView?.waitingFor!=="service")return;
+    if(state!=="playing"||classicFlightView?.waitingFor!=="service"||c9Scene)return;
     signalClassicChapter("c9-arrival");
     hull=100;hud();
     // Los viajes antiguos (solo en desarrollo) siguen reparando en vuelo.
@@ -463,12 +465,36 @@
       signalClassicChapter("c9-departure");
       saveClassicVoyageCheckpoint(classicFlight.exportCheckpoint());return;
     }
+    c9Scene=NeonCampaign.createC9Docking({width:W,height:H});ensureSprite(SPRITES.c9Station);
+    // Alto el fuego total: los enemigos se retiran y sus disparos se apagan.
+    retreatForC9();
+    showStoryTransmission("MIRA","Alto el fuego. Abro la compuerta: mete la nave por abajo.",3.6);
+  }
+  function openC9Forge() {
     if(typeof resetGameInput==="function")resetGameInput();
     NeonCampaign.endFlightInput(classicFlightInput);
     setState("paused");pauseStartedAt=performance.now();
     flightDockReturn="voyage";updateClassicDock();overlay(ui.flightDock);
     $("flightDockContinue").focus({preventScroll:true});
     ui.flightDock.querySelector(".c9-scroll").scrollTop=0;
+  }
+  function retreatForC9(){for(const item of items)if(isThreat(item)||item.gaiaEnemy||item.classicScout)item.c9Retreat=true;}
+  function updateC9Scene(dt) {
+    if(!c9Scene)return;
+    // Lo que aparezca durante la escena también se retira.
+    retreatForC9();
+    NeonCampaign.advanceC9Docking(c9Scene,dt,player,event=>{
+      if(event.type==="open")uiSound("unlock");
+      if(event.type==="tractor")uiSound("power-up");
+      if(event.type==="docked")openC9Forge();
+      if(event.type==="done")c9Scene=null;
+    });
+    if(!c9Scene)return;
+    const gate=NeonCampaign.c9Gate(c9Scene);
+    // El haz mete la nave por la compuerta; al soltarla, la empuja hacia abajo.
+    const pull=c9Scene.phase==="tractor"?gate:c9Scene.phase==="release"?{x:gate.x,y:gate.y+240}:null;
+    if(pull){player.x=player.target=player.x+(pull.x-player.x)*Math.min(1,dt*5);
+      player.y=player.targetY=player.y+(pull.y-player.y)*Math.min(1,dt*5);}
   }
 
   // Baliza de reaparición (plan F3c): se vende en la Forja de la parada si el
@@ -518,6 +544,7 @@
     signalClassicChapter("c9-departure");
     classicFlight.resolveService(classicFlightEvent);classicFlightView=classicFlight.snapshot();
     saveClassicVoyageCheckpoint(classicFlight.exportCheckpoint());
+    if(c9Scene)NeonCampaign.releaseC9Docking(c9Scene);
     applyClassicSalvageShield();
     syncClassicFlightHud();hud();resumeAudio();
   }
@@ -809,7 +836,7 @@
         const text=`${missing===1?"Falta 1":`Faltan ${missing}`} CRONIUM para seguir al siguiente tramo.`;
         showStoryTransmission("N-7",text,4);classicCroniumWaitShown={text,collected};
       }
-      if(state==="playing" && !atlasBoss && !subBossHolds() && classicFlightView.waitingFor!=="service") advanceClassicVoyageEncounters(dt);
+      if(state==="playing" && !atlasBoss && !subBossHolds() && !c9Scene && classicFlightView.waitingFor!=="service") advanceClassicVoyageEncounters(dt);
       syncClassicFlightHud();return;
     }
     if(classicFlightView?.routeProgress>=.30 && classicFlightView.routeProgress<.82) {
@@ -2233,7 +2260,7 @@
     classicFlightView=classicFlight?.snapshot() || null;
     resetSectorAttackTokens();
     // Un intento que empieza pasado el tramo 5 ya dejó atrás al subguardián.
-    subBoss=null;subBossBurn=null;subBossBeaten=Boolean(classicFlightView)&&classicFlightView.stageNumber>5;
+    subBoss=null;subBossBurn=null;c9Scene=null;subBossBeaten=Boolean(classicFlightView)&&classicFlightView.stageNumber>5;
     // La historia del capítulo dura 360 s: en los tramos posteriores del sector no hay.
     classicChapterStory=classicFlight&&fichaHasIntro()&&classicFlightView.elapsed<NeonCampaign.CHRONOS_CHAPTER_ROUTE_SECONDS?NeonCampaign.createChronosChapterStory({checkpoint:voyageEntry&&!classicSideVoyage?classicVoyageRecord?.chapter:null,routeElapsed:classicFlightView.elapsed,presentation:"in-world"}):null;
     classicChapterView=classicChapterStory?.snapshot()||null;
@@ -2387,7 +2414,7 @@
 
   function goHome() {
     if (typeof resetGameInput === "function") resetGameInput();
-    classicSideVoyage=null;subBoss=null;subBossBurn=null;
+    classicSideVoyage=null;subBoss=null;subBossBurn=null;c9Scene=null;
     classicTutorial=null;classicFlight=null;classicFlightView=null;classicChapterStory=null;classicChapterView=null;
     syncClassicChapterPresentation();
     if(classicWeapons)classicWeapons.projectiles.length=0;

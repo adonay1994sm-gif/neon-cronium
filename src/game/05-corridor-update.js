@@ -284,6 +284,7 @@
     advanceClassicFlight(dt);
     if(state!=="playing"){updateEffects(dt);return;}
     if (typeof updateSubBossEncounter === "function") updateSubBossEncounter(dt);
+    if (typeof updateC9Scene === "function") updateC9Scene(dt);
     if (!atlasBoss && !classicFlightView) {
       spawnTimer -= dt;
       if (spawnTimer <= 0) {
@@ -359,6 +360,12 @@
       // Recovering the final fragment can replace the field with the Atlas
       // arena synchronously. The old loop indexes must not read that old field.
       if (!item) continue;
+      // Alto el fuego de C9: lo hostil se retira hacia arriba y se apaga.
+      if (item.c9Retreat) {
+        item.y -= 320 * dt; item.alpha = Math.max(0, (item.alpha ?? 1) - dt * 1.4);
+        if (item.alpha <= 0 || item.y < -90) items.splice(index, 1);
+        continue;
+      }
       if(item.salvagePickup) {
         if(!advanceClassicSalvagePickup(item,dt*scale)){items.splice(index,1);continue;}
       } else if(item.showerComet) {

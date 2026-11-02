@@ -21,6 +21,7 @@ var NeonCampaign = (() => {
   var legacy_content_entry_exports = {};
   __export(legacy_content_entry_exports, {
     AIMED_METEOR_RULES: () => AIMED_METEOR_RULES,
+    C9_DOCKING_RULES: () => C9_DOCKING_RULES,
     CH03_RULES: () => CH03_RULES,
     CHRONOS_CHAPTER_ROUTE_SECONDS: () => CHRONOS_CHAPTER_ROUTE_SECONDS,
     CHRONOS_INTRO_TIMELINE: () => CHRONOS_INTRO_TIMELINE,
@@ -52,6 +53,7 @@ var NeonCampaign = (() => {
     SUBGUARDIAN_RULES: () => SUBGUARDIAN_RULES,
     VOYAGES: () => VOYAGES,
     advanceAimedMeteorRain: () => advanceAimedMeteorRain,
+    advanceC9Docking: () => advanceC9Docking,
     advanceCh03Satellite: () => advanceCh03Satellite,
     advanceClassicPursuer: () => advanceClassicPursuer,
     advanceClassicScout: () => advanceClassicScout,
@@ -71,6 +73,9 @@ var NeonCampaign = (() => {
     beginFlightInput: () => beginFlightInput,
     buyBeacon: () => buyBeacon,
     buyShipWithScrap: () => buyShipWithScrap,
+    c9CeasefireActive: () => c9CeasefireActive,
+    c9DockingFrame: () => c9DockingFrame,
+    c9Gate: () => c9Gate,
     calculateFlightBounds: () => calculateFlightBounds,
     canTriggerClassicMissile: () => canTriggerClassicMissile,
     ch03HitsShip: () => ch03HitsShip,
@@ -82,6 +87,7 @@ var NeonCampaign = (() => {
     continuePoint: () => continuePoint,
     createAimedMeteorRain: () => createAimedMeteorRain,
     createAttackTokens: () => createAttackTokens,
+    createC9Docking: () => createC9Docking,
     createCh01Animator: () => createCh01Animator,
     createCh02Animator: () => createCh02Animator,
     createCh03Satellite: () => createCh03Satellite,
@@ -140,6 +146,7 @@ var NeonCampaign = (() => {
     ownedShips: () => ownedShips,
     prepareClassicTwin: () => prepareClassicTwin,
     releaseAttack: () => releaseAttack,
+    releaseC9Docking: () => releaseC9Docking,
     releaseCometShowerItem: () => releaseCometShowerItem,
     requestAttack: () => requestAttack,
     resolveHullReinforcement: () => resolveHullReinforcement,
@@ -4639,7 +4646,7 @@ var NeonCampaign = (() => {
       if (vx > bankThreshold) return "bankRight";
       return Math.abs(vy) > bankThreshold ? "flight" : "idle";
     }
-    function enter3(next) {
+    function enter4(next) {
       state = next;
       elapsedMs = 0;
       eventCursor = 0;
@@ -4662,7 +4669,7 @@ var NeonCampaign = (() => {
           fired: attackFired
         });
       }
-      enter3(next);
+      enter4(next);
       return true;
     }
     function update(dt, sample = {}) {
@@ -4682,7 +4689,7 @@ var NeonCampaign = (() => {
         vy = nextVy;
         if (health === 0) request("destroy");
         else if (lostHealth) request("hurt");
-        else if (!animations[state].locked && state !== baseState()) enter3(baseState());
+        else if (!animations[state].locked && state !== baseState()) enter4(baseState());
       }
       const emitted = pending;
       pending = [];
@@ -4717,7 +4724,7 @@ var NeonCampaign = (() => {
           elapsedMs = 0;
           eventCursor = 0;
         } else {
-          enter3(baseState());
+          enter4(baseState());
         }
       }
       return emitted;
@@ -5028,7 +5035,7 @@ var NeonCampaign = (() => {
     observePlayer(enemy, player, profile2.sampleInterval);
     const lostHealth = enemy.previousHp !== null && hp < enemy.previousHp;
     enemy.previousHp = hp;
-    const enter3 = (state) => {
+    const enter4 = (state) => {
       enemy.state = enemy.stage = state;
       enemy.stateAge = 0;
     };
@@ -5065,7 +5072,7 @@ var NeonCampaign = (() => {
       enemy.targetX = laneTarget();
       enemy.nextTargetAt = enemy.age + profile2.sampleInterval;
       enemy.nextFire = enemy.age + profile2.recovery * (1 - 0.18 * enemy.intensity) * (0.65 + nextRandom(enemy) * 0.7);
-      enter3("reposition");
+      enter4("reposition");
     };
     const retreat = (reason) => {
       releaseTurn();
@@ -5073,13 +5080,13 @@ var NeonCampaign = (() => {
       enemy.followUp = null;
       enemy.retreatReason = reason;
       enemy.targetX = player.x < enemy.width / 2 ? enemy.width - 56 : 56;
-      enter3("retreat");
+      enter4("retreat");
     };
     if (hp <= 0) {
       releaseTurn();
       clearCharge();
       enemy.followUp = null;
-      if (enemy.state !== "destroyed") enter3("destroyed");
+      if (enemy.state !== "destroyed") enter4("destroyed");
     } else if (enemy.state !== "retreat" && enemy.state !== "destroyed") {
       const heldFor = enemy.combatStartedAt === null ? 0 : enemy.age - enemy.combatStartedAt;
       enemy.intensity = gate ? 0 : Math.min(2, Math.floor(heldFor / profile2.holdSeconds));
@@ -5091,17 +5098,17 @@ var NeonCampaign = (() => {
         reposition();
       }
     }
-    if (enemy.state === "entry" && item.y >= enemy.holdY - 110) enter3("brake");
+    if (enemy.state === "entry" && item.y >= enemy.holdY - 110) enter4("brake");
     if (enemy.state === "brake" && Math.abs(item.y - enemy.holdY) <= 32 && Math.abs(item.s) <= 62 && item.x >= enemy.combatMinX && item.x <= enemy.combatMaxX) {
       enemy.combatStartedAt ??= enemy.age;
       enemy.targetX = laneTarget();
       enemy.nextTargetAt = enemy.age + profile2.sampleInterval;
-      enter3("track");
+      enter4("track");
     }
     if (enemy.state === "fire" && enemy.stateAge >= 0.34) {
       reposition();
     }
-    if (enemy.state === "reposition" && enemy.age >= enemy.nextFire) enter3("track");
+    if (enemy.state === "reposition" && enemy.age >= enemy.nextFire) enter4("track");
     if (enemy.state === "reposition" && enemy.age >= enemy.nextTargetAt) {
       enemy.targetX = laneTarget();
       enemy.nextTargetAt = enemy.age + profile2.sampleInterval;
@@ -5123,7 +5130,7 @@ var NeonCampaign = (() => {
         enemy.chargeStartedAt = enemy.age;
         enemy.chargeSerial++;
         enemy.volley = chooseVolley(enemy, profile2.volleys);
-        enter3("charge");
+        enter4("charge");
       }
     }
     if (enemy.state === "charge") {
@@ -5192,7 +5199,7 @@ var NeonCampaign = (() => {
       enemy.fired++;
       enemy.telegraph = 0;
       enemy.attackScheduled = false;
-      enter3("fire");
+      enter4("fire");
       if (enemy.volley === "spread") {
         const { spreadAngle, spreadCount } = CLASSIC_PURSUIT_VOLLEY;
         for (let k = 0; k < spreadCount; k++) launch((k - (spreadCount - 1) / 2) * spreadAngle);
@@ -5897,7 +5904,7 @@ var NeonCampaign = (() => {
       if (vx > bankThreshold) return "bankRight";
       return Math.abs(vy) > bankThreshold ? "flight" : "idle";
     }
-    function enter3(next) {
+    function enter4(next) {
       state = next;
       elapsedMs = 0;
       eventCursor = 0;
@@ -5920,7 +5927,7 @@ var NeonCampaign = (() => {
           fired: attackFired
         });
       }
-      enter3(next);
+      enter4(next);
       return true;
     }
     function update(dt, sample = {}) {
@@ -5940,7 +5947,7 @@ var NeonCampaign = (() => {
         vy = nextVy;
         if (health === 0) request("destroy");
         else if (lostHealth) request("hurt");
-        else if (!animations2[state].locked && state !== baseState()) enter3(baseState());
+        else if (!animations2[state].locked && state !== baseState()) enter4(baseState());
       }
       const emitted = pending;
       pending = [];
@@ -5975,7 +5982,7 @@ var NeonCampaign = (() => {
           elapsedMs = 0;
           eventCursor = 0;
         } else {
-          enter3(baseState());
+          enter4(baseState());
         }
       }
       return emitted;
@@ -6229,6 +6236,90 @@ var NeonCampaign = (() => {
     return { accepted: true, hp: boss.hp };
   }
 
+  // src/game/presentation/c9-docking.js
+  var C9_DOCKING_RULES = Object.freeze({
+    arriveSeconds: 1.8,
+    openSeconds: 0.9,
+    tractorSeconds: 1,
+    releaseSeconds: 0.8,
+    leaveSeconds: 1.6,
+    // La nave tiene que quedarse este tiempo en la compuerta; si no llega, el
+    // haz la recoge sola pasado autoCatchSeconds.
+    dwellSeconds: 0.6,
+    autoCatchSeconds: 6,
+    holdY: 0.3,
+    gateOffset: 150,
+    gateRadius: 90,
+    size: 440
+  });
+  function createC9Docking({ width, height }) {
+    if (![width, height].every(Number.isFinite) || width < 280 || height < 540) throw new RangeError("Invalid C9 docking arena");
+    const holdY = height * C9_DOCKING_RULES.holdY;
+    return {
+      width,
+      height,
+      x: width / 2,
+      y: -C9_DOCKING_RULES.size / 2,
+      holdY,
+      phase: "arrive",
+      phaseTime: 0,
+      dwell: 0,
+      done: false
+    };
+  }
+  function c9Gate(scene) {
+    return { x: scene.x, y: scene.y + C9_DOCKING_RULES.gateOffset };
+  }
+  function enter2(scene, phase, emit) {
+    scene.phase = phase;
+    scene.phaseTime = 0;
+    emit({ type: phase });
+  }
+  function advanceC9Docking(scene, dt, ship2, emit = () => {
+  }) {
+    if (!(dt > 0) || scene.done || scene.phase === "docked") return;
+    const rules = C9_DOCKING_RULES;
+    scene.phaseTime += dt;
+    if (scene.phase === "arrive") {
+      const progress = Math.min(1, scene.phaseTime / rules.arriveSeconds);
+      scene.y = -rules.size / 2 + (scene.holdY + rules.size / 2) * (1 - (1 - progress) ** 3);
+      if (progress >= 1) enter2(scene, "open", emit);
+    } else if (scene.phase === "open") {
+      if (scene.phaseTime >= rules.openSeconds) enter2(scene, "await", emit);
+    } else if (scene.phase === "await") {
+      const gate = c9Gate(scene);
+      const inside = Math.hypot(ship2.x - gate.x, ship2.y - gate.y) <= rules.gateRadius;
+      scene.dwell = inside ? scene.dwell + dt : 0;
+      if (scene.dwell >= rules.dwellSeconds || scene.phaseTime >= rules.autoCatchSeconds) enter2(scene, "tractor", emit);
+    } else if (scene.phase === "tractor") {
+      if (scene.phaseTime >= rules.tractorSeconds) enter2(scene, "docked", emit);
+    } else if (scene.phase === "release") {
+      if (scene.phaseTime >= rules.releaseSeconds) enter2(scene, "leave", emit);
+    } else if (scene.phase === "leave") {
+      const progress = Math.min(1, scene.phaseTime / rules.leaveSeconds);
+      scene.y = scene.holdY - (scene.holdY + rules.size) * progress * progress;
+      if (progress >= 1) {
+        scene.done = true;
+        emit({ type: "done" });
+      }
+    }
+  }
+  function releaseC9Docking(scene, emit = () => {
+  }) {
+    if (scene.phase !== "docked") return false;
+    enter2(scene, "release", emit);
+    return true;
+  }
+  function c9DockingFrame(scene) {
+    if (scene.phase === "arrive" || scene.phase === "leave") return 0;
+    if (scene.phase === "open") return scene.phaseTime < C9_DOCKING_RULES.openSeconds / 2 ? 1 : 3;
+    if (scene.phase === "tractor" || scene.phase === "docked" || scene.phase === "release") return 2;
+    return 3;
+  }
+  function c9CeasefireActive(scene) {
+    return Boolean(scene) && !scene.done;
+  }
+
   // src/game/combat/subguardian.js
   var SUBGUARDIAN_RULES = Object.freeze({
     hp: 60,
@@ -6286,7 +6377,7 @@ var NeonCampaign = (() => {
     const options = ORDER2.filter((attack) => attack !== boss.attack);
     return options[Math.floor(nextRandom4(boss) * options.length)];
   }
-  function enter2(boss, state) {
+  function enter3(boss, state) {
     boss.state = state;
     boss.stateTime = 0;
   }
@@ -6339,7 +6430,7 @@ var NeonCampaign = (() => {
       const direction = nextRandom4(boss) < 0.5 ? -1 : 1;
       boss.beam = { angle: -direction * SUBGUARDIAN_RULES.laser.range, direction, active: false };
     }
-    enter2(boss, "warning");
+    enter3(boss, "warning");
     emit({ type: "warning", attack: boss.attack });
   }
   function endAttack2(boss) {
@@ -6347,7 +6438,7 @@ var NeonCampaign = (() => {
     boss.volleys = 0;
     boss.attacks++;
     pickTarget(boss);
-    enter2(boss, "idle");
+    enter3(boss, "idle");
   }
   function advanceAttack2(boss, dt, emit, target) {
     if (boss.attack === "laser") {
@@ -6374,7 +6465,7 @@ var NeonCampaign = (() => {
       boss.y = -140 + (boss.holdY + 140) * (1 - (1 - progress) ** 3);
       if (progress >= 1) {
         pickTarget(boss);
-        enter2(boss, "idle");
+        enter3(boss, "idle");
       }
     } else if (boss.state === "idle") {
       const arrived = move(boss, dt, motion.speed);
@@ -6383,7 +6474,7 @@ var NeonCampaign = (() => {
       if (boss.attack === "laser") boss.vx = 0;
       else if (move(boss, dt, motion.attackSpeed)) pickTarget(boss);
       if (boss.stateTime >= warningSeconds(boss.attack)) {
-        enter2(boss, "attack");
+        enter3(boss, "attack");
         boss.volleys = 0;
         if (boss.attack === "laser") {
           boss.beam.active = true;
@@ -6419,7 +6510,7 @@ var NeonCampaign = (() => {
     boss.hp = Math.max(0, boss.hp - damage);
     if (boss.hp === 0) {
       boss.beam = null;
-      enter2(boss, "defeated");
+      enter3(boss, "defeated");
     }
     return { accepted: true, hp: boss.hp };
   }

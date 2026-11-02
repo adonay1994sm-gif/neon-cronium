@@ -513,6 +513,8 @@
     if (state === "destroying" || state === "gameover") return;
     // Auditoría J06/J07: sin daño durante la gracia (tras un golpe o al reanudar).
     if (typeof hullGrace !== "undefined" && hullGrace > 0) return;
+    // Llegada de C9 en el tramo 6: alto el fuego total (propietario, 02/11/2026).
+    if (typeof c9Scene !== "undefined" && c9Scene) return;
     // Daño recibido según el modo de dificultad (Normal = 1).
     const difficultyDamage = typeof NeonCampaign !== "undefined" && typeof settings !== "undefined"
       ? NeonCampaign.DIFFICULTY_MODES?.[settings.difficulty]?.damage ?? 1 : 1;

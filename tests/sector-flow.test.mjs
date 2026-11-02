@@ -631,7 +631,14 @@ const forgeOpen = w => w.document.getElementById('flightDock').classList.contain
 const offerShown = w => forgeOpen(w) && !w.document.getElementById('beaconBuy').classList.contains('hidden');
 // ?dev=1 guarda aparte, con el prefijo neon-dev-v1:.
 const devSave = w => JSON.parse(w.localStorage.getItem(`neon-dev-v1:${KEY}`) || 'null');
-const toService = T => { T.ev('DEV.invulnerable=true'); T.adv(4); };
+// Desde el 02/11 C9 llega, abre la compuerta y hay que meter la nave dentro.
+const dockC9 = T => {
+  for (let i = 0; i < 80 && !T.ev("ui.flightDock.classList.contains('show')"); i++) {
+    T.ev("if(c9Scene&&c9Scene.phase==='await'){const g=NeonCampaign.c9Gate(c9Scene);player.x=player.target=g.x;player.y=player.targetY=g.y;}");
+    T.adv(.25);
+  }
+};
+const toService = T => { T.ev('DEV.invulnerable=true'); T.adv(4); dockC9(T); };
 
 test('after beating the subguardian, the stage-6 stop opens the Forja with the beacon inside', () => {
   const {w, T} = harness({query: '?dev=1'});
@@ -680,9 +687,31 @@ test('with the beacon, dying after stage 6 restarts at stage 6; completing the s
   click(w, 'play');
   assert.equal(T.stage(), 6);
   // Al volver al tramo 6 se atraca otra vez en C9: se sale de la Forja y se sigue.
-  T.toStage(7); assert.equal(forgeOpen(w), true); click(w, 'flightDockContinue');
+  T.toStage(7); dockC9(T); assert.equal(forgeOpen(w), true); click(w, 'flightDockContinue');
+  T.adv(3);
   T.toStage(10); T.finish();
   assert.deepEqual([devSave(w).sectors[1].completed, devSave(w).sectors[1].beacon], [true, false]);
+});
+
+// Llegada de C9 (propietario, 02/11): alto el fuego total, atraque y salida.
+test('at the stage-6 stop C9 arrives under a total ceasefire, docks the ship and leaves after the Forja', () => {
+  const {w, T} = harness({query: '?dev=1'});
+  startAt(T, 6); T.ev('DEV.invulnerable=false'); T.adv(3.9);
+  T.ev("window.__e=spawnGaiaEnemy('tracker');window.__e.y=400");
+  T.adv(.2);
+  assert.equal(T.ev("Boolean(c9Scene)"), true, 'C9 is on its way');
+  assert.equal(forgeOpen(w), false, 'the Forja waits for the docking');
+  assert.equal(T.ev("window.__e.c9Retreat||!items.includes(window.__e)"), true, 'enemies retreat');
+  const hull = T.hull();
+  T.ev("classicHullReserve=0;hullGrace=0;damageShip(30)");
+  assert.equal(T.hull(), hull, 'no damage during the ceasefire');
+  dockC9(T);
+  assert.equal(forgeOpen(w), true);
+  click(w, 'flightDockContinue');
+  assert.equal(T.ev("c9Scene&&c9Scene.phase"), 'release');
+  T.adv(3);
+  assert.equal(T.ev("c9Scene"), null, 'C9 has gone');
+  assert.equal(T.stage(), 6);
 });
 
 test('the beacon is not offered once owned, or without beating the subguardian', () => {
@@ -695,7 +724,7 @@ test('the beacon is not offered once owned, or without beating the subguardian',
   startAt(owned.T, 6); giveScrap(owned.T, 5); toService(owned.T);
   assert.deepEqual([forgeOpen(owned.w), offerShown(owned.w)], [true, false]);
   const early = harness({query: '?dev=1'});
-  startAt(early.T, 4); giveScrap(early.T, 5); early.T.ev('DEV.invulnerable=true'); early.T.toStage(6); early.T.adv(4);
+  startAt(early.T, 4); giveScrap(early.T, 5); early.T.ev('DEV.invulnerable=true'); early.T.toStage(6); early.T.adv(4); dockC9(early.T);
   assert.equal(offerShown(early.w), false, 'sin vencer al subguardián en este intento no se ofrece');
 });
 
@@ -800,7 +829,7 @@ test('beating the subguardian in stage 5 makes C9 offer the beacon in stage 6', 
   subFight(T); giveScrap(T, 5);
   T.ev('NeonCampaign.hitSubguardian(subBoss, 999)');
   T.adv(2);
-  T.toStage(6); T.adv(4);
+  T.toStage(6); T.adv(4); dockC9(T);
   assert.equal(offerShown(w), true);
 });
 

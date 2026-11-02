@@ -177,6 +177,17 @@
       ctx.drawImage(image, cell * cellWidth, 0, cellWidth, image.naturalHeight, -SUB_BEAM_WIDTH / 2, y, SUB_BEAM_WIDTH, tile);
     ctx.restore();
   }
+  // C9 llega en el tramo 6 (presentation/c9-docking.js). Hoja de la estación
+  // 2×2: cerrada, abriéndose, atracando y abierta con luces. Va por encima de
+  // la nave, así la compuerta la tapa al entrar.
+  function drawC9Docking() {
+    if (typeof c9Scene === "undefined" || !c9Scene || !spriteReady(SPRITES.c9Station)) return;
+    const image = SPRITES.c9Station, size = NeonCampaign.C9_DOCKING_RULES.size;
+    ctx.save(); ctx.translate(c9Scene.x, c9Scene.y);
+    drawGaiaCell(image, 2, NeonCampaign.c9DockingFrame(c9Scene), size);
+    ctx.restore();
+  }
+
   function drawSubguardian() {
     if (typeof subBoss === "undefined" || !subBoss) return;
     const boss = subBoss;

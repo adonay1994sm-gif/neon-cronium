@@ -24,6 +24,7 @@ export {createCh01Animator} from '../animation/ch01-animator.js';
 export {HORDE_RULES, createHordeWave} from '../combat/horde.js';
 export {AIMED_METEOR_RULES, createAimedMeteorRain, advanceAimedMeteorRain} from './aimed-meteors.js';
 export {CH03_RULES, createCh03Satellite, advanceCh03Satellite, ch03HitsShip, hitCh03Satellite} from '../combat/ch03-satellite.js';
+export {C9_DOCKING_RULES, createC9Docking, advanceC9Docking, releaseC9Docking, c9Gate, c9DockingFrame, c9CeasefireActive} from '../presentation/c9-docking.js';
 export {SUBGUARDIAN_RULES, createSubguardian, advanceSubguardian, subguardianHitsShip, hitSubguardian, subguardianEmitter, subguardianFrame} from '../combat/subguardian.js';
 export {getVoyageTransitionPresentation} from '../presentation/voyage-transitions.js';
 export {sectorPlanetPose} from '../presentation/sector-planets.js';
