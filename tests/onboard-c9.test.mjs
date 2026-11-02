@@ -330,9 +330,9 @@ test('stage 1.6 resolves emergency service in flight once without a forced orbit
   assert.equal(serviced.events.filter(event => event.type === 'service-complete').length, 1);
   assert.equal(h.node('flightDock').classList.contains('show'), false);
   h.api.render(183300);
-  assert.equal(h.loaded.has('assets/c9_station_v1.webp'), false,
+  assert.equal(h.loaded.has('assets/c9_ship_v1.webp'), false,
     'retained historic relay art is not loaded into the new onboard route');
-  assert.equal(h.drawCalls.includes('assets/c9_station_v1.webp'), false);
+  assert.equal(h.drawCalls.includes('assets/c9_ship_v1.webp'), false);
   assert.equal(serviced.workshopOpened, false, 'crossing the checkpoint must not imply opening C9');
   assert.deepEqual(serviced.salvage.upgrades, []); assert.equal(serviced.salvage.balance, 100);
   h.api.damageHullForFixture(62); h.api.beginClassicVoyageService();

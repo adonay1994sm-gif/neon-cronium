@@ -258,7 +258,7 @@
     cronosPrimeFx: loadSprite("assets/cronos_prime_fx_atlas_v1.webp", false),
     flightSpace: loadSprite("assets/chronos_flight_space_v1.webp", false),
     flightWeapons: loadSprite("assets/chronos_flight_weapons_v1.webp", false),
-    c9Station: loadSprite("assets/c9_station_v1.webp", false),
+    c9Station: loadSprite("assets/c9_ship_v1.webp", false), // C9 elegida por el propietario (02/11/2026)
 
     meteorSmall: loadSprite("assets/meteor_small.webp", true),
     meteorSmallAlt: loadSprite("assets/meteor_small_alt.webp"),

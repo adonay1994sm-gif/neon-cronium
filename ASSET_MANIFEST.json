@@ -1,8 +1,8 @@
 {
   "manifestVersion": 2,
   "buildVersion": "7.2.0",
-  "assetCount": 143,
-  "runtimeBytes": 21597230,
+  "assetCount": 144,
+  "runtimeBytes": 22179140,
   "audit": {
     "reviewed": 97,
     "READY": 58,
@@ -2081,6 +2081,23 @@
       "origin": "GPT a petición del propietario (encargo camp-art-armas-niveles)",
       "version": 1,
       "use": "Un proyectil por nivel (el más centrado de cada ráfaga): 4 columnas (N1-N4) × 2 filas (Pulso, Gemelo), celdas de 96×192."
+    },
+    {
+      "id": "c9-ship-v1",
+      "path": "assets/c9_ship_v1.webp",
+      "master": "art-source/c9-nave/c9_estados_v1.webp",
+      "dimensions": "1536x1536",
+      "format": "webp-alpha",
+      "size": 581910,
+      "sha256": "d973d055ada5b5ed7478807e4a217f9589f98c841172ae97b4675a4ff9ef40f0",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "GPT image generation uploaded to the asset vault (camp-art-c9-hoja); bottom row rescaled 0.99 and moved 8 px down",
+      "version": 1,
+      "pivot": "384,384 in each 768x768 cell",
+      "use": "C9, nave taller de Mira (diseño elegido el 02/11/2026): 2x2 celdas cerrada, abriéndose, atracando, abierta. Escena de llegada del tramo 6 y fondo de la Forja en la parada."
     }
   ],
   "project": "NEON CRONIUM"
