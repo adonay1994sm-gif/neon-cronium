@@ -1,6 +1,6 @@
 # Encargos de arte para GPT · NEON CRONIUM
 
-Actualizado: 2026-10-31. Lista pública que se mantiene al día desde el tablero del proyecto.
+Actualizado: 2026-11-02. Lista pública que se mantiene al día desde el tablero del proyecto.
 Versión para máquinas: https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/encargos-gpt.json
 
 **Antes de nada lee la guía:** https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/GUIA_GPT.md (qué es el juego, modelos de referencia y reglas).
@@ -14,4 +14,11 @@ Versión para máquinas: https://raw.githubusercontent.com/adonay1994sm-gif/neon
 5. Respeta medidas, rejilla y fondo (transparente salvo que el prompt pida opaco): el juego recorta las celdas por tamaño exacto.
 6. Revisa esta lista cada 10 minutos. Antes de empezar un encargo, mira `catalog.json` del baúl: si ya hay un archivo con su id en `"encargo"`, no lo repitas.
 
-No hay encargos pendientes.
+## Arte · C9, la nave taller de Mira: 4 conceptos para elegir
+
+- **Id:** `camp-art-c9-conceptos` · **Prioridad:** 1 · **Archivo:** `encargo-camp-art-c9-conceptos-v1.png`
+- **Para qué:** Decisión del propietario (02/11): seguir con la escena de llegada de C9 (alto el fuego total; C9 solo en el tramo 6). Primer paso: 4 conceptos para que el propietario elija. Después, del elegido: vista con compuerta cerrada y abierta, llegada y salida (encargo siguiente).
+
+```text
+Antes de empezar lee https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/GUIA_GPT.md y la biblia https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/design/BIBLIA_GALAXIA.md. Referencias: la estación C9 actual https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/art-source/immersive-rebirth/c9/c9-station-atlas-master.png (sus colores y materiales), la nave del jugador https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/art-source/ship-identity/player_ship_identity_v1.png (para la escala) y el taller de Mira https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/art-source/ui/taller-mira/ (su ambiente). QUÉ ES: C9, la nave taller de Mira (la mecánica aliada). En el tramo 6 del sector llega volando, se para, ABRE UNA COMPUERTA DE ATRAQUE y la nave del jugador entra en ella. Es aliada: luces frías (cian y blanco), casco marfil y grafito como el resto de lo aliado; nada de rojo ni naranja en las luces (son de las amenazas) ni violeta (es del tiempo). Tiene que verse como un remolcador-taller grande, unas 3 veces más ancho que la nave del jugador, con grúas o brazos de reparación, contenedores, motores potentes y una compuerta de atraque en la parte de ABAJO (por donde entra el jugador, que viene desde abajo de la pantalla). Hoja de 2 columnas × 2 filas, celdas de 1024×1024 px (2048×2048): CUATRO CONCEPTOS DISTINTOS de C9 para que el propietario elija uno. Los cuatro con la compuerta de atraque abierta y bien visible (marco con luces de guía cian y un haz tractor suave), vista cenital estricta, morro hacia ARRIBA, la nave centrada y del mismo tamaño en cada celda. Varía la forma: 1 remolcador ancho con dos brazos grúa; 2 nave anillo con dique central; 3 carguero largo con hangar en la cola; 4 plataforma compacta con cuatro motores. Estilo: arte de juego sci-fi pintado y semirrealista, blindaje con paneles y juntas visibles, luz fría de estudio desde arriba a la izquierda, sombras grafito, como el dosier de Gaia y los estados de Atlas de NEON CRONIUM. Fondo transparente real con canal alfa (sin damero pintado ni negro), bordes limpios sin halo blanco, sin texto ni números ni líneas entre celdas. Comprueba sobre negro, blanco y damero. CÓMO HACERLO: cada imagen con el GENERADOR DE IMÁGENES. PROHIBIDO dibujarla con código (Python, PIL, SVG, canvas, CSS o formas de color liso). Más de 5.000 colores.
+```
