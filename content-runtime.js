@@ -656,7 +656,7 @@ var NeonCampaign = (() => {
     mira: freeze({
       id: "mira",
       name: "Mira",
-      label: "MIRA \xB7 TALLER C9",
+      label: "MIRA \xB7 FORJA C9",
       role: "Mec\xE1nica del corredor; mantiene la ruta abierta y cobra por sus mejoras."
     }),
     atlas: freeze({
@@ -3666,7 +3666,7 @@ var NeonCampaign = (() => {
   var freeze4 = Object.freeze;
   var line = (text) => freeze4({ text });
   var BASE_ACTORS = freeze4({
-    mira: freeze4({ id: "mira", name: "Mira", role: "Mec\xE1nica del taller C9" }),
+    mira: freeze4({ id: "mira", name: "Mira", role: "Mec\xE1nica de la Forja C9" }),
     iria: freeze4({ id: "iria", name: "Comandante Iria", role: "Mando de Gaia Nova" })
   });
   var SCRIPTS = freeze4({

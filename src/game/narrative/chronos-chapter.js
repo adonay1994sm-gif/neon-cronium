@@ -20,7 +20,7 @@ const freeze = value => Object.freeze(value);
 export const CHRONOS_CHAPTER_ACTORS = freeze({
   lira: freeze({id: 'lira', name: 'Lira', label: 'LIRA · CONTROL CHRONOS',
     role: 'Operadora científica; prioriza la evacuación y conservar el registro.'}),
-  mira: freeze({id: 'mira', name: 'Mira', label: 'MIRA · TALLER C9',
+  mira: freeze({id: 'mira', name: 'Mira', label: 'MIRA · FORJA C9',
     role: 'Mecánica del corredor; mantiene la ruta abierta y cobra por sus mejoras.'}),
   atlas: freeze({id: 'atlas', name: 'Atlas', label: 'GUARDIAN ATLAS',
     role: 'Defensa autónoma de Gaia; ejecuta un bloqueo basado en identificación falsificada.'}),
