@@ -61,7 +61,7 @@ await test("PWA precarga código, legales y sprites", async () => {
     "privacy.html", "terms.html", "analytics-manager.js", "assets/player_ship_identity_v1.webp", "assets/ship_modular_atlas_v1.webp", "assets/comet_flight_atlas_v3.webp",
     "assets/chronos_shockwave_atlas_v1.webp",
     "assets/ch02_interceptor_atlas_v1.webp", "assets/guardian_atlas_states_v2.webp", "assets/cronium_energy_atlas_v2.webp",
-    "assets/combat_sfx_atlas_v2.m4a", "assets/combat_sfx_atlas_v2.json", "assets/c9_upgrade_icons_v1.webp", "assets/forja_modules_atlas_v1.webp"
+    "assets/combat_sfx_atlas_v3.m4a", "assets/combat_sfx_atlas_v3.json", "assets/c9_upgrade_icons_v1.webp", "assets/forja_modules_atlas_v1.webp"
   ]) assert.ok(paths.has(path), path);
   // The live ship and its emergency portrait must agree with the inventory;
   // preserved artwork is not a reason to restore retired images to precache.

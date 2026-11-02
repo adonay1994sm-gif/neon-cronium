@@ -1044,7 +1044,7 @@
     NeonCampaign.advanceSubguardian(subBoss,dt,event=>{
       if(event.type==="projectile")items.push(gaiaShot({...event,sprite:"orb"}));
       if(event.type==="warning")combatSound("atlas-charge",subBoss.x);
-      if(event.type==="fire")combatSound(event.attack==="laser"?"atlas-collapse":"enemy-heavy",subBoss.x);
+      if(event.type==="fire")combatSound(event.attack==="laser"?"boss-laser":"enemy-heavy",subBoss.x);
       if(event.type==="fire"&&event.attack==="laser"){shake=Math.max(shake,5);cameraKickY=Math.max(cameraKickY,4);}
       if(event.type==="defeated") {
         subBossBeaten=true;addExplosion(subBoss.x,subBoss.y,1.6,1);

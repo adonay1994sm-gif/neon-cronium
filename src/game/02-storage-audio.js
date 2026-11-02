@@ -355,7 +355,7 @@
       "enemy-phaser":[280,.08,"triangle",.04],"enemy-heavy":[120,.16,"sawtooth",.045],
       "impact-metal":[620,.05,"triangle",.035],"impact-plasma":[180,.04,"square",.025],
       "hull-hit":[95,.22,"sawtooth",.08],"enemy-break":[920,.05,"triangle",.04],
-      "atlas-charge":[135,.28,"triangle",.065],"atlas-collapse":[640,.28,"sine",.06]};
+      "atlas-charge":[135,.28,"triangle",.065],"atlas-collapse":[640,.28,"sine",.06],"boss-laser":[110,.4,"sawtooth",.06]};
     if(fallback[cue]){fallbackTones++;tone(...fallback[cue]);}
   }
 

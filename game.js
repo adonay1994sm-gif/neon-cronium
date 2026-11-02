@@ -963,7 +963,7 @@
       "enemy-phaser":[280,.08,"triangle",.04],"enemy-heavy":[120,.16,"sawtooth",.045],
       "impact-metal":[620,.05,"triangle",.035],"impact-plasma":[180,.04,"square",.025],
       "hull-hit":[95,.22,"sawtooth",.08],"enemy-break":[920,.05,"triangle",.04],
-      "atlas-charge":[135,.28,"triangle",.065],"atlas-collapse":[640,.28,"sine",.06]};
+      "atlas-charge":[135,.28,"triangle",.065],"atlas-collapse":[640,.28,"sine",.06],"boss-laser":[110,.4,"sawtooth",.06]};
     if(fallback[cue]){fallbackTones++;tone(...fallback[cue]);}
   }
 
@@ -2134,7 +2134,7 @@
     NeonCampaign.advanceSubguardian(subBoss,dt,event=>{
       if(event.type==="projectile")items.push(gaiaShot({...event,sprite:"orb"}));
       if(event.type==="warning")combatSound("atlas-charge",subBoss.x);
-      if(event.type==="fire")combatSound(event.attack==="laser"?"atlas-collapse":"enemy-heavy",subBoss.x);
+      if(event.type==="fire")combatSound(event.attack==="laser"?"boss-laser":"enemy-heavy",subBoss.x);
       if(event.type==="fire"&&event.attack==="laser"){shake=Math.max(shake,5);cameraKickY=Math.max(cameraKickY,4);}
       if(event.type==="defeated") {
         subBossBeaten=true;addExplosion(subBoss.x,subBoss.y,1.6,1);

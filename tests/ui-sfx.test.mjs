@@ -8,7 +8,7 @@ const base = new URL('../', import.meta.url);
 const read = path => fs.readFileSync(new URL(path, base));
 
 test('the UI bank matches its atlas, its manifest entry and the Kenney CC0 sources', () => {
-  const meta = JSON.parse(read('assets/ui_sfx_atlas_v1.json'));
+  const meta = JSON.parse(read('assets/ui_sfx_atlas_v2.json'));
   assert.equal(meta.src, UI_SFX_SRC);
   assert.equal(meta.duration, UI_SFX_DURATION);
   assert.deepEqual(meta.cues, JSON.parse(JSON.stringify(UI_SFX_CUES)));

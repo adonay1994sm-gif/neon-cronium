@@ -7321,9 +7321,9 @@ var NeonCampaign = (() => {
   }
 
   // src/game/audio/combat-sfx.js
-  var COMBAT_SFX_VERSION = 2;
-  var COMBAT_SFX_SRC = "assets/combat_sfx_atlas_v2.m4a";
-  var COMBAT_SFX_DURATION = 15.96;
+  var COMBAT_SFX_VERSION = 3;
+  var COMBAT_SFX_SRC = "assets/combat_sfx_atlas_v3.m4a";
+  var COMBAT_SFX_DURATION = 11.95;
   var COMBAT_SFX_VOICE_LIMIT = 8;
   var COMBAT_SFX_GAIN_BUDGET = 0.95;
   var cue = (offsets, duration, gain, priority3, cooldown, polyphony) => Object.freeze({
@@ -7334,16 +7334,17 @@ var NeonCampaign = (() => {
     polyphony
   });
   var COMBAT_SFX_CUES = Object.freeze({
-    "phaser": cue([0, 0.32], 0.2, 0.15, 1, 0.045, 3),
-    "missile-launch": cue([0.64, 1.34], 0.58, 0.31, 5, 0.25, 2),
-    "impact-metal": cue([2.04, 2.6], 0.44, 0.23, 3, 0.04, 3),
-    "impact-plasma": cue([3.16, 3.68], 0.4, 0.23, 3, 0.04, 3),
-    "hull-hit": cue([4.2, 4.9], 0.58, 0.29, 6, 0.12, 2),
-    "enemy-break": cue([5.6, 6.67], 0.95, 0.31, 5, 0.1, 2),
-    "atlas-charge": cue([7.74, 8.74], 0.88, 0.28, 7, 0.3, 1),
-    "atlas-collapse": cue([9.74, 11.71], 1.85, 0.4, 9, 1, 1),
-    "enemy-phaser": cue([13.68, 14.08], 0.28, 0.19, 2, 0.055, 3),
-    "enemy-heavy": cue([14.48, 15.22], 0.62, 0.28, 5, 0.16, 2)
+    "phaser": cue([0], 0.3, 0.15, 1, 0.045, 3),
+    "missile-launch": cue([0.42], 0.6, 0.31, 5, 0.25, 2),
+    "impact-metal": cue([1.14], 0.4, 0.2, 3, 0.04, 3),
+    "impact-plasma": cue([1.66], 0.45, 0.22, 3, 0.04, 3),
+    "hull-hit": cue([2.23], 0.6, 0.29, 6, 0.12, 2),
+    "enemy-break": cue([2.95], 1, 0.31, 5, 0.1, 2),
+    "atlas-charge": cue([4.07], 0.95, 0.26, 7, 0.3, 1),
+    "atlas-collapse": cue([5.14], 3, 0.4, 9, 1, 1),
+    "enemy-phaser": cue([8.26], 0.25, 0.17, 2, 0.055, 3),
+    "enemy-heavy": cue([8.63], 0.6, 0.26, 5, 0.16, 2),
+    "boss-laser": cue([9.35], 2.6, 0.32, 8, 1, 1)
   });
   var COMBAT_BANK = Object.freeze({
     version: COMBAT_SFX_VERSION,
@@ -7558,8 +7559,8 @@ var NeonCampaign = (() => {
   }
 
   // src/game/audio/ui-sfx.js
-  var UI_SFX_SRC = "assets/ui_sfx_atlas_v1.m4a";
-  var UI_SFX_DURATION = 10.83;
+  var UI_SFX_SRC = "assets/ui_sfx_atlas_v2.m4a";
+  var UI_SFX_DURATION = 12.7;
   var variant = (offset, duration) => Object.freeze({ offset, duration });
   var cue2 = (variants, gain, priority3, cooldown, polyphony) => Object.freeze({
     variants: Object.freeze(variants),
@@ -7569,29 +7570,29 @@ var NeonCampaign = (() => {
     polyphony
   });
   var UI_SFX_CUES = Object.freeze({
-    "ui-press": cue2([variant(0, 0.1)], 0.16, 1, 0.05, 2),
-    "ui-toggle": cue2([variant(0.22, 0.14)], 0.16, 1, 0.05, 2),
-    "ui-tick": cue2([variant(0.48, 0.06)], 0.14, 1, 0.06, 1),
-    "confirm": cue2([variant(0.66, 0.29)], 0.24, 4, 0.15, 1),
-    "weapon-switch": cue2([variant(1.07, 0.19)], 0.2, 3, 0.12, 1),
-    "pickup-scrap": cue2([variant(1.38, 0.19)], 0.18, 2, 0.05, 2),
-    "pickup-cronium": cue2([variant(1.69, 0.13), variant(1.94, 0.13)], 0.2, 2, 0.03, 3),
-    "ammo-ready": cue2([variant(2.19, 0.03)], 0.14, 1, 0.2, 1),
-    "power-up": cue2([variant(2.34, 0.42)], 0.26, 4, 0.15, 1),
-    "repair": cue2([variant(2.88, 0.54)], 0.26, 4, 0.2, 1),
-    "transmission": cue2([variant(3.54, 0.12)], 0.18, 3, 0.3, 1),
-    "stage-start": cue2([variant(3.78, 0.26)], 0.24, 4, 0.5, 1),
-    "stage-complete": cue2([variant(4.16, 0.5)], 0.3, 6, 0.5, 1),
-    "unlock": cue2([variant(4.78, 0.33)], 0.28, 5, 0.3, 1),
-    "gate-warning": cue2([variant(5.23, 0.11)], 0.2, 4, 0.3, 1),
-    "gate-clear": cue2([variant(5.46, 0.38)], 0.22, 3, 0.2, 1),
-    "defeat": cue2([variant(5.96, 0.53)], 0.3, 7, 0.5, 1),
-    "ship-destroyed": cue2([variant(6.61, 1.01)], 0.4, 8, 0.5, 1),
-    "rupture": cue2([variant(7.74, 2.01)], 0.4, 9, 1, 1),
-    "boss-alert": cue2([variant(9.87, 0.96)], 0.3, 7, 0.3, 1)
+    "ui-press": cue2([variant(0, 0.4)], 0.16, 1, 0.05, 2),
+    "ui-toggle": cue2([variant(0.52, 0.4)], 0.16, 1, 0.05, 2),
+    "ui-tick": cue2([variant(1.04, 0.4)], 0.12, 1, 0.06, 1),
+    "confirm": cue2([variant(1.56, 0.29)], 0.24, 4, 0.15, 1),
+    "weapon-switch": cue2([variant(1.97, 0.19)], 0.2, 3, 0.12, 1),
+    "pickup-scrap": cue2([variant(2.28, 0.42)], 0.18, 2, 0.05, 2),
+    "pickup-cronium": cue2([variant(2.82, 0.13), variant(3.07, 0.13)], 0.2, 2, 0.03, 3),
+    "ammo-ready": cue2([variant(3.32, 0.03)], 0.14, 1, 0.2, 1),
+    "power-up": cue2([variant(3.47, 0.42)], 0.26, 4, 0.15, 1),
+    "repair": cue2([variant(4.01, 0.54)], 0.26, 4, 0.2, 1),
+    "transmission": cue2([variant(4.67, 0.12)], 0.18, 3, 0.3, 1),
+    "stage-start": cue2([variant(4.91, 0.26)], 0.24, 4, 0.5, 1),
+    "stage-complete": cue2([variant(5.29, 0.5)], 0.3, 6, 0.5, 1),
+    "unlock": cue2([variant(5.91, 0.33)], 0.28, 5, 0.3, 1),
+    "gate-warning": cue2([variant(6.36, 0.11)], 0.2, 4, 0.3, 1),
+    "gate-clear": cue2([variant(6.59, 0.38)], 0.22, 3, 0.2, 1),
+    "defeat": cue2([variant(7.09, 0.53)], 0.3, 7, 0.5, 1),
+    "ship-destroyed": cue2([variant(7.74, 1.01)], 0.4, 8, 0.5, 1),
+    "rupture": cue2([variant(8.87, 2.01)], 0.4, 9, 1, 1),
+    "boss-alert": cue2([variant(11, 1.7)], 0.3, 7, 0.3, 1)
   });
   var UI_BANK = Object.freeze({
-    version: 1,
+    version: 2,
     src: UI_SFX_SRC,
     duration: UI_SFX_DURATION,
     cues: UI_SFX_CUES,

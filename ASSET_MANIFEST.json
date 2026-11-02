@@ -1,8 +1,8 @@
 {
   "manifestVersion": 2,
   "buildVersion": "7.2.0",
-  "assetCount": 144,
-  "runtimeBytes": 22179140,
+  "assetCount": 148,
+  "runtimeBytes": 22485696,
   "audit": {
     "reviewed": 97,
     "READY": 58,
@@ -839,8 +839,8 @@
       "size": 277049,
       "sha256": "81a09c0979225d81357cc45b9f45e833a8b751f8c424a95233bcb9ab0a249c27",
       "status": "IN_REVIEW",
-      "activeRuntime": true,
-      "precache": true,
+      "activeRuntime": false,
+      "precache": false,
       "technicalAcceptance": "CURRENT_CHROMIUM_INTEGRATION_OFFLINE_AND_CI_PASSED",
       "artisticAcceptance": "PENDING_OWNER",
       "physicalAcceptance": "PENDING",
@@ -861,7 +861,8 @@
           ],
           "scope": "Recurso real usado en C9 o reproducción del banco de combate durante acciones; entrega offline con bytes/SHA comprobados. Escenas controladas y partida natural diferenciadas; no certifica estética/escucha ni iPhone."
         }
-      ]
+      ],
+      "replacedBy": "assets/combat_sfx_atlas_v3.m4a"
     },
     {
       "id": "combat-sfx-map-v2",
@@ -874,8 +875,8 @@
       "size": 3049,
       "sha256": "ef92c62219e511fb53b054f4c5cbdfdfd281d70e5c574204df8823ce1c504a57",
       "status": "IN_REVIEW",
-      "activeRuntime": true,
-      "precache": true,
+      "activeRuntime": false,
+      "precache": false,
       "technicalAcceptance": "CURRENT_CHROMIUM_INTEGRATION_OFFLINE_AND_CI_PASSED",
       "artisticAcceptance": "PENDING_OWNER",
       "physicalAcceptance": "PENDING",
@@ -896,7 +897,8 @@
           ],
           "scope": "Recurso real usado en C9 o reproducción del banco de combate durante acciones; entrega offline con bytes/SHA comprobados. Escenas controladas y partida natural diferenciadas; no certifica estética/escucha ni iPhone."
         }
-      ]
+      ],
+      "replacedBy": "assets/combat_sfx_atlas_v3.json"
     },
     {
       "id": "forja-modules-atlas-v1",
@@ -1850,13 +1852,14 @@
       "format": "aac-lc",
       "size": 129271,
       "sha256": "dae2d5f6e7d747db1d354465e960bd93b39a3e4ef1633f7c6aaca442a66dde49",
-      "activeRuntime": true,
-      "precache": true,
+      "activeRuntime": false,
+      "precache": false,
       "status": "IN_REVIEW",
       "artisticAcceptance": "PENDING_OWNER",
       "origin": "Kenney, Interface Sounds y Sci-Fi Sounds (CC0, licencias en art-source/audio/kenney-cc0)",
       "version": 1,
-      "use": "Sonidos de interfaz y avisos: 20 eventos que sustituyen los pitidos tone()"
+      "use": "Sonidos de interfaz y avisos: 20 eventos que sustituyen los pitidos tone()",
+      "replacedBy": "assets/ui_sfx_atlas_v2.m4a"
     },
     {
       "id": "ui-sfx-map-v1",
@@ -1866,13 +1869,14 @@
       "format": "json",
       "size": 4495,
       "sha256": "a826454f591f31659188f440511f349ad3743a71ada2a9d54d8b25b9936198be",
-      "activeRuntime": true,
-      "precache": true,
+      "activeRuntime": false,
+      "precache": false,
       "status": "IN_REVIEW",
       "artisticAcceptance": "PENDING_OWNER",
       "origin": "Kenney, Interface Sounds y Sci-Fi Sounds (CC0, licencias en art-source/audio/kenney-cc0)",
       "version": 1,
-      "use": "Offsets y política de voces del banco de interfaz"
+      "use": "Offsets y política de voces del banco de interfaz",
+      "replacedBy": "assets/ui_sfx_atlas_v2.json"
     },
     {
       "id": "hangar-ships-v1",
@@ -2098,6 +2102,70 @@
       "version": 1,
       "pivot": "384,384 in each 768x768 cell",
       "use": "C9, nave taller de Mira (diseño elegido el 02/11/2026): 2x2 celdas cerrada, abriéndose, atracando, abierta. Escena de llegada del tramo 6 y fondo de la Forja en la parada."
+    },
+    {
+      "id": "combat-sfx-atlas-v3",
+      "path": "assets/combat_sfx_atlas_v3.m4a",
+      "master": "art-source/audio/combat-sfx-v3/combat_sfx_atlas_v3.wav",
+      "dimensions": "48000Hz mono AAC 11.95s",
+      "format": "aac-lc",
+      "size": 146807,
+      "sha256": "15bad102715625c88e515fe83d939fc963619881a99ea9ff2a72c797c11da9c6",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "OpenGameArt, packs CC0 elegidos por el propietario (art-source/audio/combat-sfx-v3/PROVENANCE.md)",
+      "version": 1,
+      "use": "Efectos de combate: 11 eventos (disparos, impactos, explosiones, láser del subguardián)"
+    },
+    {
+      "id": "combat-sfx-map-v3",
+      "path": "assets/combat_sfx_atlas_v3.json",
+      "master": "art-source/audio/combat-sfx-v3/combat_sfx_atlas_v3.wav",
+      "dimensions": "JSON",
+      "format": "json",
+      "size": 2515,
+      "sha256": "be65e66d430a83389878ecd8572568fbbfd3e330ca70bb29c479982b075a4dcb",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "OpenGameArt, packs CC0 elegidos por el propietario (art-source/audio/combat-sfx-v3/PROVENANCE.md)",
+      "version": 1,
+      "use": "Offsets y política de voces del banco de combate"
+    },
+    {
+      "id": "ui-sfx-atlas-v2",
+      "path": "assets/ui_sfx_atlas_v2.m4a",
+      "master": "art-source/audio/ui-sfx-v2/ui_sfx_atlas_v2.wav",
+      "dimensions": "48000Hz mono AAC 12.7s",
+      "format": "aac-lc",
+      "size": 152743,
+      "sha256": "becac60a9016a944a7075a4f3abd4dcf7af69ff901b792f19d9d094dde909edf",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "Kenney, rubberduck y Black Lodge Games (CC0; art-source/audio/kenney-cc0 y art-source/audio/ui-sfx-v2)",
+      "version": 1,
+      "use": "Sonidos de interfaz y avisos: 20 eventos que sustituyen los pitidos tone()"
+    },
+    {
+      "id": "ui-sfx-map-v2",
+      "path": "assets/ui_sfx_atlas_v2.json",
+      "master": "art-source/audio/ui-sfx-v2/ui_sfx_atlas_v2.wav",
+      "dimensions": "JSON",
+      "format": "json",
+      "size": 4491,
+      "sha256": "40a0877042b4b4e51b0c9c6f9efe357c04f45ed3cc41562bcdfdeebdab9c0d8a",
+      "activeRuntime": true,
+      "precache": true,
+      "status": "IN_REVIEW",
+      "artisticAcceptance": "PENDING_OWNER",
+      "origin": "Kenney, rubberduck y Black Lodge Games (CC0; art-source/audio/kenney-cc0 y art-source/audio/ui-sfx-v2)",
+      "version": 1,
+      "use": "Offsets y política de voces del banco de interfaz"
     }
   ],
   "project": "NEON CRONIUM"
