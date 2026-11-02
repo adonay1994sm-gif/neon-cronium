@@ -42,7 +42,7 @@ export {getChronosIntroPose, CHRONOS_INTRO_TIMELINE} from '../animation/chronos-
 export {CLASSIC_WEAPON_RULES, createClassicWeapons, triggerClassicWeapon, advanceClassicWeapons,
   hitClassicProjectile, unlockClassicWeapon, selectClassicWeapon, classicWeaponSnapshot,
   setClassicRechargeInterval, setClassicWeaponTuning, setClassicUnlimitedFire, canTriggerClassicMissile,
-  triggerClassicMissile, CLASSIC_WEAPON_LEVELS, setClassicWeaponLevels} from '../combat/classic-weapons.js';
+  triggerClassicMissile, CLASSIC_WEAPON_LEVELS, setClassicWeaponLevels, setClassicMaxCharges} from '../combat/classic-weapons.js';
 export {calculateFlightBounds, createRelativeFlightInput, beginFlightInput, moveFlightInput, endFlightInput} from '../ship/flight-controls.js';
 export {SECTORS, getSectorFicha} from './sectors/index.js';
 export {createAttackTokens, requestAttack, releaseAttack, forgetEnemy, attackHolders} from '../combat/attack-tokens.js';

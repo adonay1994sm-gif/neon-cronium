@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {CLASSIC_WEAPON_RULES, createClassicWeapons, selectClassicWeapon, unlockClassicWeapon,
   triggerClassicWeapon, advanceClassicWeapons, hitClassicProjectile,
   classicWeaponSnapshot, setClassicRechargeInterval, setClassicUnlimitedFire,
-  canTriggerClassicMissile, triggerClassicMissile, setClassicWeaponTuning, setClassicWeaponLevels} from '../src/game/combat/classic-weapons.js';
+  canTriggerClassicMissile, triggerClassicMissile, setClassicWeaponTuning, setClassicWeaponLevels, setClassicMaxCharges} from '../src/game/combat/classic-weapons.js';
 
 const origin = {x: 360, y: 1000};
 const run = (state, seconds, events = []) => {
@@ -674,4 +674,21 @@ test('Pulse and Twin fire their bought level: damage per volley x1, x1.3, x1.6 a
   }
   assert.throws(() => setClassicWeaponLevels(createClassicWeapons(), {pulse: 5}), RangeError);
   assert.throws(() => setClassicWeaponLevels(createClassicWeapons(), {scatter: 2}), TypeError);
+});
+
+// Árbol ampliado de la Forja (dec-arbol-ampliado, 02/11/2026): munición 20 → 100.
+test('a bigger magazine from the Forja adds the new rounds once, recovers up to the new top and rejects bad sizes', () => {
+  const state = createClassicWeapons();
+  assert.equal(state.maxCharges, 20);
+  state.charges = 5;
+  assert.equal(setClassicMaxCharges(state, 40), 40);
+  assert.equal(state.charges, 25, 'the 20 new rounds arrive loaded');
+  assert.equal(setClassicMaxCharges(state, 40), 40);
+  assert.equal(state.charges, 25, 'repeating the same size changes nothing');
+  run(state, 2 * 20);
+  assert.equal(state.charges, 40, 'recovery fills up to the new top');
+  assert.equal(classicWeaponSnapshot(state).rechargeProgress, 0);
+  for (const bad of [19, 101, 30.5, Number.NaN]) assert.throws(() => setClassicMaxCharges(state, bad));
+  assert.equal(state.maxCharges, 40);
+  assert.equal(state.charges, 40);
 });

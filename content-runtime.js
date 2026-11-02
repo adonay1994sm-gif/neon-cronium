@@ -154,6 +154,7 @@ var NeonCampaign = (() => {
     sectorMapState: () => sectorMapState,
     sectorPlanetPose: () => sectorPlanetPose,
     selectClassicWeapon: () => selectClassicWeapon,
+    setClassicMaxCharges: () => setClassicMaxCharges,
     setClassicRechargeInterval: () => setClassicRechargeInterval,
     setClassicUnlimitedFire: () => setClassicUnlimitedFire,
     setClassicWeaponLevels: () => setClassicWeaponLevels,
@@ -1439,6 +1440,43 @@ var NeonCampaign = (() => {
       label: "Refrigeraci\xF3n II",
       description: "Recupera un proyectil cada segundo de vuelo; conserva la carga y recuperaci\xF3n en curso."
     }),
+    // Línea de munición (dec-arbol-ampliado, 02/11/2026): 20 → 100 cargas en
+    // cuatro rangos. Precios: decisión técnica; se ajustan jugando.
+    "ammo-1": upgrade({
+      id: "ammo-1",
+      price: 60,
+      branch: "ammo",
+      rank: 1,
+      label: "Munici\xF3n I",
+      description: "El cargador pasa de 20 a 40 disparos. Llegan cargados al instalarlo."
+    }),
+    "ammo-2": upgrade({
+      id: "ammo-2",
+      price: 140,
+      branch: "ammo",
+      rank: 2,
+      requires: ["ammo-1"],
+      label: "Munici\xF3n II",
+      description: "El cargador pasa de 40 a 60 disparos."
+    }),
+    "ammo-3": upgrade({
+      id: "ammo-3",
+      price: 260,
+      branch: "ammo",
+      rank: 3,
+      requires: ["ammo-2"],
+      label: "Munici\xF3n III",
+      description: "El cargador pasa de 60 a 80 disparos."
+    }),
+    "ammo-4": upgrade({
+      id: "ammo-4",
+      price: 400,
+      branch: "ammo",
+      rank: 4,
+      requires: ["ammo-3"],
+      label: "Munici\xF3n IV",
+      description: "El cargador pasa de 80 a 100 disparos."
+    }),
     "weapon-scatter": upgrade({
       id: "weapon-scatter",
       retired: true,
@@ -1528,11 +1566,14 @@ var NeonCampaign = (() => {
     const saved = normalizeScrapRecord(record);
     const upgrades = saved?.upgrades || [];
     const owns2 = (sku) => upgrades.includes(sku);
+    const ammoRank = [4, 3, 2, 1].find((rank) => owns2(`ammo-${rank}`)) || 0;
     return {
       reserveCapacity: hullReserveCapacity(saved),
       rechargeSeconds: owns2("coolant-feed-ii") ? 1 : owns2("coolant-feed") ? 1.5 : 2,
+      maxCharges: 20 + 20 * ammoRank,
       defenseRank: owns2("hull-plating-ii") ? 2 : owns2("hull-reinforcement") ? 1 : 0,
       coolingRank: owns2("coolant-feed-ii") ? 2 : owns2("coolant-feed") ? 1 : 0,
+      ammoRank,
       weaponIds: [],
       weaponLevels: Object.fromEntries(["pulse", "twin"].map((id) => [id, owns2(`level-${id}-4`) ? 4 : owns2(`level-${id}-3`) ? 3 : owns2(`level-${id}-2`) ? 2 : 1])),
       weaponRanks: {
@@ -3781,18 +3822,18 @@ var NeonCampaign = (() => {
   function staysOutsideCorridor(item, corridor) {
     const clearance = item.r + 12;
     const left = corridor.left - clearance, right = corridor.right + clearance;
-    const top = corridor.top - clearance, bottom = corridor.bottom + clearance;
+    const top2 = corridor.top - clearance, bottom = corridor.bottom + clearance;
     const times = [
       0,
       item.life,
       ...boundaryTimes(item.x, item.vx, item.ax, left, item.life),
       ...boundaryTimes(item.x, item.vx, item.ax, right, item.life),
-      ...boundaryTimes(item.y, item.vy, item.ay, top, item.life),
+      ...boundaryTimes(item.y, item.vy, item.ay, top2, item.life),
       ...boundaryTimes(item.y, item.vy, item.ay, bottom, item.life)
     ].sort((a, b) => a - b);
     const inside = (seconds) => {
       const point = positionAt(item, seconds);
-      return point.y >= top - 1e-8 && point.y <= bottom + 1e-8 && point.x >= left - 1e-8 && point.x <= right + 1e-8;
+      return point.y >= top2 - 1e-8 && point.y <= bottom + 1e-8 && point.x >= left - 1e-8 && point.x <= right + 1e-8;
     };
     for (let index = 0; index < times.length; index++) {
       if (inside(times[index]) || index > 0 && inside((times[index] + times[index - 1]) / 2)) return false;
@@ -6795,12 +6836,12 @@ var NeonCampaign = (() => {
       boss.r + Math.min(18, boss.width * 0.025),
       Number.isFinite(boss.presentationHalfWidth) ? boss.presentationHalfWidth + 8 : 0
     ));
-    const top = Math.max(64, boss.targetY - 16);
+    const top2 = Math.max(64, boss.targetY - 16);
     return {
       left: margin,
       right: boss.width - margin,
-      top,
-      bottom: Math.max(top, Math.min(boss.playerY - 210, boss.targetY + 24))
+      top: top2,
+      bottom: Math.max(top2, Math.min(boss.playerY - 210, boss.targetY + 24))
     };
   }
   function planMotion(boss) {
@@ -7979,6 +8020,7 @@ var NeonCampaign = (() => {
       weaponRanks: { scatter: 1, needle: 1 },
       weaponLevels: { pulse: 1, twin: 1 },
       charges: CLASSIC_WEAPON_RULES.maxCharges,
+      maxCharges: CLASSIC_WEAPON_RULES.maxCharges,
       rechargeSeconds,
       recharge: 0,
       cooldown: 0,
@@ -7999,8 +8041,18 @@ var NeonCampaign = (() => {
     rechargeInterval(seconds);
     if (state.rechargeSeconds === seconds) return seconds;
     state.rechargeSeconds = seconds;
-    state.recharge = state.charges === CLASSIC_WEAPON_RULES.maxCharges ? 0 : Math.min(state.recharge, seconds - 1e-9);
+    state.recharge = state.charges === top(state) ? 0 : Math.min(state.recharge, seconds - 1e-9);
     return seconds;
+  }
+  var top = (state) => state.maxCharges ?? CLASSIC_WEAPON_RULES.maxCharges;
+  function setClassicMaxCharges(state, size) {
+    if (!Number.isInteger(size) || size < CLASSIC_WEAPON_RULES.maxCharges || size > 100) throw new RangeError("Invalid magazine size");
+    const before = top(state);
+    if (size === before) return size;
+    state.maxCharges = size;
+    state.charges = Math.min(size, state.charges + Math.max(0, size - before));
+    if (state.charges === size) state.recharge = 0;
+    return size;
   }
   function setClassicWeaponTuning(state, ranks = {}) {
     if (!ranks || typeof ranks !== "object" || Array.isArray(ranks) || Object.keys(ranks).some((id) => id !== "scatter" && id !== "needle")) {
@@ -8119,7 +8171,7 @@ var NeonCampaign = (() => {
     if (state.projectiles.length + definition.barrels.length > CLASSIC_WEAPON_RULES.maxProjectiles) {
       return { accepted: false, reason: "capacity", events: [], projectiles: [] };
     }
-    const wasFull = state.charges === CLASSIC_WEAPON_RULES.maxCharges;
+    const wasFull = state.charges === top(state);
     if (!state.unlimitedFire) {
       state.charges--;
       if (wasFull) state.recharge = 0;
@@ -8166,15 +8218,15 @@ var NeonCampaign = (() => {
     state.elapsed += dt;
     state.cooldown = Math.max(0, state.cooldown - dt);
     state.missileCooldown = Math.max(0, state.missileCooldown - dt);
-    if (!state.unlimitedFire && state.charges < CLASSIC_WEAPON_RULES.maxCharges) {
+    if (!state.unlimitedFire && state.charges < top(state)) {
       state.recharge += dt;
-      while (state.recharge + 1e-9 >= state.rechargeSeconds && state.charges < CLASSIC_WEAPON_RULES.maxCharges) {
+      while (state.recharge + 1e-9 >= state.rechargeSeconds && state.charges < top(state)) {
         state.charges++;
         state.recharge = Math.max(0, state.recharge - state.rechargeSeconds);
         events.push(event(state, "recharged", { charges: state.charges }));
       }
     }
-    if (state.charges === CLASSIC_WEAPON_RULES.maxCharges) state.recharge = 0;
+    if (state.charges === top(state)) state.recharge = 0;
     const margin = CLASSIC_WEAPON_RULES.boundsMargin;
     for (let index = state.projectiles.length - 1; index >= 0; index--) {
       const projectile2 = state.projectiles[index];
@@ -8231,7 +8283,7 @@ var NeonCampaign = (() => {
       label: definition.label,
       description: definition.description,
       damageMultiplier: definition.damageMultiplier,
-      rechargeProgress: state.charges === CLASSIC_WEAPON_RULES.maxCharges ? 0 : Math.min(1, state.recharge / state.rechargeSeconds),
+      rechargeProgress: state.charges === top(state) ? 0 : Math.min(1, state.recharge / state.rechargeSeconds),
       projectiles: state.projectiles.map((projectile2) => ({
         ...projectile2,
         hitTargets: [...projectile2.hitTargets]

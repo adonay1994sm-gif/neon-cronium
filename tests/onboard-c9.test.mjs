@@ -406,3 +406,21 @@ test('Forja keeps hull and cooling ranks, no longer sells weapons and preserves 
   assert.equal(resumed.snapshot().reserveCapacity,65);assert.equal(resumed.snapshot().weapons.rechargeSeconds,1);
   assert.equal(resumed.snapshot().salvage.balance,q.salvage.balance);
 });
+
+// dec-arbol-ampliado (02/11/2026): rama MUNICIÓN de cuatro rangos en la Forja.
+test('Forja ammo branch: Munición I gives a 40-round magazine now and after a reload; later ranks wait for the one before', t => {
+  const equipment={version:1,recoveredTwin:false,unlocked:['pulse'],selected:'pulse'};
+  const h=harness(t,{salvage:fundedRecord(250),equipment});h.api.prepare();h.node('classicC9').click();
+  const sku=id=>h.document.querySelector(`[data-c9-sku="${id}"]`);
+  assert.deepEqual([...sku('ammo-1').closest('.c9-branch').querySelectorAll('[data-c9-sku]')].map(node=>node.dataset.c9Sku),
+    ['ammo-1','ammo-2','ammo-3','ammo-4']);
+  assert.equal(sku('ammo-2').disabled,true,'Munición II needs Munición I');
+  assert.equal(h.snapshot().weapons.maxCharges,20);
+  sku('ammo-1').click();
+  const bought=h.snapshot();
+  assert.equal(bought.weapons.maxCharges,40);assert.equal(bought.weapons.charges,40,'the new rounds arrive loaded');
+  assert.equal(bought.salvage.balance,190);assert.equal(sku('ammo-1').dataset.nodeState,'installed');
+  assert.equal(sku('ammo-2').disabled,false);
+  const resumed=harness(t,{salvage:JSON.parse(h.stored(SALVAGE_KEY)),equipment});
+  resumed.api.prepare();assert.equal(resumed.snapshot().weapons.maxCharges,40);
+});

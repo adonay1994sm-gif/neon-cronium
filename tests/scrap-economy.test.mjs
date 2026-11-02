@@ -579,8 +579,8 @@ test('workshop branches and weapon levels require their paid prerequisite and ea
   }
   // Abanico y Aguja salieron de la Forja (dec-armas-plan): ya no se venden.
   for (const sku of RETIRED_UPGRADES) assert.equal(log.purchase({transactionId: `try:${sku}`, sku}).reason, 'retired');
-  assert.deepEqual(classicWorkshopState(log.getState()), {reserveCapacity: 30, rechargeSeconds: 2,
-    defenseRank: 0, coolingRank: 0, weaponIds: [], weaponLevels: {pulse: 1, twin: 1}, weaponRanks: {scatter: 0, needle: 0}});
+  assert.deepEqual(classicWorkshopState(log.getState()), {reserveCapacity: 30, rechargeSeconds: 2, maxCharges: 20,
+    defenseRank: 0, coolingRank: 0, ammoRank: 0, weaponIds: [], weaponLevels: {pulse: 1, twin: 1}, weaponRanks: {scatter: 0, needle: 0}});
   for (const sku of ['twin-preparation', 'hull-reinforcement', 'coolant-feed', 'level-pulse-2', 'level-twin-2']) {
     assert.equal(log.purchase({transactionId: `buy:${sku}`, sku}).ok, true);
   }
@@ -727,4 +727,22 @@ test('an upgrade cannot reuse the id of the last consumable', () => {
   const result = log.purchase({transactionId: 'beacon:salvage-run:1', sku: 'hull-reinforcement'});
   assert.equal(result.reason, 'transaction-id-conflict');
   assert.equal(log.getBalance(), 108 - 40);
+});
+
+// Árbol ampliado de la Forja (dec-arbol-ampliado, 02/11/2026): munición 20 → 100.
+test('the ammo line has four paid ranks, 20 → 40 → 60 → 80 → 100 rounds, each needing the one before', () => {
+  const device = memory(), log = ledger(device), run = start(log); fund(log, run.runId, 120);
+  assert.equal(classicWorkshopState(log.getState()).maxCharges, 20);
+  assert.equal(log.purchase({transactionId: 'try:ammo-2', sku: 'ammo-2'}).reason, 'prerequisite-required');
+  const skus = ['ammo-1', 'ammo-2', 'ammo-3', 'ammo-4'];
+  assert.deepEqual(skus.map(sku => SCRAP_UPGRADES[sku].price), [60, 140, 260, 400]);
+  for (const [index, sku] of skus.entries()) {
+    assert.equal(log.purchase({transactionId: `buy:${sku}`, sku}).ok, true);
+    const workshop = classicWorkshopState(log.getState());
+    assert.equal(workshop.maxCharges, 20 * (index + 2));
+    assert.equal(workshop.ammoRank, index + 1);
+  }
+  assert.equal(log.getBalance(), 120 * 9 - 860);
+  const reload = ledger(memory(device.map)); assert.equal(reload.load().ok, true);
+  assert.equal(classicWorkshopState(reload.getState()).maxCharges, 100);
 });

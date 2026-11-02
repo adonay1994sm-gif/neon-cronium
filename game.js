@@ -1152,6 +1152,7 @@
     if(JSON.stringify(equipment)!==JSON.stringify(classicEquipment))projected=persistClassicEquipment(equipment)&&projected;
     if(classicWeapons){
       NeonCampaign.setClassicRechargeInterval(classicWeapons,workshop.rechargeSeconds);
+      NeonCampaign.setClassicMaxCharges(classicWeapons,workshop.maxCharges);
       NeonCampaign.setClassicWeaponTuning(classicWeapons,workshop.weaponRanks);
       NeonCampaign.setClassicWeaponLevels(classicWeapons,workshop.weaponLevels);
     }
@@ -1407,7 +1408,8 @@
     oldGrid.remove();
     for(const [sku,definition] of Object.entries(NeonCampaign.SCRAP_UPGRADES)) {
       if(['twin-preparation','hull-reinforcement','coolant-feed'].includes(sku)||definition.retired)continue;
-      const weapon=sku.startsWith('weapon-'),kind=sku.includes('scatter')?'scatter':sku.includes('needle')?'needle':sku.includes('hull')?'hull-ii':'coolant-ii';
+      const weapon=sku.startsWith('weapon-'),kind=sku.includes('scatter')?'scatter':sku.includes('needle')?'needle':sku.includes('hull')?'hull-ii'
+        :sku.startsWith('ammo-')?(definition.rank<=2?'ammo':'ammo-ii'):'coolant-ii';
       const button=document.createElement('button');button.type='button';button.className='secondary c9-tree-node';button.dataset.c9Sku=sku;
       const art=document.createElement('span');art.className='c9-upgrade-art';art.dataset.upgrade=kind;art.setAttribute('aria-hidden','true');
       const copy=document.createElement('span');copy.className='c9-upgrade-copy';
@@ -1428,12 +1430,14 @@
       repeat.click();toast('Guía de vuelo preparada. Aprenderás maniobrando en el viaje.');
     };
     const tree=sections.systems.grid;tree.classList.add('c9-skill-tree');
-    for(const [label,first,next] of [
-      ['BLINDAJE','hull-reinforcement','hull-plating-ii'],['REFRIGERACIÓN','coolant-feed','coolant-feed-ii']]) {
+    // Munición: línea de cuatro rangos (dec-arbol-ampliado, 02/11/2026).
+    for(const [label,first,...next] of [
+      ['BLINDAJE','hull-reinforcement','hull-plating-ii'],['REFRIGERACIÓN','coolant-feed','coolant-feed-ii'],
+      ['MUNICIÓN',null,'ammo-1','ammo-2','ammo-3','ammo-4']]) {
       const branch=document.createElement('div');branch.className='c9-branch';
       const name=document.createElement('h4');name.textContent=label;branch.append(name);
       if(first)branch.append(first==='hull-reinforcement'?ui.c9BuyShield:ui.c9BuyCoolant);
-      const node=tree.querySelector(`[data-c9-sku="${next}"]`);if(node)branch.append(node);
+      for(const sku of next){const node=tree.querySelector(`[data-c9-sku="${sku}"]`);if(node)branch.append(node);}
       tree.append(branch);
     }
     // El marco pintado no se desplaza: todo menos los botones finales va en una
@@ -6177,7 +6181,7 @@
   function classicTwinFrame() {
     const cooldown = atlasBoss ? manualShotCooldown : classicWeapons?.cooldown || 0;
     if (cooldown > .10) return 2;
-    if (classicWeapons && classicWeapons.charges < 20 && classicWeapons.recharge > .10) return 1;
+    if (classicWeapons && classicWeapons.charges < (classicWeapons.maxCharges || 20) && classicWeapons.recharge > .10) return 1;
     return 0;
   }
 

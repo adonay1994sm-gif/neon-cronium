@@ -29,6 +29,16 @@ export const SCRAP_UPGRADES = Object.freeze({
   'coolant-feed-ii': upgrade({id: 'coolant-feed-ii', price: 110, branch: 'cooling', rank: 2,
     requires: ['coolant-feed'], label: 'Refrigeración II',
     description: 'Recupera un proyectil cada segundo de vuelo; conserva la carga y recuperación en curso.'}),
+  // Línea de munición (dec-arbol-ampliado, 02/11/2026): 20 → 100 cargas en
+  // cuatro rangos. Precios: decisión técnica; se ajustan jugando.
+  'ammo-1': upgrade({id: 'ammo-1', price: 60, branch: 'ammo', rank: 1, label: 'Munición I',
+    description: 'El cargador pasa de 20 a 40 disparos. Llegan cargados al instalarlo.'}),
+  'ammo-2': upgrade({id: 'ammo-2', price: 140, branch: 'ammo', rank: 2, requires: ['ammo-1'], label: 'Munición II',
+    description: 'El cargador pasa de 40 a 60 disparos.'}),
+  'ammo-3': upgrade({id: 'ammo-3', price: 260, branch: 'ammo', rank: 3, requires: ['ammo-2'], label: 'Munición III',
+    description: 'El cargador pasa de 60 a 80 disparos.'}),
+  'ammo-4': upgrade({id: 'ammo-4', price: 400, branch: 'ammo', rank: 4, requires: ['ammo-3'], label: 'Munición IV',
+    description: 'El cargador pasa de 80 a 100 disparos.'}),
   'weapon-scatter': upgrade({id: 'weapon-scatter', retired: true, price: 70, weaponId: 'scatter', branch: 'scatter', rank: 1,
     requires: ['twin-preparation'], label: 'Abanico I',
     description: 'Tres pulsos divergentes de 1 de daño; alcance corto para interceptar grupos cercanos.',
@@ -94,10 +104,13 @@ export function classicWorkshopState(record) {
   const saved = normalizeScrapRecord(record);
   const upgrades = saved?.upgrades || [];
   const owns = sku => upgrades.includes(sku);
+  const ammoRank = [4, 3, 2, 1].find(rank => owns(`ammo-${rank}`)) || 0;
   return {reserveCapacity: hullReserveCapacity(saved),
     rechargeSeconds: owns('coolant-feed-ii') ? 1 : owns('coolant-feed') ? 1.5 : 2,
+    maxCharges: 20 + 20 * ammoRank,
     defenseRank: owns('hull-plating-ii') ? 2 : owns('hull-reinforcement') ? 1 : 0,
     coolingRank: owns('coolant-feed-ii') ? 2 : owns('coolant-feed') ? 1 : 0,
+    ammoRank,
     weaponIds: [],
     weaponLevels: Object.fromEntries(['pulse', 'twin'].map(id => [id, owns(`level-${id}-4`) ? 4 : owns(`level-${id}-3`) ? 3 : owns(`level-${id}-2`) ? 2 : 1])),
     weaponRanks: {scatter: owns('scatter-focus') ? 2 : owns('weapon-scatter') ? 1 : 0,

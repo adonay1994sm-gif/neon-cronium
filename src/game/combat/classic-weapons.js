@@ -90,7 +90,7 @@ export function createClassicWeapons({type = 'pulse', unlocked = ['pulse'],
   return {
     version: CLASSIC_WEAPON_RULES.version, width, height,
     selected: type, unlocked: available, weaponRanks: {scatter: 1, needle: 1}, weaponLevels: {pulse: 1, twin: 1},
-    charges: CLASSIC_WEAPON_RULES.maxCharges,
+    charges: CLASSIC_WEAPON_RULES.maxCharges, maxCharges: CLASSIC_WEAPON_RULES.maxCharges,
     rechargeSeconds, recharge: 0, cooldown: 0, elapsed: 0,
     unlimitedFire: false, missileCooldown: 0, missileSequence: 0,
     projectileSequence: 0, eventSequence: 0, shotSequence: 0, projectiles: []
@@ -110,9 +110,25 @@ export function setClassicRechargeInterval(state, seconds) {
   rechargeInterval(seconds);
   if (state.rechargeSeconds === seconds) return seconds;
   state.rechargeSeconds = seconds;
-  state.recharge = state.charges === CLASSIC_WEAPON_RULES.maxCharges ? 0 :
+  state.recharge = state.charges === top(state) ? 0 :
     Math.min(state.recharge, seconds - 1e-9);
   return seconds;
+}
+
+// Tamaño del cargador: 20 de serie; la línea de munición de la Forja lo sube
+// hasta 100 (dec-arbol-ampliado, 02/11/2026). Partidas antiguas sin el campo: 20.
+const top = state => state.maxCharges ?? CLASSIC_WEAPON_RULES.maxCharges;
+
+/** A bigger magazine bought in the Forja arrives loaded with its new rounds,
+ * once; recovery then fills up to the new top. */
+export function setClassicMaxCharges(state, size) {
+  if (!Number.isInteger(size) || size < CLASSIC_WEAPON_RULES.maxCharges || size > 100) throw new RangeError('Invalid magazine size');
+  const before = top(state);
+  if (size === before) return size;
+  state.maxCharges = size;
+  state.charges = Math.min(size, state.charges + Math.max(0, size - before));
+  if (state.charges === size) state.recharge = 0;
+  return size;
 }
 
 /** Installing a paid rank affects future shots, never live bolts or a cooldown. */
@@ -237,7 +253,7 @@ export function triggerClassicWeapon(state, {x, y, angle = -Math.PI / 2} = {}) {
   if (state.projectiles.length + definition.barrels.length > CLASSIC_WEAPON_RULES.maxProjectiles) {
     return {accepted: false, reason: 'capacity', events: [], projectiles: []};
   }
-  const wasFull = state.charges === CLASSIC_WEAPON_RULES.maxCharges;
+  const wasFull = state.charges === top(state);
   if (!state.unlimitedFire) {
     state.charges--;
     if (wasFull) state.recharge = 0;
@@ -282,16 +298,16 @@ export function advanceClassicWeapons(state, delta) {
   state.elapsed += dt;
   state.cooldown = Math.max(0, state.cooldown - dt);
   state.missileCooldown = Math.max(0, state.missileCooldown - dt);
-  if (!state.unlimitedFire && state.charges < CLASSIC_WEAPON_RULES.maxCharges) {
+  if (!state.unlimitedFire && state.charges < top(state)) {
     state.recharge += dt;
     while (state.recharge + 1e-9 >= state.rechargeSeconds &&
-      state.charges < CLASSIC_WEAPON_RULES.maxCharges) {
+      state.charges < top(state)) {
       state.charges++;
       state.recharge = Math.max(0, state.recharge - state.rechargeSeconds);
       events.push(event(state, 'recharged', {charges: state.charges}));
     }
   }
-  if (state.charges === CLASSIC_WEAPON_RULES.maxCharges) state.recharge = 0;
+  if (state.charges === top(state)) state.recharge = 0;
   const margin = CLASSIC_WEAPON_RULES.boundsMargin;
   for (let index = state.projectiles.length - 1; index >= 0; index--) {
     const projectile = state.projectiles[index];
@@ -341,7 +357,7 @@ export function classicWeaponSnapshot(state) {
   return {...state, unlocked: [...state.unlocked], weaponRanks: {...state.weaponRanks}, weaponLevels: {...state.weaponLevels},
     label: definition.label, description: definition.description,
     damageMultiplier: definition.damageMultiplier,
-    rechargeProgress: state.charges === CLASSIC_WEAPON_RULES.maxCharges ? 0 :
+    rechargeProgress: state.charges === top(state) ? 0 :
       Math.min(1, state.recharge / state.rechargeSeconds),
     projectiles: state.projectiles.map(projectile => ({...projectile,
       hitTargets: [...projectile.hitTargets]}))};

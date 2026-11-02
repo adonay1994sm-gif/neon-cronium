@@ -147,7 +147,7 @@
   function classicTwinFrame() {
     const cooldown = atlasBoss ? manualShotCooldown : classicWeapons?.cooldown || 0;
     if (cooldown > .10) return 2;
-    if (classicWeapons && classicWeapons.charges < 20 && classicWeapons.recharge > .10) return 1;
+    if (classicWeapons && classicWeapons.charges < (classicWeapons.maxCharges || 20) && classicWeapons.recharge > .10) return 1;
     return 0;
   }
 
