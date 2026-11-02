@@ -37,6 +37,7 @@ export {SHIP_FLEET, SHIP_FLEET_SAVE_KEY, normalizeShipLoadout, shipPartFrame, sh
 
 export {createChronosVoyage, CHRONOS_VOYAGE_KEY,
   CHRONOS_VOYAGE_STAGES, normalizeChronosVoyageCheckpoint, createChronosVoyageCheckpoint} from './chronos-flight.js';
+export {createMoodMusic, MOOD_MUSIC_TRACKS} from '../audio/mood-music.js';
 export {getChronosDestructionPose} from '../animation/chronos-destruction.js';
 export {getChronosIntroPose, CHRONOS_INTRO_TIMELINE} from '../animation/chronos-intro.js';
 export {CLASSIC_WEAPON_RULES, createClassicWeapons, triggerClassicWeapon, advanceClassicWeapons,

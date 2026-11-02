@@ -835,6 +835,9 @@
   // updateScore; no score timer, RAF or permanently running drone is created.
   let voyageScore = null;
   let chapterScore = null;
+  // Música nueva por momento (propietario, 02/11/2026). Sustituye al sintetizador
+  // de viaje y a las pistas del capítulo, que ya no se crean.
+  let moodMusic = null;
   let masterBus = null;
   let combatSfx = null;
   let uiSfx = null;
@@ -880,12 +883,8 @@
     const ac = ensureAudio();
     if (!ac) return;
     if (ac.state === "suspended") ac.resume().catch(() => {});
-    if (!voyageScore && typeof NeonCampaign !== "undefined" && typeof NeonCampaign.createVoyageScore === "function") {
-      voyageScore = NeonCampaign.createVoyageScore({context: ac, output: musicGain});
-      voyageScore.setContext(voyageScoreContext);
-    }
-    if(!chapterScore&&ac.createMediaElementSource) {
-      try {chapterScore=NeonCampaign.createChapterScore({context:ac,output:musicGain});} catch {chapterScore=null;}
+    if(!moodMusic&&ac.createMediaElementSource&&typeof NeonCampaign?.createMoodMusic==="function") {
+      try {moodMusic=NeonCampaign.createMoodMusic({context:ac,output:musicGain});} catch {moodMusic=null;}
     }
     if(!combatSfx&&typeof NeonCampaign.createCombatSfx==="function") {
       combatSfx=NeonCampaign.createCombatSfx({context:ac,output:masterBus||ac.destination});
@@ -894,6 +893,12 @@
     else if(combatSfx?.snapshot().failed)combatSfx.load();
     scoreSuspended = false;
     updateAudioVolumes();
+    // Dentro del toque: la música del momento empieza ya y el otro reproductor
+    // queda desbloqueado para los fundidos (Safari en iPhone).
+    if (moodMusic && settings.music > 0) {
+      moodMusic.update({mood: musicMood(), paused: false, enabled: true});
+      moodMusic.unlock();
+    }
   }
 
   function signalScoreContext(context) {
@@ -902,13 +907,18 @@
     return voyageScore?.setContext(context) ?? true;
   }
 
+  // Momento de la música: menú fuera de la partida; en vuelo, jefe y
+  // subguardián tienen la suya mientras luchan.
+  function musicMood() {
+    if (!["playing", "paused", "destroying"].includes(state)) return "menu";
+    if (typeof atlasBoss !== "undefined" && atlasBoss && !atlasBoss.resolved) return "jefe";
+    if (typeof subBoss !== "undefined" && subBoss && !subBoss.resolved) return "subjefe";
+    return "vuelo";
+  }
+
   function updateScore(dt, paused = false) {
     combatSfx?.setPaused(paused||scoreSuspended||state!=="playing");
-    if (!voyageScore) return;
-    const rendered=chapterScore?.update({active:Boolean(classicChapterStory),
-      elapsed:classicFlightView?.elapsed||0,paused:paused||scoreSuspended,enabled:settings.music>0});
-    voyageScore.setPaused(paused || scoreSuspended || Boolean(rendered));
-    voyageScore.advance(dt);
+    moodMusic?.update({mood: musicMood(), paused: paused || scoreSuspended, enabled: settings.music > 0});
   }
 
   function stopToneVoices() {
@@ -921,6 +931,7 @@
   async function suspendAudio() {
     scoreSuspended = true;
     chapterScore?.suspend();
+    moodMusic?.suspend();
     combatSfx?.setPaused(true);
     uiSfx?.setPaused(true);
     voyageScore?.setPaused(true);
@@ -944,7 +955,7 @@
     uiSfx?.setEnabled(settings.fx>0);
     uiSfx?.setVolume(settings.fx/100);
     if (settings.fx <= 0) stopToneVoices();
-    if(settings.music<=0)chapterScore?.suspend();
+    if(settings.music<=0){chapterScore?.suspend();moodMusic?.suspend();}
     if (musicGain && audioCtx) {
       // Propietario (02/11/2026): la música tapaba el juego; tope 0,26 → 0,15 (−4,8 dB).
       const value = (settings.music / 100) * 0.15;
@@ -7697,6 +7708,8 @@
   setupClassicMissileInput();
   resizeCanvas();
   syncSettingsUI();
+  // Música del menú (02/11/2026): el navegador solo deja sonar tras el primer toque.
+  addEventListener("pointerdown", () => startMusic(), { once: true, capture: true });
   window.AnalyticsManager?.track("app_open", { build: BUILD_VERSION });
   addEventListener("pagehide", () => {
     window.AnalyticsManager?.track("session_duration", {

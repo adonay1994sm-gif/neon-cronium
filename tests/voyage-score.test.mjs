@@ -149,7 +149,7 @@ function legacyHarness(music = 35, fx = 70, {withMedia = false, story = false, a
     assert.equal(element,media);mediaSources++;
     return {connect(){},disconnect(){}};
   };
-  const h = vm.createContext({ settings: { music, fx }, musicGain: null, audioCtx: null,
+  const h = vm.createContext({ settings: { music, fx }, musicGain: null, audioCtx: null, state: 'menu', atlasBoss: null, subBoss: null,
     addEventListener() {}, window: { AudioContext: function AudioContext() { return ac; } },
     classicChapterStory:story?{}:null,classicFlightView:null,
     NeonCampaign: { createVoyageScore,createChapterScore:options=>createChapterScore({...options,createAudio:()=>media}) } });
@@ -159,67 +159,27 @@ function legacyHarness(music = 35, fx = 70, {withMedia = false, story = false, a
     snapshot: () => vm.runInContext('voyageScore?.snapshot()', h) };
 }
 
-test('legacy startMusic is one shared-context owner and no permanent drone is created', () => {
-  const { h, ac, records, snapshot } = legacyHarness();
-  h.startMusic(); h.startMusic(); h.startMusic();
-  assert.equal(records.length, 0, 'start unlocks/creates the controller; only frame updates create notes');
-  h.updateScore(1 / 60);
-  assert.equal(snapshot().totalVoices, 3);
-  const first = records.length;
-  h.startMusic(); h.updateScore(1 / 60);
-  assert.equal(records.length, first);
-  h.updateScore(1 / 60, true);
-  assert.equal(snapshot().activeVoices, 0);
-  ac.tick(5); assert.ok(records.every(voice => voice.disconnected));
-});
-
-test('legacy volumes isolate music/FX, bound effects and suspend/resume safely', async () => {
-  const { h, ac, records, snapshot } = legacyHarness();
-  h.signalScoreContext('station'); h.startMusic(); h.updateScore(1 / 60);
-  assert.equal(snapshot().context, 'station');
-  h.settings.music = 0; h.updateAudioVolumes();
-  assert.equal(snapshot().activeVoices, 0);
-  const mutedCount = records.length; h.updateScore(.034);
-  assert.equal(records.length, mutedCount);
-  for (let n = 0; n < 100; n++) h.tone();
-  assert.equal(records.length - mutedCount, 16);
-  h.settings.fx = 0; h.tone();
-  assert.equal(vm.runInContext('activeToneVoices.size', h), 0);
-  await h.suspendAudio(); assert.equal(ac.state, 'suspended');
-  const frozen = snapshot().beat; h.updateScore(.034); assert.equal(snapshot().beat, frozen);
-  await h.resumeAudio(); assert.equal(ac.state, 'suspended', 'fully muted context stays suspended');
-  h.settings.fx = 70; await h.resumeAudio();
-  assert.equal(ac.state, 'running'); assert.equal(snapshot().enabled, false);
-  h.settings.music = 35; h.updateAudioVolumes(); h.updateScore(.034);
-  assert.ok(snapshot().beat > frozen);
-});
-
-test('actual legacy integration silences procedural voices when the rendered chapter score takes ownership',async()=>{
-  const {h,ac,records,media,mediaSources,mediaPlays,snapshot}=legacyHarness(35,70,{withMedia:true});
-  h.startMusic();h.startMusic();h.updateScore(1/60);
-  assert.equal(snapshot().activeVoices,3,'outside the chapter, the established fallback remains functional');
-  const prior=records.length;
-  h.classicChapterStory={};h.classicFlightView={elapsed:12};
-  h.updateScore(1/60);await Promise.resolve();await Promise.resolve();
-  assert.equal(snapshot().activeVoices,0,'the new score cannot overlap previously running procedural music');
-  assert.equal(media.paused,false);assert.equal(media.currentTime,12);
-  for(let frame=0;frame<120;frame++){ac.tick(1/60);h.updateScore(1/60);}
-  assert.equal(records.length,prior);assert.equal(mediaPlays(),1);assert.equal(mediaSources(),1);
-  h.classicFlightView={elapsed:28};h.updateScore(1/60);
-  assert.equal(media.loop,true);assert.match(media.src,/chapter1_voyage_score_v1\.m4a$/);
-  assert.equal(records.length,prior);assert.equal(snapshot().activeVoices,0);
-});
-
-test('actual legacy integration falls back after rejected rendered autoplay and never plays both score systems',async()=>{
-  const {h,records,mediaPlays,chapterSnapshot,snapshot}=legacyHarness(35,70,
-    {withMedia:true,story:true,autoplayReject:true});
-  h.startMusic();h.updateScore(1/60);
-  assert.equal(records.length,0,'fallback waits for the actual media rejection');
-  await Promise.resolve();await Promise.resolve();await Promise.resolve();
-  assert.equal(chapterSnapshot().failed,true);
-  h.updateScore(1/60);assert.equal(snapshot().activeVoices,3);
-  const prior=records.length;
-  for(let frame=0;frame<30;frame++)h.updateScore(1/60);
-  assert.equal(mediaPlays(),1,'autoplay failure is not retried every frame');
-  assert.ok(records.length>=prior);assert.ok(snapshot().activeVoices>0);
+// Propietario (02/11/2026): el juego ya no usa este sintetizador ni las pistas del
+// capítulo; suena la música elegida en la sala de escucha (audio/mood-music.js).
+// El módulo de arriba sigue probado porque el archivo se conserva.
+test('the game starts the chosen music per moment and never builds the procedural synth', () => {
+  const {h, records} = legacyHarness(35, 70, {withMedia: true});
+  const played = [];
+  h.NeonCampaign.createMoodMusic = () => ({update(options) { played.push(options); }, unlock() { played.push('unlock'); }, suspend() { played.push('suspend'); }});
+  h.state = 'menu';
+  h.startMusic(); h.startMusic();
+  assert.deepEqual(JSON.parse(JSON.stringify(played.slice(0, 2))), [{mood: 'menu', paused: false, enabled: true}, 'unlock'], 'a tap starts the menu music at once');
+  played.length = 0;
+  const mood = () => { h.updateScore(1 / 60); return played.at(-1).mood; };
+  assert.equal(mood(), 'menu');
+  h.state = 'playing'; assert.equal(mood(), 'vuelo');
+  h.subBoss = {resolved: false}; assert.equal(mood(), 'subjefe');
+  h.subBoss = {resolved: true}; assert.equal(mood(), 'vuelo');
+  h.atlasBoss = {resolved: false}; assert.equal(mood(), 'jefe');
+  h.updateScore(1 / 60, true); assert.equal(played.at(-1).paused, true, 'pause silences it');
+  h.settings.music = 0; h.updateAudioVolumes(); assert.equal(played.at(-1), 'suspend');
+  h.updateScore(1 / 60); assert.equal(played.at(-1).enabled, false);
+  assert.equal(records.length, 0, 'no procedural note was ever created');
+  assert.equal(vm.runInContext('voyageScore', h), null);
+  assert.equal(vm.runInContext('chapterScore', h), null);
 });
