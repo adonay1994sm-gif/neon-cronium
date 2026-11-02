@@ -190,6 +190,11 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 02/11/2026: su elección de la narrativa visual (01/11) pasó un día sin
+  verse: las revisiones buscaban cambios por `actualizado` y yo había puesto
+  horas futuras en mis escrituras. En el tablero escribe siempre la hora real
+  (`date -u`) y busca lo nuevo por `elegido` y por versión, no solo por
+  `actualizado`.
 - 01/11/2026: con el subjefe nuevo dijo «está muy bien la verdad»: le gustó
   que se mueva y el láser pintado. Lo que falla al jugar prefiere quitarlo
   del juego hasta rehacerlo (el Sembrador) antes que dejarlo roto. Quiere
