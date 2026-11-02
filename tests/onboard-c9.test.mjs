@@ -246,6 +246,32 @@ test('the C9 dialog establishes focus, wraps enabled controls and Escape returns
   assert.equal(h.pending.size, 1);
 });
 
+// Detalle pendiente de C9 (rv7 C8, R1): alternar la pausa y la Forja no deja
+// estados cruzados ni toca el combate.
+test('switching between pause and C9 never stacks screens or changes the flight', t => {
+  const h = harness(t); h.api.prepare();
+  const before = gameplay(h.snapshot());
+  h.node('classicC9').click();
+  assert.equal(h.snapshot().state, 'paused'); assert.equal(h.node('flightDock').classList.contains('show'), true);
+  h.api.resumeGame();
+  assert.equal(h.snapshot().state, 'playing', 'resuming from C9 closes the Forja');
+  assert.equal(h.node('flightDock').classList.contains('show'), false);
+  assert.equal(h.node('paused').classList.contains('show'), false);
+  h.api.pauseGame();
+  assert.equal(h.node('paused').classList.contains('show'), true);
+  h.node('classicC9').click();
+  assert.equal(h.node('flightDock').classList.contains('show'), false, 'C9 cannot open on top of the pause');
+  h.api.resumeGame();
+  assert.equal(h.snapshot().state, 'playing');
+  assert.equal(h.node('paused').classList.contains('show'), false);
+  h.node('classicC9').click(); h.api.pauseGame();
+  assert.equal(h.node('paused').classList.contains('show'), false, 'pausing is ignored while C9 is open');
+  assert.equal(h.node('flightDock').classList.contains('show'), true);
+  h.node('flightDockContinue').click();
+  assert.equal(h.snapshot().state, 'playing');
+  assert.deepEqual(gameplay(h.snapshot()), before);
+});
+
 test('the actual onboard purchase commits price, entitlement and receipt once while the route stays paused', t => {
   const h = harness(t); h.api.prepare(); h.api.seedCombatResources(); h.node('classicC9').click();
   const before = h.snapshot();
