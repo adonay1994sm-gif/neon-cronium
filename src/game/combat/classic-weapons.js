@@ -122,13 +122,23 @@ const top = state => state.maxCharges ?? CLASSIC_WEAPON_RULES.maxCharges;
 /** A bigger magazine bought in the Forja arrives loaded with its new rounds,
  * once; recovery then fills up to the new top. */
 export function setClassicMaxCharges(state, size) {
-  if (!Number.isInteger(size) || size < CLASSIC_WEAPON_RULES.maxCharges || size > 100) throw new RangeError('Invalid magazine size');
+  // 100 con la línea de munición y +10 con el nodo clave Cargador ancho.
+  if (!Number.isInteger(size) || size < CLASSIC_WEAPON_RULES.maxCharges || size > 110) throw new RangeError('Invalid magazine size');
   const before = top(state);
   if (size === before) return size;
   state.maxCharges = size;
   state.charges = Math.min(size, state.charges + Math.max(0, size - before));
   if (state.charges === size) state.recharge = 0;
   return size;
+}
+
+/** Nodo clave Recarga en caliente (dec-nodos-clave, 02/11/2026): si el cargador
+ * se queda a cero, recupera al doble de velocidad hasta volver a llenarse. */
+export function setClassicHotReload(state, enabled) {
+  if (typeof enabled !== 'boolean') throw new TypeError('Hot reload must be true or false');
+  state.hotReload = enabled;
+  if (!enabled) state.hotReloading = false;
+  return enabled;
 }
 
 /** Installing a paid rank affects future shots, never live bolts or a cooldown. */
@@ -299,7 +309,8 @@ export function advanceClassicWeapons(state, delta) {
   state.cooldown = Math.max(0, state.cooldown - dt);
   state.missileCooldown = Math.max(0, state.missileCooldown - dt);
   if (!state.unlimitedFire && state.charges < top(state)) {
-    state.recharge += dt;
+    if (state.hotReload && state.charges === 0) state.hotReloading = true;
+    state.recharge += state.hotReloading ? dt * 2 : dt;
     while (state.recharge + 1e-9 >= state.rechargeSeconds &&
       state.charges < top(state)) {
       state.charges++;
@@ -307,7 +318,7 @@ export function advanceClassicWeapons(state, delta) {
       events.push(event(state, 'recharged', {charges: state.charges}));
     }
   }
-  if (state.charges === top(state)) state.recharge = 0;
+  if (state.charges === top(state)) { state.recharge = 0; state.hotReloading = false; }
   const margin = CLASSIC_WEAPON_RULES.boundsMargin;
   for (let index = state.projectiles.length - 1; index >= 0; index--) {
     const projectile = state.projectiles[index];

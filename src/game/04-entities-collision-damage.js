@@ -525,7 +525,8 @@
       kind:context.kind||"collision",largeAsteroid:context.largeAsteroid===true,
       largeAsteroidScale:context.largeAsteroidScale||1});
     classicHullReserve=damageResult.reserve;
-    if (typeof hullGrace !== "undefined") hullGrace = 0.3;
+    // Nodo clave Blindaje reactivo (02/11/2026): 1 s más sin daño tras el golpe.
+    if (typeof hullGrace !== "undefined") hullGrace = typeof classicKeyNodes !== "undefined" && classicKeyNodes.reactiveArmor ? 1.3 : 0.3;
     if (damageResult.absorbed) {
       classicShieldImpact=.18;
       // Revisión G2: el golpe absorbido no se parece a recoger CRONIUM (cian):

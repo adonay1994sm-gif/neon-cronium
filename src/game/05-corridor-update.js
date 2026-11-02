@@ -169,8 +169,10 @@
     item.rs=Number.isFinite(item.rs)?item.rs:0;
     item.p=Number.isFinite(item.p)?item.p:0;
     const dx=player.x-item.x,dy=player.y-item.y,distance=Math.hypot(dx,dy);
-    if(item.bossSalvage || distance<=150) {
-      const speed=item.bossSalvage?1100:360+240*(1-Math.min(1,distance/150));
+    // Nodo clave Imán de chatarra (02/11/2026): el doble de alcance.
+    const reach=typeof classicKeyNodes!=="undefined"&&classicKeyNodes.magnet?300:150;
+    if(item.bossSalvage || distance<=reach) {
+      const speed=item.bossSalvage?1100:360+240*(1-Math.min(1,distance/reach));
       const travel=Math.min(distance,speed*dt);
       if(distance>0){item.x+=dx/distance*travel;item.y+=dy/distance*travel;}
     } else {

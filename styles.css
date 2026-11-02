@@ -1187,7 +1187,7 @@ body.flight-mode #flightDock .c9-upgrades button[data-node-state="installed"] {
 body.flight-mode #flightDock .c9-upgrades button[data-node-state="installed"] .c9-upgrade-copy b,
 body.flight-mode #flightDock .c9-upgrades button[data-node-state="installed"] .c9-upgrade-copy small { color: var(--ui-paper); }
 /* Insignias del árbol (hoja 6x2) */
-body.flight-mode #flightDock .c9-upgrade-art:is([data-upgrade="hull"], [data-upgrade="hull-ii"], [data-upgrade="coolant"], [data-upgrade="coolant-ii"], [data-upgrade="ammo"], [data-upgrade="ammo-ii"], [data-upgrade="missiles"]),
+body.flight-mode #flightDock .c9-upgrade-art:is([data-upgrade="hull"], [data-upgrade="hull-ii"], [data-upgrade="coolant"], [data-upgrade="coolant-ii"], [data-upgrade="ammo"], [data-upgrade^="key-"], [data-upgrade="missiles"]),
 body.flight-mode #flightDock #flightInstallTwin .c9-upgrade-art {
   background-image: url('assets/skill_tree_icons_v1.webp'); background-size: 600% 200%; filter: drop-shadow(0 0 6px rgba(92,245,255,.25));
 }
@@ -1196,7 +1196,11 @@ body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="hull-ii"]
 body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="coolant"] { background-position: 80% 0; }
 body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="coolant-ii"] { background-position: 40% 100%; }
 body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="ammo"] { background-position: 0 0; }
-body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="ammo-ii"] { background-position: 0 100%; }
+/* Nodos clave: el Blindaje reactivo comparte de momento el hexágono con Blindaje II. */
+body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="key-hot-reload"] { background-position: 20% 100%; }
+body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="key-magnet"] { background-position: 80% 100%; }
+body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="key-reactive-armor"] { background-position: 60% 100%; }
+body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="key-wide-magazine"] { background-position: 0 100%; }
 body.flight-mode #flightDock #flightInstallTwin .c9-upgrade-art { background-position: 100% 100%; }
 body.flight-mode #flightDock #c9-supplies .c9-upgrade-art[data-upgrade="missiles"] { background-position: 60% 0; }
 /* Botones finales: aplicar en cian, como la maqueta */

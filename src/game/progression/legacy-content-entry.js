@@ -4,7 +4,7 @@ export {createChapterScore} from '../audio/chapter-score.js';
 export {createChronosChapterStory, normalizeChronosChapterCheckpoint, CHRONOS_CHAPTER_ROUTE_SECONDS} from '../narrative/chronos-chapter.js';
 export {resolveHullReinforcement} from '../combat/hull-reinforcement.js';
 export {createCompletionJournal} from './completion-journal.js';
-export {SCRAP_ECONOMY_KEY, SCRAP_UPGRADES, SCRAP_SHIPS, SCRAP_WEAPON_LEVELS, RETIRED_UPGRADES, SCRAP_CONSUMABLES,
+export {SCRAP_ECONOMY_KEY, SCRAP_ECONOMY_RULES, KEY_NODES, SCRAP_UPGRADES, SCRAP_SHIPS, SCRAP_WEAPON_LEVELS, RETIRED_UPGRADES, SCRAP_CONSUMABLES,
   createScrapLedger, rewardForEnemy, formatDenominations, classicWorkshopState} from './scrap-economy.js';
 export {createVoyageHazardField, advanceVoyageHazardField} from './voyage-hazards.js';
 export {VOYAGES, PLAYABLE_VOYAGES, getVoyageFicha, getVoyageStageRules, getVoyageStageRulesFor} from './voyages/index.js';
@@ -42,7 +42,7 @@ export {getChronosIntroPose, CHRONOS_INTRO_TIMELINE} from '../animation/chronos-
 export {CLASSIC_WEAPON_RULES, createClassicWeapons, triggerClassicWeapon, advanceClassicWeapons,
   hitClassicProjectile, unlockClassicWeapon, selectClassicWeapon, classicWeaponSnapshot,
   setClassicRechargeInterval, setClassicWeaponTuning, setClassicUnlimitedFire, canTriggerClassicMissile,
-  triggerClassicMissile, CLASSIC_WEAPON_LEVELS, setClassicWeaponLevels, setClassicMaxCharges} from '../combat/classic-weapons.js';
+  triggerClassicMissile, CLASSIC_WEAPON_LEVELS, setClassicWeaponLevels, setClassicMaxCharges, setClassicHotReload} from '../combat/classic-weapons.js';
 export {calculateFlightBounds, createRelativeFlightInput, beginFlightInput, moveFlightInput, endFlightInput} from '../ship/flight-controls.js';
 export {SECTORS, getSectorFicha} from './sectors/index.js';
 export {createAttackTokens, requestAttack, releaseAttack, forgetEnemy, attackHolders} from '../combat/attack-tokens.js';

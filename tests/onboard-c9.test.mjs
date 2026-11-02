@@ -424,3 +424,25 @@ test('Forja ammo branch: Munición I gives a 40-round magazine now and after a r
   const resumed=harness(t,{salvage:JSON.parse(h.stored(SALVAGE_KEY)),equipment});
   resumed.api.prepare();assert.equal(resumed.snapshot().weapons.maxCharges,40);
 });
+
+// dec-nodos-clave (02/11/2026): parejas «elige 1 de 2» en la Forja.
+test('Forja key nodes: one choice per pair, the other one changes it for 100, and the choice survives a reload', t => {
+  const equipment={version:1,recoveredTwin:false,unlocked:['pulse'],selected:'pulse'};
+  const h=harness(t,{salvage:fundedRecord(700),equipment});h.api.prepare();h.node('classicC9').click();
+  const key=id=>h.document.querySelector(`[data-c9-key="${id}"]`),sku=id=>h.document.querySelector(`[data-c9-sku="${id}"]`);
+  assert.deepEqual([...key('hot-reload').closest('.c9-branch').querySelectorAll('[data-c9-key]')].map(node=>node.dataset.c9Key),['hot-reload','magnet']);
+  assert.equal(key('hot-reload').disabled,true,'the pair needs Munición II');
+  sku('ammo-1').click();sku('ammo-2').click();
+  assert.equal(key('magnet').querySelector('[data-c9-state]').textContent,'300 CHATARRA · ELIGE 1 DE 2');
+  key('hot-reload').click();
+  assert.equal(h.snapshot().weapons.hotReload,true);assert.equal(h.snapshot().salvage.balance,200);
+  assert.equal(key('hot-reload').dataset.nodeState,'installed');
+  assert.equal(key('magnet').querySelector('[data-c9-state]').textContent,'CAMBIAR · 100 CHATARRA');
+  key('magnet').click();
+  const changed=h.snapshot();
+  assert.equal(changed.weapons.hotReload,false);assert.equal(changed.salvage.balance,100);
+  assert.deepEqual(changed.salvage.keyChoices,{'key-1':'magnet'});
+  const resumed=harness(t,{salvage:JSON.parse(h.stored(SALVAGE_KEY)),equipment});resumed.api.prepare();
+  assert.deepEqual(resumed.snapshot().salvage.keyChoices,{'key-1':'magnet'});
+  assert.equal(resumed.snapshot().salvage.balance,100);
+});

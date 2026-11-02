@@ -35,11 +35,13 @@ var NeonCampaign = (() => {
     GAIA_ENEMY_RULES: () => GAIA_ENEMY_RULES,
     GUARDIAN_ATLAS_RULES: () => GUARDIAN_ATLAS_RULES,
     HORDE_RULES: () => HORDE_RULES,
+    KEY_NODES: () => KEY_NODES,
     MENU_UNLOCKS_KEY: () => MENU_UNLOCKS_KEY,
     PLAYABLE_VOYAGES: () => PLAYABLE_VOYAGES,
     RETIRED_UPGRADES: () => RETIRED_UPGRADES,
     SCRAP_CONSUMABLES: () => SCRAP_CONSUMABLES,
     SCRAP_ECONOMY_KEY: () => SCRAP_ECONOMY_KEY,
+    SCRAP_ECONOMY_RULES: () => SCRAP_ECONOMY_RULES,
     SCRAP_SHIPS: () => SCRAP_SHIPS,
     SCRAP_UPGRADES: () => SCRAP_UPGRADES,
     SCRAP_WEAPON_LEVELS: () => SCRAP_WEAPON_LEVELS,
@@ -154,6 +156,7 @@ var NeonCampaign = (() => {
     sectorMapState: () => sectorMapState,
     sectorPlanetPose: () => sectorPlanetPose,
     selectClassicWeapon: () => selectClassicWeapon,
+    setClassicHotReload: () => setClassicHotReload,
     setClassicMaxCharges: () => setClassicMaxCharges,
     setClassicRechargeInterval: () => setClassicRechargeInterval,
     setClassicUnlimitedFire: () => setClassicUnlimitedFire,
@@ -1389,6 +1392,7 @@ var NeonCampaign = (() => {
     reinforcedHullReserve: 45,
     maxMissiles: 3,
     missileUnitPrice: 6,
+    keySwapPrice: 100,
     maxDropReceipts: 512,
     maxPurchaseReceipts: 128,
     maxInvalidBackups: 8
@@ -1477,6 +1481,28 @@ var NeonCampaign = (() => {
       label: "Munici\xF3n IV",
       description: "El cargador pasa de 80 a 100 disparos."
     }),
+    // Nodos clave (dec-nodos-clave, 02/11/2026): cada pareja se compra una vez
+    // eligiendo una opción; cambiarla cuesta keySwapPrice (switchKeyNode).
+    "key-1": upgrade({
+      id: "key-1",
+      price: 300,
+      branch: "key",
+      rank: 1,
+      requires: ["ammo-2"],
+      label: "Nodo clave \xB7 munici\xF3n",
+      choices: Object.freeze(["hot-reload", "magnet"]),
+      description: "Eliges una: Recarga en caliente o Im\xE1n de chatarra."
+    }),
+    "key-2": upgrade({
+      id: "key-2",
+      price: 300,
+      branch: "key",
+      rank: 2,
+      requires: ["hull-plating-ii"],
+      label: "Nodo clave \xB7 blindaje",
+      choices: Object.freeze(["reactive-armor", "wide-magazine"]),
+      description: "Eliges una: Blindaje reactivo o Cargador ancho."
+    }),
     "weapon-scatter": upgrade({
       id: "weapon-scatter",
       retired: true,
@@ -1538,6 +1564,12 @@ var NeonCampaign = (() => {
   var SCRAP_SHIPS = Object.freeze(Object.fromEntries(SHIP_ROSTER.filter((ship2) => ship2.access.type === "scrap").map((ship2) => [`ship-${ship2.id}`, upgrade({ id: `ship-${ship2.id}`, shipId: ship2.id, price: ship2.access.price, label: ship2.name })])));
   var catalogue = (sku) => SCRAP_UPGRADES[sku] || SCRAP_SHIPS[sku] || SCRAP_WEAPON_LEVELS[sku];
   var inCatalogue = (sku) => has(SCRAP_UPGRADES, sku) || has(SCRAP_SHIPS, sku) || has(SCRAP_WEAPON_LEVELS, sku);
+  var KEY_NODES = Object.freeze({
+    "hot-reload": Object.freeze({ slot: "key-1", label: "Recarga en caliente", description: "Si vac\xEDas el cargador, se recarga al doble de velocidad hasta llenarse." }),
+    magnet: Object.freeze({ slot: "key-1", label: "Im\xE1n de chatarra", description: "Atraes la chatarra desde el doble de distancia." }),
+    "reactive-armor": Object.freeze({ slot: "key-2", label: "Blindaje reactivo", description: "Tras un golpe, 1 segundo m\xE1s sin recibir da\xF1o." }),
+    "wide-magazine": Object.freeze({ slot: "key-2", label: "Cargador ancho", description: "10 disparos m\xE1s en el cargador." })
+  });
   var SCRAP_CONSUMABLES = Object.freeze({ "sector-beacon": Object.freeze({ price: 40 }) });
   var integer = (value) => Number.isSafeInteger(value) && value >= 0;
   var object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -1567,13 +1599,15 @@ var NeonCampaign = (() => {
     const upgrades = saved?.upgrades || [];
     const owns2 = (sku) => upgrades.includes(sku);
     const ammoRank = [4, 3, 2, 1].find((rank) => owns2(`ammo-${rank}`)) || 0;
+    const choice = (id) => Object.values(saved?.keyChoices || {}).includes(id);
     return {
       reserveCapacity: hullReserveCapacity(saved),
       rechargeSeconds: owns2("coolant-feed-ii") ? 1 : owns2("coolant-feed") ? 1.5 : 2,
-      maxCharges: 20 + 20 * ammoRank,
+      maxCharges: 20 + 20 * ammoRank + (choice("wide-magazine") ? 10 : 0),
       defenseRank: owns2("hull-plating-ii") ? 2 : owns2("hull-reinforcement") ? 1 : 0,
       coolingRank: owns2("coolant-feed-ii") ? 2 : owns2("coolant-feed") ? 1 : 0,
       ammoRank,
+      keyNodes: { hotReload: choice("hot-reload"), magnet: choice("magnet"), reactiveArmor: choice("reactive-armor"), wideMagazine: choice("wide-magazine") },
       weaponIds: [],
       weaponLevels: Object.fromEntries(["pulse", "twin"].map((id) => [id, owns2(`level-${id}-4`) ? 4 : owns2(`level-${id}-3`) ? 3 : owns2(`level-${id}-2`) ? 2 : 1])),
       weaponRanks: {
@@ -1626,7 +1660,10 @@ var NeonCampaign = (() => {
       missileRefillSequence: 0,
       lastMissileRefill: null,
       consumableSpent: 0,
-      lastConsumable: null
+      lastConsumable: null,
+      keyChoices: {},
+      keySwaps: 0,
+      lastKeySwap: null
     };
   }
   function normalizeScrapRecord(value) {
@@ -1654,6 +1691,14 @@ var NeonCampaign = (() => {
     if (lastConsumable === null) {
       if (consumableSpent !== 0) return null;
     } else if (!object(lastConsumable) || !identifier(lastConsumable.id) || typeof lastConsumable.sku !== "string" || !has(SCRAP_CONSUMABLES, lastConsumable.sku) || !integer(lastConsumable.price) || lastConsumable.price < 1 || lastConsumable.price > consumableSpent) return null;
+    const keyChoices = has(value, "keyChoices") ? value.keyChoices : {};
+    const keySwaps = has(value, "keySwaps") ? value.keySwaps : 0;
+    const lastKeySwap = has(value, "lastKeySwap") ? value.lastKeySwap : null;
+    const keyChoiceValid = (sku, choice) => Boolean(SCRAP_UPGRADES[sku]?.choices?.includes(choice));
+    if (!object(keyChoices) || !integer(keySwaps) || !Number.isSafeInteger(keySwaps * SCRAP_ECONOMY_RULES.keySwapPrice)) return null;
+    if (keySwaps === 0) {
+      if (lastKeySwap !== null) return null;
+    } else if (!object(lastKeySwap) || lastKeySwap.id !== `c9:key:${keySwaps}` || !keyChoiceValid(lastKeySwap.sku, lastKeySwap.choice)) return null;
     const transactionIds = /* @__PURE__ */ new Set(), purchased = /* @__PURE__ */ new Set();
     let spent = 0;
     for (const receipt of value.purchases) {
@@ -1664,7 +1709,9 @@ var NeonCampaign = (() => {
       spent += receipt.price;
     }
     if ([...purchased].some((sku) => catalogue(sku).requires.some((required) => !purchased.has(required)))) return null;
-    if (spent + missileRoundsPurchased * SCRAP_ECONOMY_RULES.missileUnitPrice + consumableSpent !== value.spent || upgrades.length !== purchased.size || upgrades.some((sku) => !purchased.has(sku))) return null;
+    if (spent + missileRoundsPurchased * SCRAP_ECONOMY_RULES.missileUnitPrice + consumableSpent + keySwaps * SCRAP_ECONOMY_RULES.keySwapPrice !== value.spent || upgrades.length !== purchased.size || upgrades.some((sku) => !purchased.has(sku))) return null;
+    const keySlots = upgrades.filter((sku) => catalogue(sku).choices);
+    if (Object.keys(keyChoices).length !== keySlots.length || keySlots.some((sku) => !keyChoiceValid(sku, keyChoices[sku])) || lastKeySwap && !keySlots.includes(lastKeySwap.sku)) return null;
     if (value.activeRun !== null) {
       const run = value.activeRun;
       if (!object(run) || run.sequence !== value.runSequence || run.sequence < 1 || run.id !== `salvage-run:${run.sequence}` || !identifier(run.scope) || !Array.isArray(run.claimed) || run.claimed.length > SCRAP_ECONOMY_RULES.maxDropReceipts) return null;
@@ -1711,7 +1758,10 @@ var NeonCampaign = (() => {
         price: lastMissileRefill.price
       },
       consumableSpent,
-      lastConsumable: lastConsumable === null ? null : { id: lastConsumable.id, sku: lastConsumable.sku, price: lastConsumable.price }
+      lastConsumable: lastConsumable === null ? null : { id: lastConsumable.id, sku: lastConsumable.sku, price: lastConsumable.price },
+      keyChoices: { ...keyChoices },
+      keySwaps,
+      lastKeySwap: lastKeySwap === null ? null : { id: lastKeySwap.id, sku: lastKeySwap.sku, choice: lastKeySwap.choice }
     };
   }
   function createScrapLedger({ storage, key = SCRAP_ECONOMY_KEY } = {}) {
@@ -1922,9 +1972,11 @@ var NeonCampaign = (() => {
       next.missileShotsSpent = sequence;
       return commit(next, loaded.raw, { duplicate: false, shotId, remaining: next.missileAmmo });
     }
-    function purchase({ transactionId, sku: requestedSku } = {}) {
+    function purchase({ transactionId, sku: requestedSku, choice } = {}) {
       const sku = upgradeName(requestedSku);
       if (!identifier(transactionId) || typeof sku !== "string" || !inCatalogue(sku) && sku !== "missile-refill") throw new TypeError("A stable transaction ID and catalogue SKU are required");
+      if (catalogue(sku)?.choices && !catalogue(sku).choices.includes(choice)) throw new TypeError("A key node needs one of its choices");
+      if (transactionId.startsWith("c9:key:")) throw new TypeError("Key node change receipts are reserved");
       if (sku === "missile-refill") return refillMissiles(transactionId);
       if (transactionId.startsWith("c9:missiles:")) throw new TypeError("Missile refill transaction IDs are reserved");
       const loaded = readState();
@@ -1957,10 +2009,38 @@ var NeonCampaign = (() => {
       next.spent += price;
       next.upgrades.push(sku);
       next.purchases.push({ id: transactionId, sku, price });
+      if (catalogue(sku).choices) next.keyChoices = { ...next.keyChoices, [sku]: choice };
       return commit(next, loaded.raw, { sku, price, duplicate: false });
     }
+    function switchKeyNode({ transactionId, sku, choice } = {}) {
+      const sequence = operationSequence(transactionId, "c9:key:");
+      if (sequence === null || typeof sku !== "string" || !SCRAP_UPGRADES[sku]?.choices?.includes(choice))
+        throw new TypeError("A c9:key:<sequence> receipt, a key node and one of its choices are required");
+      const loaded = readState();
+      if (loaded.error) return loaded.error;
+      if (sequence <= current.keySwaps) return current.lastKeySwap?.id === transactionId && (current.lastKeySwap.sku !== sku || current.lastKeySwap.choice !== choice) ? blocked("transaction-id-conflict") : success("duplicate", { duplicate: true, sku, choice, price: 0 });
+      if (sequence !== current.keySwaps + 1) return blocked("key-swap-sequence-conflict");
+      if (!current.upgrades.includes(sku)) return { ok: false, status: "unavailable", reason: "not-owned", state: copy(current) };
+      if (current.keyChoices[sku] === choice) return { ok: false, status: "unavailable", reason: "already-chosen", state: copy(current) };
+      const price = SCRAP_ECONOMY_RULES.keySwapPrice;
+      if (current.balance < price) return {
+        ok: false,
+        status: "unavailable",
+        reason: "insufficient-funds",
+        price,
+        missing: price - current.balance,
+        state: copy(current)
+      };
+      const next = copy(current);
+      next.balance -= price;
+      next.spent += price;
+      next.keySwaps = sequence;
+      next.keyChoices = { ...next.keyChoices, [sku]: choice };
+      next.lastKeySwap = { id: transactionId, sku, choice };
+      return commit(next, loaded.raw, { sku, choice, price, duplicate: false });
+    }
     function buyConsumable({ transactionId, sku } = {}) {
-      if (!identifier(transactionId) || typeof sku !== "string" || !has(SCRAP_CONSUMABLES, sku) || transactionId.startsWith("c9:missiles:")) throw new TypeError("A stable transaction ID and consumable SKU are required");
+      if (!identifier(transactionId) || typeof sku !== "string" || !has(SCRAP_CONSUMABLES, sku) || transactionId.startsWith("c9:missiles:") || transactionId.startsWith("c9:key:")) throw new TypeError("A stable transaction ID and consumable SKU are required");
       const loaded = readState();
       if (loaded.error) return loaded.error;
       if (current.lastConsumable?.id === transactionId) return current.lastConsumable.sku === sku ? success("duplicate", { duplicate: true, sku, price: 0 }) : blocked("transaction-id-conflict");
@@ -1993,6 +2073,8 @@ var NeonCampaign = (() => {
       purchase,
       buyConsumable,
       spendMissile,
+      switchKeyNode,
+      nextKeySwapId: () => current === null ? null : `c9:key:${current.keySwaps + 1}`,
       nextMissileShotId: () => current === null ? null : `missile:${current.missileShotsSpent + 1}`,
       nextMissileRefillId: () => current === null ? null : `c9:missiles:${current.missileRefillSequence + 1}`,
       getState: () => current === null ? null : copy(current),
@@ -8046,13 +8128,19 @@ var NeonCampaign = (() => {
   }
   var top = (state) => state.maxCharges ?? CLASSIC_WEAPON_RULES.maxCharges;
   function setClassicMaxCharges(state, size) {
-    if (!Number.isInteger(size) || size < CLASSIC_WEAPON_RULES.maxCharges || size > 100) throw new RangeError("Invalid magazine size");
+    if (!Number.isInteger(size) || size < CLASSIC_WEAPON_RULES.maxCharges || size > 110) throw new RangeError("Invalid magazine size");
     const before = top(state);
     if (size === before) return size;
     state.maxCharges = size;
     state.charges = Math.min(size, state.charges + Math.max(0, size - before));
     if (state.charges === size) state.recharge = 0;
     return size;
+  }
+  function setClassicHotReload(state, enabled) {
+    if (typeof enabled !== "boolean") throw new TypeError("Hot reload must be true or false");
+    state.hotReload = enabled;
+    if (!enabled) state.hotReloading = false;
+    return enabled;
   }
   function setClassicWeaponTuning(state, ranks = {}) {
     if (!ranks || typeof ranks !== "object" || Array.isArray(ranks) || Object.keys(ranks).some((id) => id !== "scatter" && id !== "needle")) {
@@ -8219,14 +8307,18 @@ var NeonCampaign = (() => {
     state.cooldown = Math.max(0, state.cooldown - dt);
     state.missileCooldown = Math.max(0, state.missileCooldown - dt);
     if (!state.unlimitedFire && state.charges < top(state)) {
-      state.recharge += dt;
+      if (state.hotReload && state.charges === 0) state.hotReloading = true;
+      state.recharge += state.hotReloading ? dt * 2 : dt;
       while (state.recharge + 1e-9 >= state.rechargeSeconds && state.charges < top(state)) {
         state.charges++;
         state.recharge = Math.max(0, state.recharge - state.rechargeSeconds);
         events.push(event(state, "recharged", { charges: state.charges }));
       }
     }
-    if (state.charges === top(state)) state.recharge = 0;
+    if (state.charges === top(state)) {
+      state.recharge = 0;
+      state.hotReloading = false;
+    }
     const margin = CLASSIC_WEAPON_RULES.boundsMargin;
     for (let index = state.projectiles.length - 1; index >= 0; index--) {
       const projectile2 = state.projectiles[index];

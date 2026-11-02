@@ -1142,6 +1142,8 @@
   // A purchase owns its entitlement in the same atomic record as its price.
   // The old equipment record is only a replayable projection, never the money
   // transaction. A failed projection can be retried without charging again.
+  // Nodos clave elegidos en la Forja: imán y blindaje reactivo se leen en vuelo.
+  let classicKeyNodes={hotReload:false,magnet:false,reactiveArmor:false,wideMagazine:false};
   function projectClassicSalvageUpgrades() {
     const upgrades=classicSalvageState?.upgrades||[];
     let projected=true;
@@ -1149,11 +1151,13 @@
       projected=persistClassicEquipment(NeonCampaign.prepareClassicTwin(classicEquipment));
     }
     const workshop=NeonCampaign.classicWorkshopState(classicSalvageState);
+    classicKeyNodes=workshop.keyNodes;
     const equipment=NeonCampaign.syncClassicWorkshopWeapons(classicEquipment,classicSalvageState);
     if(JSON.stringify(equipment)!==JSON.stringify(classicEquipment))projected=persistClassicEquipment(equipment)&&projected;
     if(classicWeapons){
       NeonCampaign.setClassicRechargeInterval(classicWeapons,workshop.rechargeSeconds);
       NeonCampaign.setClassicMaxCharges(classicWeapons,workshop.maxCharges);
+      NeonCampaign.setClassicHotReload(classicWeapons,workshop.keyNodes.hotReload);
       NeonCampaign.setClassicWeaponTuning(classicWeapons,workshop.weaponRanks);
       NeonCampaign.setClassicWeaponLevels(classicWeapons,workshop.weaponLevels);
     }
@@ -1182,11 +1186,15 @@
     return true;
   }
 
-  function buyClassicC9Upgrade(sku) {
+  // choice: opción de un nodo clave (dec-nodos-clave, 02/11/2026). Si la pareja
+  // ya está comprada, elegir la otra opción es un cambio de 100 de chatarra.
+  function buyClassicC9Upgrade(sku,choice=null) {
     if(!classicSalvageLedger)return false;
     if(sku==="twin-preparation"&&(!classicEquipment.recoveredTwin||classicEquipment.twinPrepared||classicEquipment.unlocked.includes("twin")))return false;
     const sequence=classicSalvageState?.missileRefillSequence||0;
-    const result=classicSalvageLedger.purchase({transactionId:sku==="missile-refill"?`c9:missiles:${sequence+1}`:`c9:${sku}`,sku});
+    const swap=Boolean(choice)&&Boolean(classicSalvageState?.upgrades.includes(sku));
+    const result=swap?classicSalvageLedger.switchKeyNode({transactionId:classicSalvageLedger.nextKeySwapId(),sku,choice})
+      :classicSalvageLedger.purchase({transactionId:sku==="missile-refill"?`c9:missiles:${sequence+1}`:`c9:${sku}`,sku,...(choice?{choice}:{})});
     if(result.state)classicSalvageState=result.state;
     if(!result.ok&&result.reason!=="already-owned") {
       if(ui.c9PurchaseStatus)ui.c9PurchaseStatus.textContent=result.reason==="insufficient-funds"
@@ -1201,6 +1209,7 @@
       : sku==="twin-preparation" ? "Emisor preparado. Atlas sigue custodiando la autorización del segundo cañón."
       : sku==="hull-reinforcement" ? "Placas integradas. La reserva de casco ahora admite 45 puntos, sin temporizador."
       : sku==="missile-refill" ? "Misiles cargados. Cada unidad repuesta cuesta 6 de chatarra."
+      : choice ? `${NeonCampaign.KEY_NODES[choice].label}: ${NeonCampaign.KEY_NODES[choice].description}`
       : NeonCampaign.SCRAP_UPGRADES[sku] ? `${NeonCampaign.SCRAP_UPGRADES[sku].label}: ${NeonCampaign.SCRAP_UPGRADES[sku].description}`
       : "Mejora instalada y guardada.";
     shipPresentationSignature="";flightHudSignature="";updateClassicDock();updateAmmoHud();hud();
@@ -1408,9 +1417,9 @@
     sections.supplies.grid.append(beacon);
     oldGrid.remove();
     for(const [sku,definition] of Object.entries(NeonCampaign.SCRAP_UPGRADES)) {
-      if(['twin-preparation','hull-reinforcement','coolant-feed'].includes(sku)||definition.retired)continue;
+      if(['twin-preparation','hull-reinforcement','coolant-feed'].includes(sku)||definition.retired||definition.choices)continue;
       const weapon=sku.startsWith('weapon-'),kind=sku.includes('scatter')?'scatter':sku.includes('needle')?'needle':sku.includes('hull')?'hull-ii'
-        :sku.startsWith('ammo-')?(definition.rank<=2?'ammo':'ammo-ii'):'coolant-ii';
+        :sku.startsWith('ammo-')?'ammo':'coolant-ii';
       const button=document.createElement('button');button.type='button';button.className='secondary c9-tree-node';button.dataset.c9Sku=sku;
       const art=document.createElement('span');art.className='c9-upgrade-art';art.dataset.upgrade=kind;art.setAttribute('aria-hidden','true');
       const copy=document.createElement('span');copy.className='c9-upgrade-copy';
@@ -1419,6 +1428,17 @@
       const status=document.createElement('em');status.dataset.c9State='';
       copy.append(label,detail,status);button.append(art,copy);button.onclick=()=>buyClassicC9Upgrade(sku);
       (weapon?sections.arsenal:sections.systems).grid.append(button);
+    }
+    // Nodos clave: dos opciones por pareja; elegir la otra cuesta 100 (dec-nodos-clave).
+    for(const [choice,node] of Object.entries(NeonCampaign.KEY_NODES)) {
+      const button=document.createElement('button');button.type='button';button.className='secondary c9-tree-node';button.dataset.c9Key=choice;
+      const art=document.createElement('span');art.className='c9-upgrade-art';art.dataset.upgrade=`key-${choice}`;art.setAttribute('aria-hidden','true');
+      const copy=document.createElement('span');copy.className='c9-upgrade-copy';
+      const label=document.createElement('b');label.setAttribute('data-c9-label','');label.textContent=node.label;
+      const detail=document.createElement('small');detail.textContent=node.description;
+      const status=document.createElement('em');status.dataset.c9State='';
+      copy.append(label,detail,status);button.append(art,copy);button.onclick=()=>buyClassicC9Upgrade(node.slot,choice);
+      sections.systems.grid.append(button);
     }
     const repeat=document.createElement('button');repeat.type='button';repeat.id='replayFlightTutorial';repeat.className='secondary';repeat.textContent='REPETIR GUÍA DE VUELO';
     repeat.onclick=()=>{
@@ -1434,11 +1454,12 @@
     // Munición: línea de cuatro rangos (dec-arbol-ampliado, 02/11/2026).
     for(const [label,first,...next] of [
       ['BLINDAJE','hull-reinforcement','hull-plating-ii'],['REFRIGERACIÓN','coolant-feed','coolant-feed-ii'],
-      ['MUNICIÓN',null,'ammo-1','ammo-2','ammo-3','ammo-4']]) {
+      ['MUNICIÓN',null,'ammo-1','ammo-2','ammo-3','ammo-4'],
+      ['NODO CLAVE · MUNICIÓN',null,'hot-reload','magnet'],['NODO CLAVE · BLINDAJE',null,'reactive-armor','wide-magazine']]) {
       const branch=document.createElement('div');branch.className='c9-branch';
       const name=document.createElement('h4');name.textContent=label;branch.append(name);
       if(first)branch.append(first==='hull-reinforcement'?ui.c9BuyShield:ui.c9BuyCoolant);
-      for(const sku of next){const node=tree.querySelector(`[data-c9-sku="${sku}"]`);if(node)branch.append(node);}
+      for(const sku of next){const node=tree.querySelector(`[data-c9-sku="${sku}"],[data-c9-key="${sku}"]`);if(node)branch.append(node);}
       tree.append(branch);
     }
     // El marco pintado no se desplaza: todo menos los botones finales va en una
@@ -1734,6 +1755,18 @@
       setC9Label(button,definition.label.toUpperCase());
       button.querySelector('[data-c9-state]').textContent=owned?'INSTALADO':missing.length
         ?`REQUIERE ${missing.map(id=>NeonCampaign.SCRAP_UPGRADES[id]?.label||id).join(' + ')}`:`${definition.price} CHATARRA`;
+    }
+    for(const button of ui.flightDock.querySelectorAll('[data-c9-key]')) {
+      const choice=button.dataset.c9Key,slot=NeonCampaign.KEY_NODES[choice].slot,definition=NeonCampaign.SCRAP_UPGRADES[slot];
+      const owned=upgrades.includes(slot),chosen=classicSalvageState?.keyChoices?.[slot]===choice;
+      const missing=definition.requires.filter(id=>!upgrades.includes(id));
+      const price=owned?NeonCampaign.SCRAP_ECONOMY_RULES.keySwapPrice:definition.price;
+      button.disabled=!classicSalvageState||chosen||missing.length>0||balance<price||!classicEquipmentWritable;
+      button.dataset.nodeState=chosen?'installed':missing.length?'locked':'available';
+      setC9Label(button,NeonCampaign.KEY_NODES[choice].label.toUpperCase());
+      button.querySelector('[data-c9-state]').textContent=chosen?'ELEGIDO':missing.length
+        ?`REQUIERE ${missing.map(id=>NeonCampaign.SCRAP_UPGRADES[id]?.label||id).join(' + ')}`
+        :owned?`CAMBIAR · ${price} CHATARRA`:`${price} CHATARRA · ELIGE 1 DE 2`;
     }
     syncSectorBeaconButton();
     // Desde el menú las dos salidas llevaban al menú: queda una sola (A4).
@@ -4287,7 +4320,8 @@
       kind:context.kind||"collision",largeAsteroid:context.largeAsteroid===true,
       largeAsteroidScale:context.largeAsteroidScale||1});
     classicHullReserve=damageResult.reserve;
-    if (typeof hullGrace !== "undefined") hullGrace = 0.3;
+    // Nodo clave Blindaje reactivo (02/11/2026): 1 s más sin daño tras el golpe.
+    if (typeof hullGrace !== "undefined") hullGrace = typeof classicKeyNodes !== "undefined" && classicKeyNodes.reactiveArmor ? 1.3 : 0.3;
     if (damageResult.absorbed) {
       classicShieldImpact=.18;
       // Revisión G2: el golpe absorbido no se parece a recoger CRONIUM (cian):
@@ -4697,8 +4731,10 @@
     item.rs=Number.isFinite(item.rs)?item.rs:0;
     item.p=Number.isFinite(item.p)?item.p:0;
     const dx=player.x-item.x,dy=player.y-item.y,distance=Math.hypot(dx,dy);
-    if(item.bossSalvage || distance<=150) {
-      const speed=item.bossSalvage?1100:360+240*(1-Math.min(1,distance/150));
+    // Nodo clave Imán de chatarra (02/11/2026): el doble de alcance.
+    const reach=typeof classicKeyNodes!=="undefined"&&classicKeyNodes.magnet?300:150;
+    if(item.bossSalvage || distance<=reach) {
+      const speed=item.bossSalvage?1100:360+240*(1-Math.min(1,distance/reach));
       const travel=Math.min(distance,speed*dt);
       if(distance>0){item.x+=dx/distance*travel;item.y+=dy/distance*travel;}
     } else {

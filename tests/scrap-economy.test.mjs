@@ -580,7 +580,8 @@ test('workshop branches and weapon levels require their paid prerequisite and ea
   // Abanico y Aguja salieron de la Forja (dec-armas-plan): ya no se venden.
   for (const sku of RETIRED_UPGRADES) assert.equal(log.purchase({transactionId: `try:${sku}`, sku}).reason, 'retired');
   assert.deepEqual(classicWorkshopState(log.getState()), {reserveCapacity: 30, rechargeSeconds: 2, maxCharges: 20,
-    defenseRank: 0, coolingRank: 0, ammoRank: 0, weaponIds: [], weaponLevels: {pulse: 1, twin: 1}, weaponRanks: {scatter: 0, needle: 0}});
+    defenseRank: 0, coolingRank: 0, ammoRank: 0,
+    keyNodes: {hotReload: false, magnet: false, reactiveArmor: false, wideMagazine: false}, weaponIds: [], weaponLevels: {pulse: 1, twin: 1}, weaponRanks: {scatter: 0, needle: 0}});
   for (const sku of ['twin-preparation', 'hull-reinforcement', 'coolant-feed', 'level-pulse-2', 'level-twin-2']) {
     assert.equal(log.purchase({transactionId: `buy:${sku}`, sku}).ok, true);
   }
@@ -745,4 +746,62 @@ test('the ammo line has four paid ranks, 20 → 40 → 60 → 80 → 100 rounds,
   assert.equal(log.getBalance(), 120 * 9 - 860);
   const reload = ledger(memory(device.map)); assert.equal(reload.load().ok, true);
   assert.equal(classicWorkshopState(reload.getState()).maxCharges, 100);
+});
+
+// Nodos clave (dec-nodos-clave, 02/11/2026): dos parejas; eliges una y puedes
+// cambiarla pagando 100.
+test('key nodes: each pair needs its line, is bought once with a choice and changes the workshop effects', () => {
+  const device = memory(), log = ledger(device), run = start(log); fund(log, run.runId, 150);
+  assert.equal(log.purchase({transactionId: 'c9:key-1', sku: 'key-1', choice: 'magnet'}).reason, 'prerequisite-required');
+  for (const sku of ['ammo-1', 'ammo-2', 'hull-reinforcement', 'hull-plating-ii'])
+    assert.equal(log.purchase({transactionId: `c9:${sku}`, sku}).ok, true);
+  assert.throws(() => log.purchase({transactionId: 'c9:key-1', sku: 'key-1'}), 'a key node needs a choice');
+  assert.throws(() => log.purchase({transactionId: 'c9:key-1', sku: 'key-1', choice: 'reactive-armor'}), 'that choice is from the other pair');
+  assert.deepEqual(classicWorkshopState(log.getState()).keyNodes, {hotReload: false, magnet: false, reactiveArmor: false, wideMagazine: false});
+  assert.equal(log.purchase({transactionId: 'c9:key-1', sku: 'key-1', choice: 'hot-reload'}).ok, true);
+  assert.equal(log.purchase({transactionId: 'c9:key-2', sku: 'key-2', choice: 'wide-magazine'}).ok, true);
+  const workshop = classicWorkshopState(log.getState());
+  assert.deepEqual(workshop.keyNodes, {hotReload: true, magnet: false, reactiveArmor: false, wideMagazine: true});
+  assert.equal(workshop.maxCharges, 70, 'Munición II (60) + Cargador ancho (10)');
+  assert.equal(log.getBalance(), 150 * 9 - 60 - 140 - 30 - 90 - 300 - 300);
+  const reload = ledger(memory(device.map)); assert.equal(reload.load().ok, true);
+  assert.deepEqual(classicWorkshopState(reload.getState()).keyNodes, workshop.keyNodes);
+});
+
+test('changing a key node costs 100 once per receipt, even if the write is retried or the game reloads', () => {
+  const device = memory(), log = ledger(device), run = start(log); fund(log, run.runId, 80);
+  for (const sku of ['ammo-1', 'ammo-2']) log.purchase({transactionId: `c9:${sku}`, sku});
+  log.purchase({transactionId: 'c9:key-1', sku: 'key-1', choice: 'hot-reload'});
+  const before = log.getBalance();
+  assert.equal(log.nextKeySwapId(), 'c9:key:1');
+  assert.equal(log.switchKeyNode({transactionId: 'c9:key:1', sku: 'key-1', choice: 'hot-reload'}).reason, 'already-chosen');
+  const swapped = log.switchKeyNode({transactionId: 'c9:key:1', sku: 'key-1', choice: 'magnet'});
+  assert.equal(swapped.ok, true); assert.equal(swapped.price, 100);
+  assert.equal(log.getBalance(), before - 100);
+  assert.equal(log.switchKeyNode({transactionId: 'c9:key:1', sku: 'key-1', choice: 'magnet'}).duplicate, true);
+  assert.equal(log.getBalance(), before - 100, 'a retried receipt is not charged twice');
+  const reload = ledger(memory(device.map)); assert.equal(reload.load().ok, true);
+  assert.equal(reload.getBalance(), before - 100);
+  assert.equal(classicWorkshopState(reload.getState()).keyNodes.magnet, true);
+  assert.equal(reload.switchKeyNode({transactionId: 'c9:key:1', sku: 'key-1', choice: 'magnet'}).duplicate, true);
+  assert.equal(reload.switchKeyNode({transactionId: 'c9:key:2', sku: 'key-2', choice: 'reactive-armor'}).reason, 'not-owned');
+  const poor = ledger(memory(new Map(device.map))); poor.load();
+  // Sin chatarra suficiente no cambia nada.
+  while (poor.getBalance() >= 100) poor.switchKeyNode({transactionId: poor.nextKeySwapId(), sku: 'key-1',
+    choice: classicWorkshopState(poor.getState()).keyNodes.magnet ? 'hot-reload' : 'magnet'});
+  const stuck = poor.switchKeyNode({transactionId: poor.nextKeySwapId(), sku: 'key-1',
+    choice: classicWorkshopState(poor.getState()).keyNodes.magnet ? 'hot-reload' : 'magnet'});
+  assert.equal(stuck.reason, 'insufficient-funds');
+});
+
+test('forged key-node data never passes normalization', () => {
+  const device = memory(), log = ledger(device), run = start(log); fund(log, run.runId, 60);
+  for (const sku of ['ammo-1', 'ammo-2']) log.purchase({transactionId: `c9:${sku}`, sku});
+  log.purchase({transactionId: 'c9:key-1', sku: 'key-1', choice: 'hot-reload'});
+  const good = log.getState();
+  assert.ok(normalizeScrapRecord(good));
+  for (const forged of [{...good, keyChoices: {}}, {...good, keyChoices: {'key-1': 'reactive-armor'}},
+    {...good, keyChoices: {'key-1': 'hot-reload', 'key-2': 'wide-magazine'}},
+    {...good, keySwaps: 1}, {...good, keySwaps: 1, spent: good.spent + 100, balance: good.balance - 100, lastKeySwap: null}])
+    assert.equal(normalizeScrapRecord(forged), null);
 });

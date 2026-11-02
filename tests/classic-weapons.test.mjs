@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {CLASSIC_WEAPON_RULES, createClassicWeapons, selectClassicWeapon, unlockClassicWeapon,
   triggerClassicWeapon, advanceClassicWeapons, hitClassicProjectile,
   classicWeaponSnapshot, setClassicRechargeInterval, setClassicUnlimitedFire,
-  canTriggerClassicMissile, triggerClassicMissile, setClassicWeaponTuning, setClassicWeaponLevels, setClassicMaxCharges} from '../src/game/combat/classic-weapons.js';
+  canTriggerClassicMissile, triggerClassicMissile, setClassicWeaponTuning, setClassicWeaponLevels, setClassicMaxCharges, setClassicHotReload} from '../src/game/combat/classic-weapons.js';
 
 const origin = {x: 360, y: 1000};
 const run = (state, seconds, events = []) => {
@@ -688,7 +688,30 @@ test('a bigger magazine from the Forja adds the new rounds once, recovers up to 
   run(state, 2 * 20);
   assert.equal(state.charges, 40, 'recovery fills up to the new top');
   assert.equal(classicWeaponSnapshot(state).rechargeProgress, 0);
-  for (const bad of [19, 101, 30.5, Number.NaN]) assert.throws(() => setClassicMaxCharges(state, bad));
+  for (const bad of [19, 111, 30.5, Number.NaN]) assert.throws(() => setClassicMaxCharges(state, bad));
   assert.equal(state.maxCharges, 40);
   assert.equal(state.charges, 40);
+});
+
+// Nodos clave (dec-nodos-clave, 02/11/2026).
+test('wide magazine: the Forja may raise the magazine to 110 rounds', () => {
+  const state = createClassicWeapons();
+  assert.equal(setClassicMaxCharges(state, 110), 110);
+  assert.equal(state.charges, 110);
+});
+
+test('hot reload: after running dry the magazine recovers twice as fast until it is full again', () => {
+  const plain = createClassicWeapons(), hot = createClassicWeapons();
+  assert.equal(setClassicHotReload(hot, true), true);
+  for (const state of [plain, hot]) state.charges = 0;
+  // Sin munición vacía no hay prisa: solo cuenta tras quedarse a cero.
+  run(plain, 10); run(hot, 10);
+  assert.equal(plain.charges, 5);
+  assert.equal(hot.charges, 10, 'double speed while recovering from empty');
+  run(hot, 20);
+  assert.equal(hot.charges, 20);
+  const partial = createClassicWeapons(); setClassicHotReload(partial, true);
+  partial.charges = 10; run(partial, 10);
+  assert.equal(partial.charges, 15, 'a half magazine recovers at the normal speed');
+  assert.throws(() => setClassicHotReload(hot, 'yes'));
 });

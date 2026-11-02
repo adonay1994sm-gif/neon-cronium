@@ -994,3 +994,18 @@ test('leaving HARDCORE in Ajustes goes back to the normal save', () => {
   assert.equal(JSON.parse(w.localStorage.getItem('neon-settings-v5')).difficulty, 'normal');
   assert.equal(w.__reloaded, 1);
 });
+
+// Nodos clave (dec-nodos-clave, 02/11/2026) en vuelo real.
+test('key nodes in flight: reactive armour gives 1.3 s of grace after a hit and the magnet pulls scrap from twice as far', () => {
+  const {T} = harness({query: '?dev=1'});
+  startAt(T, 2); T.ev('DEV.invulnerable=false'); T.adv(1);
+  T.ev("classicHullReserve=0;hullGrace=0;damageShip(5)");
+  assert.equal(T.ev('hullGrace'), .3, 'normal grace');
+  T.ev("classicKeyNodes={...classicKeyNodes,reactiveArmor:true};hullGrace=0;damageShip(5)");
+  assert.equal(T.ev('hullGrace'), 1.3, 'reactive armour');
+  const pulled = magnet => T.ev(`(()=>{classicKeyNodes={...classicKeyNodes,magnet:${magnet}};
+    const item={salvagePickup:true,x:player.x,y:player.y-220,vx:0,vy:0,life:10};const before=item.y;
+    advanceClassicSalvagePickup(item,.1);return item.y-before;})()`);
+  assert.ok(pulled(true) > 20, 'at 220 px the magnet pulls the scrap towards the ship');
+  assert.ok(pulled(false) < 20, 'without the magnet it only drifts');
+});
