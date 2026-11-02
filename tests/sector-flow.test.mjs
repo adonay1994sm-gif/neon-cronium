@@ -625,20 +625,24 @@ test('the subguardian only fights in the sector', () => {
 });
 
 // Baliza de reaparición (plan F3c, tarea 4): 40 chatarra en la parada de C9.
+// Desde el 02/11 la parada abre la Forja y la baliza se compra dentro.
 const giveScrap = (T, scouts) => T.ev(`for(let i=0;i<${scouts};i++)classicSalvageState=classicSalvageLedger.claimDrop({runId:classicSalvageRunId,dropId:'prueba:'+i,enemyType:'scout'}).state`);
-const offerShown = w => w.document.getElementById('beaconOffer').classList.contains('show');
+const forgeOpen = w => w.document.getElementById('flightDock').classList.contains('show');
+const offerShown = w => forgeOpen(w) && !w.document.getElementById('beaconBuy').classList.contains('hidden');
 // ?dev=1 guarda aparte, con el prefijo neon-dev-v1:.
 const devSave = w => JSON.parse(w.localStorage.getItem(`neon-dev-v1:${KEY}`) || 'null');
 const toService = T => { T.ev('DEV.invulnerable=true'); T.adv(4); };
 
-test('after beating the subguardian, C9 offers the beacon', () => {
+test('after beating the subguardian, the stage-6 stop opens the Forja with the beacon inside', () => {
   const {w, T} = harness({query: '?dev=1'});
   startAt(T, 6); giveScrap(T, 5); toService(T);
   assert.equal(offerShown(w), true);
   assert.equal(T.st().state, 'paused');
-  assert.equal(w.document.getElementById('beaconBuy').textContent, 'COMPRAR · 40 CHATARRA');
-  click(w, 'beaconSkip');
-  assert.deepEqual([offerShown(w), T.st().state], [false, 'playing']);
+  assert.equal(T.hull(), 100, 'the stop repairs the hull');
+  assert.match(w.document.getElementById('beaconBuy').textContent, /BALIZA DE REAPARICIÓN · 40 CHATARRA/);
+  click(w, 'flightDockContinue');
+  assert.deepEqual([forgeOpen(w), T.st().state, T.stage()], [false, 'playing', 6]);
+  assert.equal(T.ev('classicFlightView.waitingFor'), null, 'the route goes on after leaving the Forja');
 });
 
 test('buying it saves the beacon and charges 40 scrap', () => {
@@ -647,7 +651,8 @@ test('buying it saves the beacon and charges 40 scrap', () => {
   click(w, 'beaconBuy');
   assert.equal(devSave(w).sectors[1].beacon, true);
   assert.equal(T.ev('classicSalvageState.balance'), 5);
-  assert.deepEqual([offerShown(w), T.st().state], [false, 'playing']);
+  assert.deepEqual([offerShown(w), forgeOpen(w), T.st().state], [false, true, 'paused'], 'bought: the button goes, the Forja stays');
+  assert.match(w.document.getElementById('c9PurchaseStatus').textContent, /Baliza activa/);
 });
 
 test('without enough scrap the button explains it and nothing is charged', () => {
@@ -664,7 +669,7 @@ test('without enough scrap the button explains it and nothing is charged', () =>
 test('with the beacon, dying after stage 6 restarts at stage 6; completing the sector clears it', () => {
   const {w, T} = harness({query: '?dev=1'});
   startAt(T, 6); giveScrap(T, 5); toService(T);
-  click(w, 'beaconBuy');
+  click(w, 'beaconBuy'); click(w, 'flightDockContinue');
   T.ev('DEV.invulnerable=false');
   T.toStage(8);
   T.ev('hull=0'); T.finishGame('hull');
@@ -674,20 +679,21 @@ test('with the beacon, dying after stage 6 restarts at stage 6; completing the s
   assert.match(w.document.getElementById('playSector').textContent, /CON BALIZA/);
   click(w, 'play');
   assert.equal(T.stage(), 6);
+  // Al volver al tramo 6 se atraca otra vez en C9: se sale de la Forja y se sigue.
+  T.toStage(7); assert.equal(forgeOpen(w), true); click(w, 'flightDockContinue');
   T.toStage(10); T.finish();
   assert.deepEqual([devSave(w).sectors[1].completed, devSave(w).sectors[1].beacon], [true, false]);
 });
 
-test('the panel is not offered twice or when the beacon is already owned', () => {
+test('the beacon is not offered once owned, or without beating the subguardian', () => {
   const {w, T} = harness({query: '?dev=1'});
   startAt(T, 6); giveScrap(T, 5); toService(T);
-  click(w, 'beaconSkip');
-  T.ev('offerSectorBeacon()'); T.adv(2);
-  assert.equal(offerShown(w), false);
+  click(w, 'flightDockContinue'); T.adv(2);
+  assert.equal(offerShown(w), false, 'the Forja does not reopen after the stop');
   const owned = harness({query: '?dev=1'});
   owned.w.localStorage.setItem(`neon-dev-v1:${KEY}`, JSON.stringify({version: 1, unlocked: 1, sectors: {1: {completed: false, stars: 0, beacon: true}}, run: null}));
   startAt(owned.T, 6); giveScrap(owned.T, 5); toService(owned.T);
-  assert.equal(offerShown(owned.w), false);
+  assert.deepEqual([forgeOpen(owned.w), offerShown(owned.w)], [true, false]);
   const early = harness({query: '?dev=1'});
   startAt(early.T, 4); giveScrap(early.T, 5); early.T.ev('DEV.invulnerable=true'); early.T.toStage(6); early.T.adv(4);
   assert.equal(offerShown(early.w), false, 'sin vencer al subguardián en este intento no se ofrece');
@@ -831,14 +837,14 @@ test('in fury the open core is drawn with the core animation, not the closed fur
   assert.ok(drawnTexts.includes('image:assets/atlas_fury_atlas_v1.webp'));
 });
 
-test('a paid beacon that could not be saved is kept when the panel closes', () => {
+test('a paid beacon that could not be saved is kept when leaving the Forja', () => {
   const {w, T} = harness({query: '?dev=1'});
   startAt(T, 6); giveScrap(T, 5); toService(T);
   T.ev("window.__realSave=saveSector;saveSector=()=>false");
   click(w, 'beaconBuy');
-  assert.equal(offerShown(w), true, 'the panel stays open and asks to retry');
+  assert.equal(offerShown(w), true, 'the button stays and asks to retry');
   T.ev("saveSector=window.__realSave");
-  click(w, 'beaconSkip');
+  click(w, 'flightDockContinue');
   assert.equal(devSave(w)?.sectors?.[1]?.beacon, true);
   assert.equal(T.ev('classicSalvageState.balance'), 5, 'charged once');
 });

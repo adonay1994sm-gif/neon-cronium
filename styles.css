@@ -1480,3 +1480,5 @@ body.hardcore-mode .metric-sector small::after{content:" · HC";color:var(--ui-r
 #shipHangar .hangar-weapon small{color:var(--ui-muted);font:800 10px/1.2 var(--font-display);letter-spacing:.04em}
 #shipHangar .hangar-weapon button{margin:0;min-height:36px;padding-inline:8px;font-size:12px;letter-spacing:.02em;white-space:nowrap}
 @media(max-width:360px){#shipHangar .hangar-weapon-actions{grid-template-columns:1fr}}
+/* Baliza de reaparición dentro de la Forja (02/11/2026): su dibujo pintado. */
+#flightDock .c9-upgrade-art[data-upgrade="beacon"]{background:url("assets/sector_beacon_atlas_v1.webp") 0 0/400% 100% no-repeat}

@@ -1335,7 +1335,7 @@
     }
     // Una arma por partida: en vuelo no se cambia (dec-armas-plan).
     ui.flightWeapon.onclick = () => toast("El arma se elige y se mejora en el hangar.");
-    $("beaconBuy").onclick=()=>buySectorBeacon();$("beaconSkip").onclick=()=>closeSectorBeacon();
+    $("beaconBuy").onclick=()=>buySectorBeacon();
     ui.flightInstallTwin.onclick = () => buyClassicC9Upgrade("twin-preparation");
     ui.c9BuyShield.onclick=()=>buyClassicC9Upgrade("hull-reinforcement");
     ui.c9BuyMissiles.onclick=()=>buyClassicC9Upgrade("missile-refill");
@@ -1378,7 +1378,7 @@
     const nav=document.createElement('nav');nav.className='c9-navigation';nav.setAttribute('aria-label','Secciones de la Forja');
     const sections={};
     for(const [id,label,description] of [
-      ['arsenal','01 · ARSENAL','Elige cómo quieres combatir. Comprar no equipa automáticamente.'],
+      ['arsenal','01 · ARSENAL','Tu arma y su nivel. Se eligen y se mejoran en el hangar.'],
       ['systems','02 · EVOLUCIÓN','Cada conexión requiere el módulo anterior. Tú eliges la rama.'],
       ['supplies','03 · SUMINISTROS','Tres misiles de reserva. Pagas únicamente las unidades que faltan.']]) {
       const section=document.createElement('section');section.id=`c9-${id}`;section.className='c9-section cockpit-workshop-section';
@@ -1399,6 +1399,11 @@
     sections.arsenal.grid.before(loadout);
     for(const node of [ui.flightInstallTwin,ui.c9BuyShield,ui.c9BuyCoolant,calibrate])sections.systems.grid.append(node);
     sections.supplies.grid.append(ui.c9BuyMissiles);
+    // Baliza de reaparición dentro de la Forja (propietario, 02/11/2026): en la
+    // parada del tramo 6 se repara, se mejora y se compra en el mismo sitio.
+    const beacon=$("beaconBuy");beacon.className="secondary";
+    beacon.innerHTML='<span class="c9-upgrade-art" data-upgrade="beacon" aria-hidden="true"></span><span class="c9-upgrade-copy"><b data-c9-label></b><small>Si caes después del tramo 6, vuelves a empezar en él</small></span>';
+    sections.supplies.grid.append(beacon);
     oldGrid.remove();
     for(const [sku,definition] of Object.entries(NeonCampaign.SCRAP_UPGRADES)) {
       if(['twin-preparation','hull-reinforcement','coolant-feed'].includes(sku)||definition.retired)continue;
@@ -1534,66 +1539,69 @@
     ui.briefingMission.textContent=stage.objective+". La ruta continúa desde el último punto de etapa guardado.";
   }
 
+  // Parada de C9 en el tramo 6 (dec-hangar-acceso y propietario, 02/11/2026):
+  // se repara el casco y se abre la Forja con la estación de fondo; el viaje
+  // sigue al pulsar VOLVER A PILOTAR (resumeClassicVoyageService).
   function beginClassicVoyageService() {
     if(state!=="playing"||classicFlightView?.waitingFor!=="service")return;
-    // Preserve the v2 route checkpoint and one emergency repair, without
-    // inserting an orbital station or forcing a workshop/modal interruption.
     signalClassicChapter("c9-arrival");
-    hull=100;
-    classicFlight.resolveService(classicFlightEvent);classicFlightView=classicFlight.snapshot();
-    signalClassicChapter("c9-departure");
-    saveClassicVoyageCheckpoint(classicFlight.exportCheckpoint());hud();
-    offerSectorBeacon();
-  }
-
-  // Baliza de reaparición (plan F3c): se ofrece en la parada de C9 si el CH-03
-  // cayó en este intento y el sector no la tiene. La partida queda en pausa.
-  // El recibo lleva el id de la partida de chatarra: reintentar no cobra dos veces.
-  let sectorBeaconOffered=false;
-  function offerSectorBeacon() {
-    if(HARDCORE||!isSectorRun()||!subBossBeaten||sectorBeaconOffered||state!=="playing")return false;
-    if(loadSectorSave().sectors[classicSideVoyage.ficha.sector]?.beacon)return false;
-    sectorBeaconOffered=true;
+    hull=100;hud();
+    // Los viajes antiguos (solo en desarrollo) siguen reparando en vuelo.
+    if(!isSectorRun()) {
+      classicFlight.resolveService(classicFlightEvent);classicFlightView=classicFlight.snapshot();
+      signalClassicChapter("c9-departure");
+      saveClassicVoyageCheckpoint(classicFlight.exportCheckpoint());return;
+    }
     if(typeof resetGameInput==="function")resetGameInput();
     NeonCampaign.endFlightInput(classicFlightInput);
     setState("paused");pauseStartedAt=performance.now();
+    flightDockReturn="voyage";updateClassicDock();overlay(ui.flightDock);
+    $("flightDockContinue").focus({preventScroll:true});
+    ui.flightDock.querySelector(".c9-scroll").scrollTop=0;
+  }
+
+  // Baliza de reaparición (plan F3c): se vende en la Forja de la parada si el
+  // subjefe cayó en este intento y el sector no la tiene. El recibo lleva el id
+  // de la partida de chatarra: reintentar no cobra dos veces.
+  function offerSectorBeacon() {
+    if(HARDCORE||!isSectorRun()||!subBossBeaten||flightDockReturn!=="voyage")return false;
+    return !loadSectorSave().sectors[classicSideVoyage.ficha.sector]?.beacon;
+  }
+  function syncSectorBeaconButton() {
+    const buy=$("beaconBuy"),offered=offerSectorBeacon();
+    buy.classList.toggle("hidden",!offered);
+    if(!offered)return;
     const price=NeonCampaign.SCRAP_CONSUMABLES["sector-beacon"].price,balance=classicSalvageState?.balance??0;
-    const buy=$("beaconBuy");
     buy.disabled=!classicSalvageLedger||balance<price;
-    buy.textContent=balance<price?`FALTAN ${price-balance} CHATARRA`:`COMPRAR · ${price} CHATARRA`;
-    $("beaconStatus").textContent=balance<price?"Recupera restos de las naves enemigas para la próxima vez.":"";
-    overlay(ui.beaconOffer);return true;
+    setC9Label(buy,balance<price?`BALIZA · FALTAN ${price-balance} CHATARRA`:`BALIZA DE REAPARICIÓN · ${price} CHATARRA`);
   }
   function buySectorBeacon() {
     if(!classicSalvageLedger||!classicSalvageRunId||!isSectorRun())return false;
     const result=classicSalvageLedger.buyConsumable({transactionId:`beacon:${classicSalvageRunId}`,sku:"sector-beacon"});
     if(result.state)classicSalvageState=result.state;
     if(!result.ok) {
-      $("beaconStatus").textContent=result.reason==="insufficient-funds"
+      ui.c9PurchaseStatus.textContent=result.reason==="insufficient-funds"
         ? `Faltan ${result.missing} de chatarra.` : "No se ha confirmado el pago. Puedes reintentarlo.";
       return false;
     }
     const sector=classicSideVoyage.ficha.sector;
     if(!saveSector(NeonCampaign.buyBeacon(loadSectorSave(),sector))) {
-      $("beaconStatus").textContent="Pago guardado. Pulsa otra vez para activar la baliza sin volver a cobrar.";
+      ui.c9PurchaseStatus.textContent="Pago guardado. Pulsa otra vez para activar la baliza sin volver a cobrar.";
       return false;
     }
     uiSound("confirm");updateAmmoHud();
-    closeSectorBeacon();return true;
-  }
-  function closeSectorBeacon() {
-    if(state!=="paused"||!ui.beaconOffer.classList.contains("show"))return;
-    // Pagada pero sin guardar en el sector (fallo de escritura): se reintenta
-    // al salir, así seguir sin pulsar otra vez no pierde el pago.
-    const sector=classicSideVoyage.ficha.sector,save=loadSectorSave();
-    if(classicSalvageState?.lastConsumable?.id===`beacon:${classicSalvageRunId}`&&!save.sectors[sector]?.beacon)saveSector(NeonCampaign.buyBeacon(save,sector));
-    if(typeof resetGameInput==="function")resetGameInput();
-    setState("playing");overlay();last=performance.now();resumeAudio();
-    grantResumeGrace();syncClassicFlightHud();hud();
+    ui.c9PurchaseStatus.textContent="Baliza activa: si caes, vuelves a empezar en el tramo 6.";
+    updateClassicDock();return true;
   }
 
   function resumeClassicVoyageService() {
     if(flightDockReturn!=="voyage"||state!=="paused"||!classicFlight)return;
+    // Pagada pero sin guardar en el sector (fallo de escritura): se reintenta
+    // al salir, así seguir sin pulsar otra vez no pierde el pago.
+    if(isSectorRun()) {
+      const sector=classicSideVoyage.ficha.sector,save=loadSectorSave();
+      if(classicSalvageState?.lastConsumable?.id===`beacon:${classicSalvageRunId}`&&!save.sectors[sector]?.beacon)saveSector(NeonCampaign.buyBeacon(save,sector));
+    }
     if(typeof resetGameInput==="function")resetGameInput();
     setState("playing");overlay();last=performance.now();
     signalClassicChapter("c9-departure");
@@ -1695,6 +1703,7 @@
       button.querySelector('[data-c9-state]').textContent=owned?'INSTALADO':missing.length
         ?`REQUIERE ${missing.map(id=>NeonCampaign.SCRAP_UPGRADES[id]?.label||id).join(' + ')}`:`${definition.price} CHATARRA`;
     }
+    syncSectorBeaconButton();
     // Desde el menú las dos salidas llevaban al menú: queda una sola (A4).
     const fromMenu=!["voyage","hud"].includes(flightDockReturn);
     $("flightDockContinue").textContent=fromMenu ? "VOLVER AL MENÚ" : "VOLVER A PILOTAR →";
@@ -3313,7 +3322,7 @@
     classicFlightView=classicFlight?.snapshot() || null;
     resetSectorAttackTokens();
     // Un intento que empieza pasado el tramo 5 ya dejó atrás al subguardián.
-    subBoss=null;subBossBurn=null;subBossBeaten=Boolean(classicFlightView)&&classicFlightView.stageNumber>5;sectorBeaconOffered=false;
+    subBoss=null;subBossBurn=null;subBossBeaten=Boolean(classicFlightView)&&classicFlightView.stageNumber>5;
     // La historia del capítulo dura 360 s: en los tramos posteriores del sector no hay.
     classicChapterStory=classicFlight&&fichaHasIntro()&&classicFlightView.elapsed<NeonCampaign.CHRONOS_CHAPTER_ROUTE_SECONDS?NeonCampaign.createChronosChapterStory({checkpoint:voyageEntry&&!classicSideVoyage?classicVoyageRecord?.chapter:null,routeElapsed:classicFlightView.elapsed,presentation:"in-world"}):null;
     classicChapterView=classicChapterStory?.snapshot()||null;
