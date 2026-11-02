@@ -134,3 +134,17 @@ test('ducking lowers only the music by 6 dB, fast in and slow out', () => {
   assert.notEqual(duck, master);
   assert.notEqual(duck, music);
 });
+
+// Propietario (02/11/2026, dec-audio-molesta): la música repetitiva tapaba el
+// juego en el iPhone. Con el control al máximo, la música queda a 0,15.
+test('music at the top of its slider plays at 0.15, lower than before (0.26)', () => {
+  const targets = [];
+  const context = vm.createContext({settings: {music: 100, fx: 70}, addEventListener() {},
+    voyageScore: null, combatSfx: null, uiSfx: null, chapterScore: null, scoreSuspended: false, state: 'playing',
+    stopToneVoices() {}, audioCtx: {currentTime: 0},
+    musicGain: {gain: {setTargetAtTime(value) { targets.push(value); }}}});
+  vm.runInContext(source, context);
+  context.updateAudioVolumes();
+  assert.equal(targets.length, 1);
+  assert.ok(Math.abs(targets[0] - 0.15) < 1e-9, `music gain ${targets[0]}`);
+});

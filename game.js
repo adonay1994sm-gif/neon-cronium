@@ -946,7 +946,8 @@
     if (settings.fx <= 0) stopToneVoices();
     if(settings.music<=0)chapterScore?.suspend();
     if (musicGain && audioCtx) {
-      const value = (settings.music / 100) * 0.26;
+      // Propietario (02/11/2026): la música tapaba el juego; tope 0,26 → 0,15 (−4,8 dB).
+      const value = (settings.music / 100) * 0.15;
       musicGain.gain.setTargetAtTime(value, audioCtx.currentTime, 0.08);
     }
   }
