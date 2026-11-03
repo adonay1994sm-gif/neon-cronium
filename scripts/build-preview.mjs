@@ -20,8 +20,11 @@ export function previewGame(source) {
   let game = replaceOnce(source, 'const storage = NeonCore.createStorageService(HARDCORE?.storage ?? window.NeonDev?.storage);',
     'const storage = NeonCore.createStorageService(HARDCORE?.storage ?? (window.NeonDev?.storage || window.NeonPreview.storage));');
   // La partida HARDCORE también vive dentro del guardado aislado del preview.
-  game = replaceOnce(game, 'const base = window.NeonDev?.storage ?? window.localStorage, prefix = "neon-hardcore-v1:";',
-    'const base = window.NeonDev?.storage ?? window.NeonPreview.storage, prefix = "neon-hardcore-v1:";');
+  game = replaceOnce(game, 'base = window.NeonDev?.storage ?? window.localStorage;',
+    'base = window.NeonDev?.storage ?? window.NeonPreview.storage;');
+  // La confirmación de HARDCORE (auditoría 03/11, A04) también.
+  game = replaceOnce(game, '(window.NeonDev?.storage ?? window.localStorage).setItem(HARDCORE_CONFIRMED_KEY, "1")',
+    '(window.NeonDev?.storage ?? window.NeonPreview.storage).setItem(HARDCORE_CONFIRMED_KEY, "1")');
   game = replaceOnce(game, 'return Object.freeze({prefix: (window.NeonDev?.prefix || "") + prefix, storage: Object.freeze({',
     'return Object.freeze({prefix: (window.NeonDev?.prefix || window.NeonPreview.storagePrefix) + prefix, storage: Object.freeze({');
   return game.replaceAll('▶ VER ANUNCIO Y REPARAR', 'REPARAR NAVE');

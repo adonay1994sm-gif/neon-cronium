@@ -224,12 +224,21 @@
   // HARDCORE (propietario 24/10 y 30/10): partida aparte que se borra entera al
   // morir. Todo se guarda con su prefijo salvo los ajustes, que son comunes;
   // cambiar de modo en Ajustes recarga el juego con la otra partida.
+  // Se apunta al confirmar HARDCORE en Ajustes. Unos ajustes antiguos con
+  // difficulty "hardcore" (cuando era una dificultad más) no bastan para pasar
+  // a la partida que se borra al morir (auditoría 03/11, A04).
+  const HARDCORE_CONFIRMED_KEY = "neon-hardcore-confirmed-v1";
   const HARDCORE = (() => {
     // Encima del guardado aislado de pruebas (?dev=1); el paquete de preview
     // cambia esta base por la suya (scripts/build-preview.mjs).
-    const base = window.NeonDev?.storage ?? window.localStorage, prefix = "neon-hardcore-v1:";
-    let enabled = false;
-    try { enabled = JSON.parse(base.getItem(KEYS.settings) || "{}")?.difficulty === "hardcore"; } catch {}
+    // Con los datos del sitio bloqueados, leer localStorage lanza un error:
+    // sin almacenamiento no hay HARDCORE y el juego arranca igual (A02).
+    const prefix = "neon-hardcore-v1:";
+    let base = null, enabled = false;
+    try {
+      base = window.NeonDev?.storage ?? window.localStorage;
+      enabled = JSON.parse(base.getItem(KEYS.settings) || "{}")?.difficulty === "hardcore" && base.getItem(HARDCORE_CONFIRMED_KEY) === "1";
+    } catch {}
     if (!enabled) return null;
     const key = name => name === KEYS.settings ? name : prefix + name;
     return Object.freeze({prefix: (window.NeonDev?.prefix || "") + prefix, storage: Object.freeze({

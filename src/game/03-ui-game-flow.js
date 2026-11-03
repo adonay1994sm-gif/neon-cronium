@@ -1318,6 +1318,9 @@
   // no al abrir la derrota: cerrar la app durante la explosión no la salta.
   function recordSectorDeath() {
     if(!isSectorRun()||sectorDeathRecorded)return;
+    // HARDCORE se borra al estallar la nave, no al abrir la derrota: cerrar la
+    // app durante la explosión ya no la conserva (auditoría 03/11, A03).
+    if(HARDCORE){sectorDeathRecorded=true;sectorRevive=false;wipeHardcoreRun();return;}
     const save=loadSectorSave();
     sectorRevive=NeonCampaign.useRevive(save);
     saveSector(NeonCampaign.dieInSector(save));

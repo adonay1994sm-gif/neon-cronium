@@ -25,7 +25,7 @@ function context() {
   }, set(target, key, value) { target[key] = value; return true; }});
 }
 
-function harness({unlocked = '2', query = '', storage = {}} = {}) {
+function harness({unlocked = '2', query = '', storage = {}, blockStorage = false} = {}) {
   const dom = new JSDOM(html, {url: `https://neon.test/${query}`, runScripts: 'outside-only', pretendToBeVisual: true});
   const w = dom.window;
   for (const [key, value] of Object.entries(storage)) w.localStorage.setItem(key, value);
@@ -36,6 +36,8 @@ function harness({unlocked = '2', query = '', storage = {}} = {}) {
   w.Image = class { constructor() { this.complete = false; this.naturalWidth = 0; this.naturalHeight = 0; }
     set src(v) { this._src = v; this.complete = true; this.naturalWidth = 1536; this.naturalHeight = 768; } get src() { return this._src || ''; } };
   w.localStorage.setItem('neon-unlocked-v2', unlocked);
+  // Navegador que bloquea los datos del sitio (auditoría 03/11, A02).
+  if (blockStorage) Object.defineProperty(w, 'localStorage', {get() { throw new w.DOMException('blocked', 'SecurityError'); }});
   // Azar con semilla fija: las pruebas que cuentan patrullas o peligros no
   // pueden depender de la suerte (revisión 3, prueba intermitente).
   let seed = 0x9e3779b9;
@@ -945,10 +947,12 @@ test('the Forja opened from the menu offers one clear way back to the menu', () 
 // morir, sin revivir ni baliza; se elige en Ajustes con aviso.
 const HC = 'neon-hardcore-v1:';
 const hardcoreSettings = JSON.stringify({difficulty: 'hardcore'});
+// HARDCORE solo cuenta si se confirmó en Ajustes (auditoría 03/11, A04).
+const HC_OK = {'neon-hardcore-confirmed-v1': '1'};
 const runAt = stageNumber => JSON.stringify({version: 1, unlocked: 1, sectors: {}, run: {sector: 1, stageNumber, stageHull: 90, reviveUsed: false}});
 
 test('HARDCORE plays its own save and leaves the normal one alone', () => {
-  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, [KEY]: runAt(7), [HC + KEY]: runAt(3)}});
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, ...HC_OK, [KEY]: runAt(7), [HC + KEY]: runAt(3)}});
   assert.equal(w.document.body.classList.contains('hardcore-mode'), true);
   click(w, 'play');
   assert.equal(T.stage(), 3, 'the HARDCORE run, not the normal one');
@@ -956,7 +960,7 @@ test('HARDCORE plays its own save and leaves the normal one alone', () => {
 });
 
 test('dying in HARDCORE erases the whole HARDCORE save, with no revive and no beacon', () => {
-  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, [KEY]: runAt(7), [HC + KEY]: runAt(3),
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, ...HC_OK, [KEY]: runAt(7), [HC + KEY]: runAt(3),
     [HC + 'neonCronium.menu.v1']: JSON.stringify({version: 1, hangar: true, seen: {hangar: true}})}});
   click(w, 'play');
   T.ev('subBossBeaten=true');
@@ -983,11 +987,12 @@ test('choosing HARDCORE in Ajustes asks first and only switches after confirming
   select.value = 'hardcore'; select.dispatchEvent(new w.Event('change'));
   click(w, 'hardcoreYes');
   assert.equal(JSON.parse(w.localStorage.getItem('neon-settings-v5')).difficulty, 'hardcore');
+  assert.equal(w.localStorage.getItem('neon-hardcore-confirmed-v1'), '1', 'the confirmation is remembered');
   assert.equal(w.__reloaded, 1, 'the game restarts on the HARDCORE save');
 });
 
 test('leaving HARDCORE in Ajustes goes back to the normal save', () => {
-  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings}});
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, ...HC_OK}});
   T.ev('reloadGame=()=>{window.__reloaded=(window.__reloaded||0)+1}');
   const select = w.document.getElementById('difficulty');
   select.value = 'normal'; select.dispatchEvent(new w.Event('change'));
@@ -1026,4 +1031,27 @@ test('Escape with the stop Forja open sends C9 away and the route goes on', () =
   const hull = T.hull();
   T.ev("classicHullReserve=0;hullGrace=0;damageShip(30)");
   assert.ok(T.hull() < hull, 'the ship can be hurt again');
+});
+
+// Auditoría 03/11 (A02-A04): fallos de HARDCORE.
+test('with site data blocked by the browser the game still loads to the menu', () => {
+  const {T} = harness({blockStorage: true});
+  assert.equal(T.st().state, 'menu');
+});
+
+test('HARDCORE erases its save the moment the ship explodes, so closing the app then cannot keep it', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, ...HC_OK, [KEY]: runAt(7), [HC + KEY]: runAt(3),
+    [HC + 'neonCronium.menu.v1']: JSON.stringify({version: 1, hangar: true, seen: {hangar: true}})}});
+  click(w, 'play');
+  T.hit(500);
+  assert.equal(T.st().state, 'destroying', 'the explosion is still playing');
+  assert.deepEqual(Object.keys(w.localStorage).filter(key => key.startsWith(HC)), [], 'already erased');
+  assert.equal(JSON.parse(w.localStorage.getItem(KEY)).run.stageNumber, 7, 'the normal save is intact');
+});
+
+test('an old settings file with difficulty "hardcore" but no confirmation does not switch to the HARDCORE save', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, [KEY]: runAt(7), [HC + KEY]: runAt(3)}});
+  assert.equal(w.document.body.classList.contains('hardcore-mode'), false);
+  click(w, 'play');
+  assert.equal(T.stage(), 7, 'it keeps playing the normal save');
 });

@@ -425,7 +425,12 @@
   // HARDCORE se elige con aviso y juega su propia partida: entrar o salir de él
   // guarda los ajustes y recarga el juego con la otra partida.
   const hardcoreConfirm = $("hardcoreConfirm");
-  const switchDifficulty = value => { settings.difficulty = value; saveSettings(); reloadGame(); };
+  const switchDifficulty = value => {
+    settings.difficulty = value; saveSettings();
+    // Recuerda que HARDCORE se confirmó con el aviso (auditoría 03/11, A04).
+    if (value === "hardcore") try { (window.NeonDev?.storage ?? window.localStorage).setItem(HARDCORE_CONFIRMED_KEY, "1"); } catch {}
+    reloadGame();
+  };
   if (ui.difficulty) ui.difficulty.onchange = (event) => {
     const value = ["facil", "normal", "dificil", "hardcore"].includes(event.target.value) ? event.target.value : "normal";
     if (value === "hardcore" && !HARDCORE) {
