@@ -27,6 +27,7 @@
   let shipRenderMode = "modular";
   let shipLoadout = NeonCampaign.normalizeShipLoadout(savedShipFleet?.loadout);
   let shipHangarDraft = null;
+  let shipPurchaseConfirm = null; // nave pendiente del segundo toque para comprarla
   let shipPresentationSignature = "";
   // Nave elegida en el hangar (neonCronium.ships.v1). Astér vuela con la nave
   // modular; las demás, con sus poses de GPT. La fija setupShipHangar.

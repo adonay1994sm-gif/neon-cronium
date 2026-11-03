@@ -1753,11 +1753,15 @@
       $("hangarExclusiveLabel").textContent = `EXCLUSIVA · ${ship.exclusive.cooldown} S`;
       $("hangarExclusiveName").textContent = ship.exclusive.name;
       $("hangarUltimateName").textContent = ship.ultimate.name;
-      $("hangarExclusiveText").textContent = ship.exclusive.text;
-      $("hangarUltimateText").textContent = ship.ultimate.text;
+      // Las habilidades aún no están programadas (propietario, 03/11/2026,
+      // dec-naves-habilidades): se rotulan para no venderlas como si funcionaran.
+      $("hangarExclusiveText").textContent = `Próximamente · ${ship.exclusive.text}`;
+      $("hangarUltimateText").textContent = `Próximamente · ${ship.ultimate.text}`;
       const mine = owned.includes(ship.id), forSale = !mine && ship.access.type === "scrap";
-      $("shipHangarStatus").textContent = !mine ? accessText(ship, balance) : ship.id === save.selected ? "Es la nave que pilotas." : "La tienes: pulsa PILOTAR para usarla.";
-      $("shipApply").textContent = mine ? `PILOTAR ${ship.name.toUpperCase()}` : forSale ? `COMPRAR · ${scrapText(ship.access.price)}` : "NO LA TIENES";
+      const confirming = forSale && shipPurchaseConfirm === ship.id;
+      $("shipHangarStatus").textContent = confirming ? `Pulsa otra vez para comprarla por ${scrapText(ship.access.price)} de chatarra. Sus habilidades llegan más adelante: de momento cambia su aspecto.`
+        : !mine ? accessText(ship, balance) : ship.id === save.selected ? "Es la nave que pilotas." : "La tienes: pulsa PILOTAR para usarla.";
+      $("shipApply").textContent = mine ? `PILOTAR ${ship.name.toUpperCase()}` : forSale ? `${confirming ? "CONFIRMAR" : "COMPRAR"} · ${scrapText(ship.access.price)}` : "NO LA TIENES";
       $("shipApply").disabled = mine ? ship.id === save.selected : !forSale || !scrapReady || balance < ship.access.price;
       refreshWeapons();
     }
@@ -1810,14 +1814,14 @@
     function closeHangar() {
       hangar.classList.remove("show");
       hangar.classList.add("hidden");
-      shipHangarDraft = null;
+      shipHangarDraft = null; shipPurchaseConfirm = null;
       overlay(ui.menu);
       openButton.focus({ preventScroll: true });
     }
 
     openButton.onclick = () => {
       if (state !== "menu" || !(ui.menu.classList.contains("show") || ui.briefing.classList.contains("show"))) return;
-      shipHangarDraft = shipState().save.selected;
+      shipHangarDraft = shipState().save.selected; shipPurchaseConfirm = null;
       refreshHangar();
       hangar.classList.remove("hidden");
       overlay(hangar);
@@ -1826,6 +1830,7 @@
     for (const button of slotButtons) button.onclick = () => {
       if (!shipHangarDraft) return;
       shipHangarDraft = button.dataset.ship;
+      shipPurchaseConfirm = null;
       refreshHangar();
     };
     $("shipApply").onclick = () => {
@@ -1833,6 +1838,9 @@
       const ship = roster.find(entry => entry.id === shipHangarDraft);
       let bought = false;
       if (ship.access.type === "scrap" && !shipState().owned.includes(ship.id)) {
+        // Compra en dos toques (dec-naves-habilidades): el primero solo pide confirmar.
+        if (shipPurchaseConfirm !== ship.id) { shipPurchaseConfirm = ship.id; refreshHangar(); return; }
+        shipPurchaseConfirm = null;
         // Primero se cobra (con recibo fijo: un reintento no cobra dos veces) y luego se elige.
         const result = loadClassicSalvage() ? classicSalvageLedger.purchase({transactionId: `ship:${ship.id}`, sku: `ship-${ship.id}`}) : null;
         if (result?.state) classicSalvageState = result.state;

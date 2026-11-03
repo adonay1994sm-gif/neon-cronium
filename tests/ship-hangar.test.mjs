@@ -222,7 +222,7 @@ test('with enough scrap a scrap ship is bought once, charged in the scrap ledger
   h.open();h.pick('vertice');
   assert.match(h.node('shipHangarStatus').textContent,/Tienes 3\.000\./);
   assert.equal(h.node('shipApply').disabled,false);
-  h.apply();
+  h.apply();h.apply();
   const snap=h.snapshot();
   assert.equal(snap.balance,500);
   assert.deepEqual(snap.scrapShips,['ship-vertice']);
@@ -235,9 +235,27 @@ test('with enough scrap a scrap ship is bought once, charged in the scrap ledger
   assert.equal(h.snapshot().balance,500,'never charged twice');
 });
 
+// Propietario (03/11/2026, dec-naves-habilidades): las habilidades aún no
+// existen; se rotulan y la compra pide un segundo toque.
+test('buying a ship asks for a second tap, says its abilities come later, and changing ship cancels it', t=>{
+  const h=harness(t,{scrap:3000});
+  h.open();h.pick('vertice');
+  assert.match(h.node('hangarExclusiveText').textContent,/^Próximamente · /);
+  assert.match(h.node('hangarUltimateText').textContent,/^Próximamente · /);
+  h.apply();
+  assert.equal(h.snapshot().balance,3000,'the first tap charges nothing');
+  assert.equal(h.node('shipApply').textContent,'CONFIRMAR · 2.500');
+  assert.match(h.node('shipHangarStatus').textContent,/otra vez/);
+  assert.match(h.node('shipHangarStatus').textContent,/habilidades/);
+  h.pick('aster');h.pick('vertice');
+  assert.equal(h.node('shipApply').textContent,'COMPRAR · 2.500','picking another ship cancels the confirmation');
+  h.apply();h.apply();
+  assert.equal(h.snapshot().balance,500);
+});
+
 test('a bought ship stays yours even if the ship save was lost (the scrap ledger rules)', t=>{
   const h=harness(t,{scrap:3000});
-  h.open();h.pick('vertice');h.api.allowSave(false);h.apply();
+  h.open();h.pick('vertice');h.api.allowSave(false);h.apply();h.apply();
   assert.equal(h.snapshot().balance,500,'charged');
   assert.match(h.node('shipHangarStatus').textContent,/Comprada, pero no se pudo elegir/);
   assert.equal(h.node('shipApply').textContent,'PILOTAR VÉRTICE');
