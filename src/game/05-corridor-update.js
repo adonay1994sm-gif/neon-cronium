@@ -347,7 +347,9 @@
     if (!atlasBoss) updateGateSystem(dt, scale);
 
     // Un turno de ataque de quien ya no está (derribado o fuera) se libera ya.
-    const attackTokens = typeof sectorAttackTokens === "undefined" ? null : sectorAttackTokens;
+    // También los turnos de reserva de fuera del sector (auditoría 03/11, A17).
+    const attackTokens = (typeof sectorAttackTokens === "undefined" ? null : sectorAttackTokens)
+      || (typeof gaiaFallbackTokens === "undefined" ? null : gaiaFallbackTokens);
     if (attackTokens) {
       const alive = new Set(items.map(item => item.id));
       for (const id of [...attackTokens.holders.keys(), ...attackTokens.waiting.keys()])

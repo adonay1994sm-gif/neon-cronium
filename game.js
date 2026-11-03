@@ -2426,6 +2426,7 @@
   function resetSectorAttackTokens() {
     const rules=isSectorRun()&&classicFlightView?NeonCampaign.getVoyageStageRules(classicFlightView.routeId,classicFlightView.stageNumber):null;
     sectorAttackTokens=rules?NeonCampaign.createAttackTokens({max:rules.attackers??2}):null;
+    gaiaFallbackTokens=null; // una partida nueva no hereda turnos ocupados (A17)
     if(sectorAttackTokens)sectorAttackTokens.baseMax=sectorAttackTokens.max;
   }
   // La regla de morir se guarda al estallar la nave (tramo 1, o 6 con baliza),
@@ -4947,7 +4948,9 @@
     if (!atlasBoss) updateGateSystem(dt, scale);
 
     // Un turno de ataque de quien ya no está (derribado o fuera) se libera ya.
-    const attackTokens = typeof sectorAttackTokens === "undefined" ? null : sectorAttackTokens;
+    // También los turnos de reserva de fuera del sector (auditoría 03/11, A17).
+    const attackTokens = (typeof sectorAttackTokens === "undefined" ? null : sectorAttackTokens)
+      || (typeof gaiaFallbackTokens === "undefined" ? null : gaiaFallbackTokens);
     if (attackTokens) {
       const alive = new Set(items.map(item => item.id));
       for (const id of [...attackTokens.holders.keys(), ...attackTokens.waiting.keys()])

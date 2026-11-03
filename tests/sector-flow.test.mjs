@@ -1068,3 +1068,17 @@ test('the subguardian fight uses the compact boss strip and gives the screen bac
   assert.equal(w.document.body.classList.contains('atlas-combat'), false);
   assert.equal(T.ev('ui.atlasEncounter.classList.contains("hidden")'), true);
 });
+
+// Auditoría 03/11 (A17): fuera del sector los enemigos de Gaia piden turno a
+// gaiaFallbackTokens; los turnos de los derribados no se liberaban nunca.
+test('outside the sector, attack turns of enemies that are gone are freed, and a new run starts clean', () => {
+  const {T} = harness({query: '?dev=1'});
+  startAt(T, 2); T.adv(.5);
+  T.ev("sectorAttackTokens=null;gaiaFallbackTokens=NeonCampaign.createAttackTokens({max:2});"
+    + "NeonCampaign.requestAttack(gaiaFallbackTokens,{id:'gone-1'},0);NeonCampaign.requestAttack(gaiaFallbackTokens,{id:'gone-2'},0)");
+  assert.equal(T.ev('gaiaFallbackTokens.holders.size'), 2);
+  T.adv(1 / 30);
+  assert.equal(T.ev('gaiaFallbackTokens.holders.size'), 0, 'their turns are free again');
+  T.ev("NeonCampaign.requestAttack(gaiaFallbackTokens,{id:'gone-3'},0)"); T.startLevel(0);
+  assert.equal(T.ev('gaiaFallbackTokens'), null, 'a new run does not inherit taken turns');
+});

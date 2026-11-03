@@ -1315,6 +1315,7 @@
   function resetSectorAttackTokens() {
     const rules=isSectorRun()&&classicFlightView?NeonCampaign.getVoyageStageRules(classicFlightView.routeId,classicFlightView.stageNumber):null;
     sectorAttackTokens=rules?NeonCampaign.createAttackTokens({max:rules.attackers??2}):null;
+    gaiaFallbackTokens=null; // una partida nueva no hereda turnos ocupados (A17)
     if(sectorAttackTokens)sectorAttackTokens.baseMax=sectorAttackTokens.max;
   }
   // La regla de morir se guarda al estallar la nave (tramo 1, o 6 con baliza),
