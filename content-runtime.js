@@ -1515,7 +1515,7 @@ var NeonCampaign = (() => {
       requires: ["twin-preparation"],
       label: "Abanico I",
       description: "Tres pulsos divergentes de 1 de da\xF1o; alcance corto para interceptar grupos cercanos.",
-      tradeoff: "Exige acercarse: sus pulsos se disipan antes que un Phaser."
+      tradeoff: "Exige acercarse: sus pulsos se disipan antes que el Pulso."
     }),
     "scatter-focus": upgrade({
       id: "scatter-focus",
@@ -1539,7 +1539,7 @@ var NeonCampaign = (() => {
       requires: ["twin-preparation"],
       label: "Aguja I",
       description: "Proyectil estrecho de 2 de da\xF1o que perfora hasta tres objetivos alineados.",
-      tradeoff: "Menor anchura de impacto y cadencia m\xE1s lenta que el Phaser."
+      tradeoff: "Menor anchura de impacto y cadencia m\xE1s lenta que el Pulso."
     }),
     "needle-resonance": upgrade({
       id: "needle-resonance",
@@ -8059,9 +8059,10 @@ var NeonCampaign = (() => {
     boundsMargin: 80,
     missile: Object.freeze({ damage: 18, speed: 760, radius: 10, duration: 3.2, cooldown: 0.7 }),
     types: Object.freeze({
+      // Un solo nombre, PULSO (propietario, 03/11/2026): «Phaser» es la mejora verde.
       pulse: weapon({
         id: "pulse",
-        label: "Phaser",
+        label: "Pulso",
         damageMultiplier: 1,
         description: "Da\xF1o \xD71: un pulso de 1 de da\xF1o por carga.",
         cooldown: 0.24,

@@ -13,7 +13,8 @@ export const CLASSIC_WEAPON_RULES = Object.freeze({
   maxDelta: .05, maxProjectiles: 32, boundsMargin: 80,
   missile: Object.freeze({damage:18,speed:760,radius:10,duration:3.2,cooldown:.7}),
   types: Object.freeze({
-    pulse: weapon({id: 'pulse', label: 'Phaser', damageMultiplier: 1,
+    // Un solo nombre, PULSO (propietario, 03/11/2026): «Phaser» es la mejora verde.
+    pulse: weapon({id: 'pulse', label: 'Pulso', damageMultiplier: 1,
       description: 'Daño ×1: un pulso de 1 de daño por carga.', cooldown: .24, speed: 920,
       damage: 1, radius: 9, duration: 2.4, barrels: [{offset: 0, spread: 0}]}),
     twin: weapon({id: 'twin', label: 'Gemelo', damageMultiplier: 2,

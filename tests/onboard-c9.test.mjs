@@ -169,7 +169,8 @@ test('fresh classic launch plays the Chronos opening as a skippable film, then g
   assert.equal(h.loaded.has(INTRO_PATH), false, 'retained historical opening art is not requested');
   assert.equal(h.node('classicC9').classList.contains('hidden'), true, 'C9 waits for its recovered module');
   assert.equal(h.node('flightWeapon').classList.contains('hidden'), true, 'one owned weapon needs no selector');
-  assert.equal(h.node('fireWeapon').textContent, 'PHASER');
+  // Un solo nombre para el arma inicial (propietario, 03/11/2026): PULSO.
+  assert.equal(h.node('fireWeapon').textContent, 'PULSO');
   assert.equal(h.node('flightPilotHint').textContent.includes('DESLIZA'), true);
   assert.equal(h.api.fireManualShot(), true, 'manual combat works as soon as the film is skipped');
   h.api.render(0);
