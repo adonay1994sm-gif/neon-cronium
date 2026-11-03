@@ -1055,3 +1055,16 @@ test('an old settings file with difficulty "hardcore" but no confirmation does n
   click(w, 'play');
   assert.equal(T.stage(), 7, 'it keeps playing the normal save');
 });
+
+// Auditoría 03/11 (A09): el cartel del subguardián tapaba la ruta y las
+// transmisiones; ahora usa la franja compacta de combate, como Atlas.
+test('the subguardian fight uses the compact boss strip and gives the screen back when it falls', () => {
+  const {w, T} = harness();
+  startAt(T, 5); T.adv(11);
+  assert.equal(T.ev('Boolean(subBoss)&&subBoss.state!=="entry"'), true);
+  assert.equal(w.document.body.classList.contains('atlas-combat'), true, 'compact strip, transmissions hidden');
+  T.ev('NeonCampaign.hitSubguardian(subBoss, 999)'); T.adv(3);
+  assert.equal(T.ev('subBoss'), null);
+  assert.equal(w.document.body.classList.contains('atlas-combat'), false);
+  assert.equal(T.ev('ui.atlasEncounter.classList.contains("hidden")'), true);
+});

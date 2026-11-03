@@ -2108,6 +2108,9 @@
   function showBossHud(name,phase,health,status) {
     if(!ui.atlasEncounter)return;
     ui.atlasEncounter.classList.remove("hidden");
+    // Franja compacta de combate también para el subjefe (auditoría 03/11, A09):
+    // el cartel grande tapaba la ruta y las transmisiones.
+    document.body.classList.add("atlas-combat");
     const title=ui.atlasEncounter.querySelector(".atlas-identity b");
     if(title&&title.textContent!==name)title.textContent=name;
     if(ui.atlasPhase.textContent!==phase)ui.atlasPhase.textContent=phase;
@@ -2176,7 +2179,7 @@
     }
     if(subBossBurn&&(subBossBurn.age+=dt)>.5)subBossBurn=null;
     if(subBoss.state!=="entry"&&subBoss.state!=="defeated")bossRam(subBoss.x,subBoss.y,SUB_BOSS_HIT_RADIUS*.8,dt);
-    if(subBoss.resolved){subBoss=null;ui.atlasEncounter?.classList.add("hidden");return;}
+    if(subBoss.resolved){subBoss=null;ui.atlasEncounter?.classList.add("hidden");if(!atlasBoss)document.body.classList.remove("atlas-combat");return;}
     const status=subBoss.state==="warning"?(subBoss.attack==="laser"?"LÁSER · sal de la franja roja":"CARGANDO · prepárate para esquivar")
       :subBoss.state==="defeated"?"SUBGUARDIÁN ABATIDO":"Dispárale y esquiva su láser.";
     showBossHud("SUBGUARDIÁN","SUBJEFE",subBoss.hp/subBoss.maxHp,status);
