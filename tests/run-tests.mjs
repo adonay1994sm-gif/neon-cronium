@@ -161,7 +161,7 @@ await test("service worker incluye recursos activos y excluye referencias visual
   ];
   for (const path of required) assert.ok(corePaths.has(path), `no precargado: ${path}`);
   for (const path of [...assetManifest.groups.filter(group=>group.precache===false).flatMap(group=>group.paths),...assetManifest.standalone.filter(item=>item.precache===false).map(item=>item.path)]) assert.equal(corePaths.has(path),false,`referencia retirada precargada: ${path}`);
-  assert.equal(swContext.__SW_TEST__.CACHE, "neon-cronium-pre-release-7-2-0-orbital-hud-2");
+  assert.equal(swContext.__SW_TEST__.CACHE, "neon-cronium-pre-release-7-2-0-orbital-hud-3");
 });
 
 await test("todas las referencias locales de HTML existen", async () => {

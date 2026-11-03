@@ -1,4 +1,4 @@
-const CACHE = "neon-cronium-pre-release-7-2-0-orbital-hud-2";
+const CACHE = "neon-cronium-pre-release-7-2-0-orbital-hud-3";
 const CORE = [
   "assets/menu_hangar_bg_v1.webp",
   "assets/menu_frame_v1.webp",
@@ -216,6 +216,10 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  // Peticiones por partes (la música en <audio>, sobre todo en Safari): las
+  // atiende la red; responder con el archivo entero desde la caché puede
+  // impedir que suene (auditoría 03/11, A20).
+  if (event.request.headers?.get?.("range")) return;
   const isCode = event.request.mode === "navigate" || /\.(?:html|js|css)$/.test(url.pathname);
   event.respondWith(isCode ? networkFirst(event.request) : cacheFirst(event.request));
 });

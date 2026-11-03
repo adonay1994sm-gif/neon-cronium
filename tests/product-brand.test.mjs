@@ -73,7 +73,7 @@ test('renaming preserves existing preview saves and resumes a pre-rename voyage 
 });
 
 test('ordinary PWA gets a fresh branded cache and active art documentation resolves after the filename change', async () => {
-  assert.match(await text('sw.js'), /^const CACHE = "neon-cronium-pre-release-7-2-0-orbital-hud-2";/);
+  assert.match(await text('sw.js'), /^const CACHE = "neon-cronium-pre-release-7-2-0-orbital-hud-3";/);
   assert.match(await text('docs/PRODUCT_VISION.md'), /ART_DIRECTION_NEON_CRONIUM\.md/);
   assert.match(await text('ART_DIRECTION_NEON_CRONIUM.md'), /# NEON CRONIUM/);
   for (const path of ['ASSET_MANIFEST.json', 'ASSET_PRODUCTION_150.json']) assert.equal(JSON.parse(await text(path)).project, 'NEON CRONIUM');
