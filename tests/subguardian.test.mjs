@@ -72,11 +72,13 @@ test('the laser is silent while it warns, then sweeps from the emitter and burns
   assert.equal(subguardianHitsShip(laser, SHIP), 0);
 });
 
-test('60 hits of damage bring it down once; it cannot be hit while flying in', () => {
+// Propietario (03/11/2026, dec-subguardian-muro): 30 de vida, antes 60.
+test('30 hits of damage bring it down once; it cannot be hit while flying in', () => {
+  assert.equal(SUBGUARDIAN_RULES.hp, 30);
   const boss = make();
   assert.equal(hitSubguardian(boss, 10).accepted, false, 'entry');
   run(boss, 2.2);
-  assert.equal(hitSubguardian(boss, 59).hp, 1);
+  assert.equal(hitSubguardian(boss, 29).hp, 1);
   assert.equal(hitSubguardian(boss, 5).hp, 0);
   assert.equal(boss.state, 'defeated');
   assert.equal(hitSubguardian(boss, 5).accepted, false);

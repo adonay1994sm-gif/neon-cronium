@@ -6447,7 +6447,7 @@ var NeonCampaign = (() => {
 
   // src/game/combat/subguardian.js
   var SUBGUARDIAN_RULES = Object.freeze({
-    hp: 60,
+    hp: 30,
     entrySeconds: 2,
     holdY: 0.29,
     rest: 1.1,

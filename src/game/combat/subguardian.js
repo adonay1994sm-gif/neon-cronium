@@ -9,8 +9,10 @@
  * cañones y el abanico de Atlas (13 y 15). Sin furia.
  * Puro: reloj de juego que pasa el llamador y azar con semilla.
  */
+// Vida 60 → 30: con el arma inicial la pelea pasaba de 3 minutos (propietario,
+// 03/11/2026, dec-subguardian-muro).
 export const SUBGUARDIAN_RULES = Object.freeze({
-  hp: 60, entrySeconds: 2, holdY: .29, rest: 1.1, defeatSeconds: 1.6, damagedAt: .35,
+  hp: 30, entrySeconds: 2, holdY: .29, rest: 1.1, defeatSeconds: 1.6, damagedAt: .35,
   // Patrulla: va hacia un punto nuevo de la franja de arriba entre ataques y
   // sigue derivando despacio durante los cañones y el abanico.
   // holdY .29: por debajo del panel del jefe, que tapa la franja de arriba.
