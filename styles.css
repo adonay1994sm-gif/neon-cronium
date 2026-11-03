@@ -1477,7 +1477,7 @@ body.hardcore-mode .metric-sector small::after{content:" · HC";color:var(--ui-r
 @media(max-width:360px){#shipHangar .ship-hangar-actions{grid-template-columns:1fr}#shipHangar .hangar-ability small{display:none}}
 /* Hangar · ARMA (armas por niveles, 01/11/2026): Pulso y Gemelo con su nivel,
    elegir y subir de nivel. Disparos pintados de GPT (weapon_levels_v1). */
-#shipHangar .hangar-weapons{margin:14px 0 28px;padding:10px 0 0;border-top:1px solid var(--ui-line)}
+#shipHangar .hangar-weapons{margin:10px 0 4px;padding:10px 0 0;border-top:1px solid var(--ui-line)}
 #shipHangar .hangar-weapons h3{margin:0 0 8px;color:var(--ui-cyan);font:800 12px/1.2 var(--font-display);letter-spacing:.14em}
 #shipHangar .hangar-weapon-cards{display:grid;gap:8px}
 #shipHangar .hangar-weapon{display:grid;grid-template-columns:48px minmax(0,1fr);gap:6px 8px;align-items:center;padding:8px;
@@ -1485,10 +1485,11 @@ body.hardcore-mode .metric-sector small::after{content:" · HC";color:var(--ui-r
 #shipHangar .hangar-weapon.is-locked .hangar-weapon-art{filter:grayscale(1) brightness(.5)}
 #shipHangar .hangar-weapon-art{width:48px;height:48px;background:url("assets/weapon_levels_v1.webp") 0 0/400% 200% no-repeat}
 #shipHangar .hangar-weapon p{margin:0;display:grid;gap:2px;min-width:0}
-#shipHangar .hangar-weapon-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#shipHangar .hangar-weapon-actions{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 #shipHangar .hangar-weapon b{color:var(--ui-paper);font:800 14px/1.1 var(--font-display);letter-spacing:.06em}
 #shipHangar .hangar-weapon small{color:var(--ui-muted);font:800 10px/1.2 var(--font-display);letter-spacing:.04em}
-#shipHangar .hangar-weapon button{margin:0;min-height:36px;padding-inline:8px;font-size:12px;letter-spacing:.02em;white-space:nowrap}
+/* Los botones no ensanchan la columna: el texto baja de línea (auditoría 03/11, A08). */
+#shipHangar .hangar-weapon button{margin:0;min-width:0;min-height:36px;padding-inline:4px;font-size:11px;line-height:1.15;letter-spacing:0;white-space:normal;overflow-wrap:normal}
 @media(max-width:360px){#shipHangar .hangar-weapon-actions{grid-template-columns:1fr}}
 /* Baliza de reaparición dentro de la Forja (02/11/2026): su dibujo pintado. */
 #flightDock .c9-upgrade-art[data-upgrade="beacon"]{background:url("assets/sector_beacon_atlas_v1.webp") 0 0/400% 100% no-repeat}
