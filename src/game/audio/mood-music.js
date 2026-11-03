@@ -18,15 +18,21 @@ export function createMoodMusic({context, output, createAudio = () => new Audio(
     const audio = createAudio(); audio.preload = 'auto'; audio.loop = true;
     const gain = context.createGain(); gain.gain.value = 0; gain.connect(output);
     const source = context.createMediaElementSource(audio); source.connect(gain);
-    return {audio, gain, source, stopAt: Infinity};
+    // track: la pista cargada, como ruta relativa (audio.src la devuelve absoluta).
+    return {audio, gain, source, stopAt: Infinity, track: null};
   };
   const decks = [deck(), deck()];
-  let current = null, mood = null;
+  // blocked: el navegador rechazó play() por falta de gesto; se reintenta en unlock().
+  let current = null, mood = null, blocked = false;
   const fade = (item, value) => {
     item.gain.gain.cancelScheduledValues?.(context.currentTime);
     item.gain.gain.setTargetAtTime(value, context.currentTime, MOOD_MUSIC_FADE / 3);
   };
-  const play = item => { if (item.audio.paused) Promise.resolve(item.audio.play()).catch(() => {}); };
+  const load = (item, track) => { if (item.track !== track) { item.audio.src = track; item.track = track; } };
+  const play = item => {
+    if (!item.audio.paused || blocked) return;
+    Promise.resolve(item.audio.play()).catch(error => { if (error?.name === 'NotAllowedError') blocked = true; });
+  };
   const pauseAll = () => { for (const item of decks) item.audio.pause(); };
 
   return Object.freeze({
@@ -36,8 +42,7 @@ export function createMoodMusic({context, output, createAudio = () => new Audio(
       if (next !== mood || !current) {
         const old = current;
         current = decks.find(item => item !== old);
-        const src = MOOD_MUSIC_TRACKS[next];
-        if (current.audio.src !== src) current.audio.src = src;
+        load(current, MOOD_MUSIC_TRACKS[next]);
         current.audio.loop = true; current.audio.currentTime = 0; current.stopAt = Infinity;
         fade(current, 1);
         if (old) { fade(old, 0); old.stopAt = context.currentTime + MOOD_MUSIC_FADE; }
@@ -51,9 +56,10 @@ export function createMoodMusic({context, output, createAudio = () => new Audio(
      * para en silencio el reproductor que no suena, para que el fundido
      * posterior no quede bloqueado. */
     unlock() {
+      blocked = false;
       for (const item of decks) {
         if (item === current || !item.audio.paused) continue;
-        if (!item.audio.src) item.audio.src = MOOD_MUSIC_TRACKS.menu;
+        if (!item.track) load(item, MOOD_MUSIC_TRACKS.menu);
         Promise.resolve(item.audio.play()).then(() => { if (item !== current) item.audio.pause(); }).catch(() => {});
       }
     },

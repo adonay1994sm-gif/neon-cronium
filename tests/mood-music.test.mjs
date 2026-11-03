@@ -91,3 +91,35 @@ test('it only connects to the music bus it is given', () => {
   h.music.update({mood: 'menu'});
   assert.ok(h.gains.length >= 1 && h.gains.every(node => node.to === h.output));
 });
+
+// Auditoría 03/11 (A19): un navegador devuelve audio.src como URL absoluta;
+// comparar con la ruta relativa recargaba la pista en cada cambio de momento.
+test('a player that already holds a track does not reload it when that mood comes back', () => {
+  const h = harness();
+  for (const audio of h.audios) {
+    let value = '', sets = 0;
+    Object.defineProperty(audio, 'src', {get: () => value ? `https://neon.test/${value}` : '', set: next => { sets++; value = next; }});
+    Object.defineProperty(audio, 'sets', {get: () => sets});
+  }
+  h.music.update({mood: 'menu'}); h.music.update({mood: 'vuelo'});
+  h.context.currentTime += MOOD_MUSIC_FADE * 3;
+  h.music.update({mood: 'menu'}); h.music.update({mood: 'vuelo'}); h.music.update({mood: 'menu'});
+  assert.deepEqual(h.audios.map(audio => audio.sets), [1, 1], 'each player loads its track once');
+});
+
+// Auditoría 03/11 (A18): con el autoplay bloqueado no se reintenta play() en
+// cada fotograma; se vuelve a intentar con el siguiente toque (unlock).
+test('blocked autoplay is not retried every frame; the next tap tries again', async () => {
+  const h = harness();
+  let attempts = 0;
+  for (const audio of h.audios) audio.play = function () { attempts++; return Promise.reject(Object.assign(new Error('gesture'), {name: 'NotAllowedError'})); };
+  h.music.update({mood: 'menu'});
+  await Promise.resolve(); await Promise.resolve();
+  for (let frame = 0; frame < 30; frame++) h.music.update({mood: 'menu'});
+  assert.equal(attempts, 1, 'one try, then it waits for a tap');
+  for (const audio of h.audios) audio.play = function () { attempts++; this.paused = false; return Promise.resolve(); };
+  h.music.unlock();
+  h.music.update({mood: 'menu'});
+  assert.ok(attempts >= 2, 'the tap tries again');
+  assert.equal(h.audios.some(audio => !audio.paused), true, 'and the music plays');
+});

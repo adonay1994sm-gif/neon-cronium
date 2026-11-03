@@ -7741,7 +7741,9 @@
   resizeCanvas();
   syncSettingsUI();
   // Música del menú (02/11/2026): el navegador solo deja sonar tras el primer toque.
-  addEventListener("pointerdown", () => startMusic(), { once: true, capture: true });
+  // En el iPhone el gesto que vale para el audio es soltar el dedo o un clic, no
+  // pointerdown (auditoría 03/11, A18); el primero que llegue arranca la música.
+  for (const type of ["touchend", "click", "keydown"]) addEventListener(type, () => startMusic(), { once: true, capture: true });
   window.AnalyticsManager?.track("app_open", { build: BUILD_VERSION });
   addEventListener("pagehide", () => {
     window.AnalyticsManager?.track("session_duration", {
