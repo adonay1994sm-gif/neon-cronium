@@ -2812,13 +2812,12 @@
       <ul class="hangar-ability-text"><li id="hangarExclusiveText"></li><li id="hangarUltimateText"></li></ul>
       <p id="shipHangarStatus" class="hangar-status" role="status"></p>
 
-      <!-- ARMA encima de VOLVER/COMPRAR para que no quede escondida (auditoría 03/11, A08). -->
+      <footer class="ship-hangar-actions"><button id="shipHangarBack" class="secondary" type="button">VOLVER</button><button id="shipApply" class="primary" type="button"></button></footer>
       <section class="hangar-weapons" aria-labelledby="hangarWeaponTitle"><h3 id="hangarWeaponTitle">ARMA</h3>
         <div class="hangar-weapon-cards">${["pulse", "twin"].map(id => `<div class="hangar-weapon" data-weapon="${id}"><span class="hangar-weapon-art" aria-hidden="true"></span>
           <p><b>${id === "pulse" ? "PULSO" : "GEMELO"}</b><small data-weapon-level></small></p>
           <span class="hangar-weapon-actions"><button type="button" class="secondary" data-weapon-pick></button><button type="button" class="secondary" data-weapon-up></button></span></div>`).join("")}</div>
         <p id="hangarWeaponStatus" class="hangar-status" role="status"></p></section>
-      <footer class="ship-hangar-actions"><button id="shipHangarBack" class="secondary" type="button">VOLVER</button><button id="shipApply" class="primary" type="button"></button></footer>
     </section>`;
     canvas.closest(".game").append(hangar);
     ui.shipHangar = hangar;
