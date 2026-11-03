@@ -7123,17 +7123,17 @@ var NeonCampaign = (() => {
         y: originY
       });
     } else {
-      const fan = tier === "medium", rule = fan ? GUARDIAN_ATLAS_RULES.fan : GUARDIAN_ATLAS_RULES.twin;
+      const fan2 = tier === "medium", rule = fan2 ? GUARDIAN_ATLAS_RULES.fan : GUARDIAN_ATLAS_RULES.twin;
       const targetY = Math.max(originY + 180, aim.targetY);
       const targetX = clamp10(
-        aim.targetX + (fan ? 0 : (boss.volley === 0 ? -0.018 : 0.018) * boss.width * aim.sweepDirection),
+        aim.targetX + (fan2 ? 0 : (boss.volley === 0 ? -0.018 : 0.018) * boss.width * aim.sweepDirection),
         24,
         boss.width - 24
       );
       const aimed2 = Math.atan2(targetY - originY, targetX - boss.x), distance2 = Math.hypot(targetY - originY, targetX - boss.x);
-      const spread2 = !fan || distance2 * Math.tan(2 * rule.spread / (rule.projectiles - 1)) >= rule.minGap ? rule.spread : Math.atan2(boss.width * 0.2, distance2);
-      const direction = fan ? clamp10(aimed2, spread2 + 0.25, Math.PI - spread2 - 0.25) : aimed2;
-      const speed = fan ? rule.speed : phaseRules(boss).projectileSpeed;
+      const spread2 = !fan2 || distance2 * Math.tan(2 * rule.spread / (rule.projectiles - 1)) >= rule.minGap ? rule.spread : Math.atan2(boss.width * 0.2, distance2);
+      const direction = fan2 ? clamp10(aimed2, spread2 + 0.25, Math.PI - spread2 - 0.25) : aimed2;
+      const speed = fan2 ? rule.speed : phaseRules(boss).projectileSpeed;
       for (let index = 0; index < rule.projectiles; index++) {
         const angle = direction + (index / (rule.projectiles - 1) * 2 - 1) * spread2;
         const shot = projectile(boss, boss.x, originY, Math.cos(angle) * speed, Math.sin(angle) * speed, index, targetX);
@@ -8123,7 +8123,7 @@ var NeonCampaign = (() => {
       })
     })
   });
-  var FAN = Object.freeze([{ offset: -6, spread: -0.1 }, { offset: 0, spread: 0 }, { offset: 6, spread: 0.1 }]);
+  var fan = (side) => [{ offset: -6, spread: -0.1, damage: side }, { offset: 0, spread: 0 }, { offset: 6, spread: 0.1, damage: side }];
   var QUAD = Object.freeze([{ offset: -18, spread: 0 }, { offset: -6, spread: 0 }, { offset: 6, spread: 0 }, { offset: 18, spread: 0 }]);
   var level = (damageMultiplier, damage, radius, barrels, description) => Object.freeze({
     damageMultiplier,
@@ -8137,8 +8137,8 @@ var NeonCampaign = (() => {
       null,
       level(1, 1, 9, [{ offset: 0, spread: 0 }]),
       level(1.3, 1.3, 11, [{ offset: 0, spread: 0 }], "Nivel 2 \xB7 da\xF1o \xD71,3: un pulso m\xE1s grande."),
-      level(1.6, 1.6 / 3, 9, FAN, "Nivel 3 \xB7 da\xF1o \xD71,6: tres pulsos en abanico."),
-      level(2, 2 / 3, 10, FAN, "Nivel 4 \xB7 da\xF1o \xD72: tres pulsos con anillo.")
+      level(1.6, 1.6, 9, fan(0.3), "Nivel 3 \xB7 da\xF1o \xD71,6 en el pulso central, con dos pulsos de apoyo en abanico."),
+      level(2, 2, 10, fan(0.4), "Nivel 4 \xB7 da\xF1o \xD72 en el pulso central, con dos pulsos de apoyo con anillo.")
     ]),
     twin: Object.freeze([
       null,
@@ -8369,7 +8369,7 @@ var NeonCampaign = (() => {
         y: y + Math.cos(angle) * barrel.offset,
         vx: Math.cos(direction) * definition.speed,
         vy: Math.sin(direction) * definition.speed,
-        damage: definition.damage,
+        damage: barrel.damage ?? definition.damage,
         radius: definition.radius,
         pierce: definition.pierce || 1,
         duration: definition.duration,

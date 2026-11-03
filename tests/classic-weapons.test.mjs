@@ -666,7 +666,10 @@ test('Pulse and Twin fire their bought level: damage per volley x1, x1.3, x1.6 a
       const shot = triggerClassicWeapon(state, origin);
       assert.equal(shot.projectiles.length, barrels, `${type} ${value}`);
       assert.ok(shot.projectiles.every(projectile => projectile.level === value));
-      const damage = shot.projectiles.reduce((total, projectile) => total + projectile.damage, 0);
+      // Pulso 3 y 4 (propietario, 03/11/2026, dec-pulso-niveles-dano): el pulso
+      // central hace el daño entero aunque los laterales fallen a distancia.
+      const damage = type === 'pulse' ? shot.projectiles.find(projectile => projectile.barrel === (barrels === 3 ? 1 : 0)).damage
+        : shot.projectiles.reduce((total, projectile) => total + projectile.damage, 0);
       assert.ok(Math.abs(damage - base * factor) < 1e-9, `${type} level ${value}: ${damage}`);
       assert.equal(classicWeaponSnapshot(state).damageMultiplier, base * factor);
       assert.equal(state.charges, 19, 'one charge per volley at every level');
@@ -714,4 +717,15 @@ test('hot reload: after running dry the magazine recovers twice as fast until it
   partial.charges = 10; run(partial, 10);
   assert.equal(partial.charges, 15, 'a half magazine recovers at the normal speed');
   assert.throws(() => setClassicHotReload(hot, 'yes'));
+});
+
+test('Pulse 3 and 4: the centre pulse alone beats level 2 at range, the side pulses only add a little up close', () => {
+  const sides = {3: .3, 4: .4};
+  for (const value of [3, 4]) {
+    const state = createClassicWeapons();
+    setClassicWeaponLevels(state, {pulse: value});
+    const [left, centre, right] = triggerClassicWeapon(state, origin).projectiles;
+    assert.ok(centre.damage > 1.3, `level ${value} centre ${centre.damage} beats level 2`);
+    assert.equal(left.damage, sides[value]); assert.equal(right.damage, sides[value]);
+  }
 });
