@@ -2432,7 +2432,9 @@
 
   function resumeGame() {
     if (state !== "paused") return;
-    if(ui.flightDock?.classList.contains("show")&&flightDockReturn==="hud"){closeClassicDock();return;}
+    // Auditoría 03/11 (A01): la Forja de la parada también se cierra por su camino
+    // (suelta a C9); si no, la ruta se quedaba esperando y la nave invencible.
+    if(ui.flightDock?.classList.contains("show")&&["hud","voyage"].includes(flightDockReturn)){closeClassicDock();return;}
     setState("playing");
     overlay();
     last = performance.now();

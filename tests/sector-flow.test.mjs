@@ -1009,3 +1009,21 @@ test('key nodes in flight: reactive armour gives 1.3 s of grace after a hit and 
   assert.ok(pulled(true) > 20, 'at 220 px the magnet pulls the scrap towards the ship');
   assert.ok(pulled(false) < 20, 'without the magnet it only drifts');
 });
+
+// Auditoría 03/11 (A01): Escape con la Forja de la parada abierta dejaba C9
+// atracada para siempre, la ruta esperando y la nave invencible.
+test('Escape with the stop Forja open sends C9 away and the route goes on', () => {
+  const {w, T} = harness({query: '?dev=1'});
+  startAt(T, 6); T.ev('DEV.invulnerable=false'); T.adv(3.9); dockC9(T);
+  assert.equal(forgeOpen(w), true);
+  w.document.body.focus();
+  w.dispatchEvent(new w.KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+  assert.equal(forgeOpen(w), false);
+  assert.equal(T.ev("c9Scene&&c9Scene.phase"), 'release', 'C9 lets the ship go');
+  T.adv(3);
+  assert.equal(T.ev("c9Scene"), null, 'C9 has gone and the ceasefire is over');
+  assert.equal(T.ev("classicFlightView.waitingFor"), null, 'the route is not stuck at the stop');
+  const hull = T.hull();
+  T.ev("classicHullReserve=0;hullGrace=0;damageShip(30)");
+  assert.ok(T.hull() < hull, 'the ship can be hurt again');
+});
