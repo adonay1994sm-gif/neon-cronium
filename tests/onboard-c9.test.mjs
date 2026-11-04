@@ -447,3 +447,15 @@ test('Forja key nodes: one choice per pair, the other one changes it for 100, an
   assert.deepEqual(resumed.snapshot().salvage.keyChoices,{'key-1':'magnet'});
   assert.equal(resumed.snapshot().salvage.balance,100);
 });
+
+// Auditoría 03/11 (A11): la pareja de nodos clave se lee como una elección.
+test('each key-node pair says «choose one» and has an «O» between its two options', t => {
+  const h=harness(t,{salvage:fundedRecord(10)});h.api.prepare();h.node('classicC9').click();
+  for(const first of ['hot-reload','reactive-armor']) {
+    const branch=h.document.querySelector(`[data-c9-key="${first}"]`).closest('.c9-branch');
+    assert.match(branch.querySelector('h4').textContent,/ELIGE UNO/);
+    const kids=[...branch.children].map(node=>node.dataset?.c9Key||node.className);
+    assert.equal(kids.indexOf('c9-or'),kids.indexOf(first)+1,'the «O» sits between the two options');
+    assert.equal(branch.querySelector('.c9-or').textContent,'O');
+  }
+});

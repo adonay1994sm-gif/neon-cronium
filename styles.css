@@ -809,6 +809,8 @@ body.flight-mode #flightDock .c9-branch::before { content: ""; position: absolut
 body.flight-mode #flightDock .c9-branch h4 { margin: 0; min-height: 30px; padding-left: 0; color: #acd4dc; font-size: 10px; line-height: 1.4; letter-spacing: .04em; }
 body.flight-mode #flightDock .c9-branch button { position: relative; z-index: 1; flex-direction: column; align-items: flex-start; min-height: 190px; width: 100%; padding: 12px; gap: 9px; }
 body.flight-mode #flightDock .c9-branch .c9-upgrade-art { align-self: flex-start; }
+/* «O» entre las dos opciones de un nodo clave (auditoría 03/11, A11). */
+body.flight-mode #flightDock .c9-branch .c9-or { position: relative; z-index: 1; align-self: center; margin: -6px 0; padding: 0 12px; color: var(--ui-amber); font: 800 12px/1 var(--font-display); letter-spacing: .2em; }
 body.flight-mode #flightDock .c9-actions { z-index: 4; position: sticky; bottom: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 7px; margin: 0 -18px; padding: 12px 18px 16px; background: #0c2130f7; border-top: 1px solid #809fab; }
 body.flight-mode #flightDock .c9-actions button { grid-column: auto; min-height: 48px; margin: 0; padding: 10px 12px; font-size: 12px; }
 body.flight-mode #flightDock .c9-actions button:last-child { min-height: 44px; font-size: 11px; }

@@ -1476,11 +1476,13 @@
     for(const [label,first,...next] of [
       ['BLINDAJE','hull-reinforcement','hull-plating-ii'],['REFRIGERACIÓN','coolant-feed','coolant-feed-ii'],
       ['MUNICIÓN',null,'ammo-1','ammo-2','ammo-3','ammo-4'],
-      ['NODO CLAVE · MUNICIÓN',null,'hot-reload','magnet'],['NODO CLAVE · BLINDAJE',null,'reactive-armor','wide-magazine']]) {
+      ['NODO CLAVE · MUNICIÓN · ELIGE UNO',null,'hot-reload','magnet'],['NODO CLAVE · BLINDAJE · ELIGE UNO',null,'reactive-armor','wide-magazine']]) {
       const branch=document.createElement('div');branch.className='c9-branch';
       const name=document.createElement('h4');name.textContent=label;branch.append(name);
       if(first)branch.append(first==='hull-reinforcement'?ui.c9BuyShield:ui.c9BuyCoolant);
       for(const sku of next){const node=tree.querySelector(`[data-c9-sku="${sku}"],[data-c9-key="${sku}"]`);if(node)branch.append(node);}
+      // Pareja de nodos clave: una «O» entre las dos opciones (auditoría 03/11, A11).
+      if(next[0]==='hot-reload'||next[0]==='reactive-armor'){const or=document.createElement('p');or.className='c9-or';or.textContent='O';or.setAttribute('aria-hidden','true');branch.children[1]?.after(or);}
       tree.append(branch);
     }
     // El marco pintado no se desplaza: todo menos los botones finales va en una
@@ -1488,6 +1490,12 @@
     const scroll=document.createElement('div');scroll.className='c9-scroll';
     scroll.append(...[...panel.children].filter(node=>!node.classList.contains('c9-actions')));
     panel.prepend(scroll);
+    // La pestaña activa sigue a la sección que se está viendo (auditoría 03/11, A11).
+    scroll.addEventListener('scroll',()=>{
+      const top=nav.getBoundingClientRect().bottom,line=top+(scroll.getBoundingClientRect().bottom-top)*.35;let current=nav.querySelector('button');
+      for(const link of nav.querySelectorAll('button')){const target=document.getElementById(link.getAttribute('aria-controls'));if(target&&target.getBoundingClientRect().top<=line)current=link;}
+      for(const link of nav.querySelectorAll('button'))link===current?link.setAttribute('aria-current','true'):link.removeAttribute('aria-current');
+    },{passive:true});
   }
 
   function normalizeClassicVoyageRecord(value) {
