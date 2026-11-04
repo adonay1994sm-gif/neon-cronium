@@ -66,7 +66,15 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
 - Si algo es un concepto suyo, no lo programes de golpe: debatelo, busca
   referencias que funcionen y propón. «Lo que te digo es un concepto».
 - Una vez decidido, quiere avance sin pausas: «Empieza», «Sigue tu
-  recomendación», «Sí a todo».
+  recomendación», «Sí a todo», «Hazlo».
+- Suele elegir rápido y casi siempre la opción recomendada: marca siempre una
+  y di en una línea por qué. Contesta en el chat o en el tablero; mira ambos.
+- **Si no tiene nada que decidir, tráele lo siguiente** (02/11: «qué sigue,
+  no hay decisiones»). No esperes de brazos cruzados: plantea las próximas
+  decisiones con opciones o sigue con lo ya acordado.
+- **Lo que se ve o se oye lo elige probándolo en el iPhone.** Para música,
+  efectos o arte, hazle una página con las opciones para escuchar o ver y
+  elegir (la sala de escucha del 02/11 funcionó a la primera).
 - **Nunca aparques una petición suya sin decírselo.** Si algo va para
   después, avísale y anótalo en el tablero. Aparcar el hangar de las 10 naves
   sin preguntar le costó días y enfado (24/10).
@@ -172,6 +180,19 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
 - Arte con GPT (24/10): se sigue con el tablero, la lista pública de
   encargos y el baúl. Nada de pagar la API de OpenAI ni de usar su
   herramienta Lúmina: no volver a proponerlo.
+- C9 (02/11): diseño 1, nave con brazos; llega solo en el tramo 6, con alto
+  el fuego total, y la Forja se abre al atracar.
+- Forja (02/11): munición de 20 a 100 en cuatro rangos y dos parejas de nodos
+  clave («elige uno», cambiar cuesta 100). Piezas de facción, con el sector 2.
+- Arma inicial: se llama PULSO; en los niveles 3 y 4 el pulso central hace el
+  daño entero (03/11). Los niveles se compran con chatarra en el hangar.
+- Subguardián (03/11): 30 de vida.
+- Naves de chatarra (03/11): sus habilidades se rotulan «Próximamente» hasta
+  programarlas y la compra pide dos toques.
+- Audio (02/11): música synthwave, una pista por momento (menú Midnight Drive,
+  vuelo Bio-Hazard, subguardián Technological Messup, Atlas Confrontation),
+  todas CC0; efectos potentes elegidos en la sala de escucha. El sonido de jefe
+  destruido aún «hay que darle más vueltas».
 - Pendientes de su decisión:
   - el color de la Égida;
   - la pose del Fulminante de Atlas.
@@ -181,7 +202,9 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
 1. ¿Es lo que pidió, o lo que yo creí que pedía? Si dudo, pregunto.
 2. ¿He usado el mejor arte disponible (baúl, `art-source/`, maquetas de GPT)?
 3. ¿Lo he visto en capturas a tamaño móvil?
-4. ¿Pasan `npm run build && npm test && npm run test:static && npm run test:content`?
+4. ¿Pasan `npm run build && npm test && npm run test:static && npm run test:content`,
+   y `test:sistema` si toca pantallas? Todo en verde **antes** de subir: el
+   03/11 subí un commit con `test:sistema` en rojo y hubo que deshacerlo.
 5. ¿Está en el tablero, con lo pendiente anotado y el enlace de prueba al día?
 
 ## Aprendizajes
@@ -189,6 +212,21 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
 Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
+
+- 04/11/2026: subí un commit con `test:sistema` en rojo (letra de 11 px fuera
+  del sistema) y hubo que deshacerlo. Regla 8.4 ampliada: todas las suites en
+  verde antes de subir.
+- 03/11/2026: «Utiliza skills para revisar todo, sé minucioso»: una auditoría
+  completa son los tres revisores más `code-review` a fondo, con los hallazgos
+  al tablero. Con «Hazlo» quería empezar por lo que rompe la partida sin tocar
+  balance; lo de balance, como decisiones con opciones.
+- 03/11/2026: eligió en minutos y siempre la opción recomendada (subguardián,
+  Pulso, naves, nombre PULSO), a veces desde el tablero. Regla añadida en 3.
+- 02/11/2026: «Hay que cambiar todo el audio, no me gusta». La sala de escucha
+  con opciones gratis y una recomendada le sirvió para elegir todo en una
+  tarde («Ya está»). Regla añadida en 3: lo sensorial se elige probándolo.
+- 02/11/2026: «Qué sigue, no hay decisiones»: cuando no tiene nada que
+  decidir quiere que le traiga lo siguiente. Regla añadida en 3.
 
 - 02/11/2026: su elección de la narrativa visual (01/11) pasó un día sin
   verse: las revisiones buscaban cambios por `actualizado` y yo había puesto
