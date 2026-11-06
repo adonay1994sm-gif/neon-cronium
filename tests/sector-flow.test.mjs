@@ -1098,3 +1098,30 @@ test('meeting the quota does not speed up a sector stage', () => {
   }
   assert.ok(at !== null && at >= full - 1, `stage 3 ended at ${at} s of ${full} s`);
 });
+
+// Auditoría 03/11 (A14, propietario 06/11): con baliza se vuelve al tramo 6,
+// y los enemigos ya derribados allí vuelven a soltar chatarra, como sin baliza.
+test('after dying with the beacon, the retry from stage 6 drops scrap again', () => {
+  const salvageRun = T => T.ev('classicSalvageState?.activeRun?.id||null');
+  const {w, T} = harness();
+  w.localStorage.setItem(KEY, JSON.stringify({version: 1, unlocked: 1, sectors: {1: {completed: false, stars: 0, beacon: true}},
+    run: {sector: 1, stageNumber: 7, stageHull: 100, reviveUsed: true}}));
+  click(w, 'play');
+  assert.equal(T.stage(), 7);
+  const first = salvageRun(T);
+  T.ev('hull=1'); T.hitNow(60); T.adv(2);
+  assert.equal(sectorSave(w).run.stageNumber, 6, 'the beacon brings you back to stage 6');
+  assert.notEqual(salvageRun(T), first, 'closing the app after the explosion keeps the new run');
+  click(w, 'retry');
+  assert.equal(T.stage(), 6);
+  assert.notEqual(salvageRun(T), first, 'enemies of the retry drop scrap again');
+});
+
+test('after the rewarded revive the enemies still drop scrap', () => {
+  const {T} = harness();
+  startAt(T, 5);
+  T.ev('hull=1'); T.hitNow(60); T.adv(2);
+  assert.equal(T.resumeReward(), true);
+  const run = T.ev('classicSalvageRunId');
+  assert.ok(run && run === T.ev('classicSalvageState.activeRun.id'), 'kills after the revive are paid into the open run');
+});
