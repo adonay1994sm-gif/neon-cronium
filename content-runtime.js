@@ -7802,11 +7802,16 @@ var NeonCampaign = (() => {
       /** Llamar dentro de un toque del jugador: Safari (iPhone) solo deja sonar
        * un elemento de audio si su primer play() llega con un gesto. Arranca y
        * para en silencio el reproductor que no suena, para que el fundido
-       * posterior no quede bloqueado. */
+       * posterior no quede bloqueado. La pista del momento también arranca aquí,
+       * dentro del toque, aunque update() llegara antes (revisión PR #57, P57-02). */
       unlock() {
         blocked = false;
         for (const item of decks) {
-          if (item === current || !item.audio.paused) continue;
+          if (item === current) {
+            play(item);
+            continue;
+          }
+          if (!item.audio.paused) continue;
           if (!item.track) load(item, MOOD_MUSIC_TRACKS.menu);
           Promise.resolve(item.audio.play()).then(() => {
             if (item !== current) item.audio.pause();
