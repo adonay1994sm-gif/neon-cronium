@@ -5073,7 +5073,7 @@ var NeonCampaign = (() => {
     }
     return "single";
   }
-  var CLASSIC_PURSUIT_VOLLEY = Object.freeze({ maxProjectiles: 5, doubleGap: 0.2, spreadAngle: 0.3, spreadCount: 5, cone: 1.2 });
+  var CLASSIC_PURSUIT_VOLLEY = Object.freeze({ maxProjectiles: 5, doubleGap: 0.2, spreadAngle: 0.3, spreadCount: 5, cone: 0.65, spreadCone: 1.2 });
   function createClassicPursuer({
     x,
     width = 720,
@@ -5279,8 +5279,9 @@ var NeonCampaign = (() => {
     const launch = (angleOffset) => {
       const aim = enemy.lockedTarget;
       const dy = Math.max(1, aim.y - (item.y + 38));
-      const dx = clamp7(aim.x - item.x, -dy * CLASSIC_PURSUIT_VOLLEY.cone, dy * CLASSIC_PURSUIT_VOLLEY.cone);
-      const limit = Math.atan(CLASSIC_PURSUIT_VOLLEY.cone);
+      const cone = enemy.volley === "spread" ? CLASSIC_PURSUIT_VOLLEY.spreadCone : CLASSIC_PURSUIT_VOLLEY.cone;
+      const dx = clamp7(aim.x - item.x, -dy * cone, dy * cone);
+      const limit = Math.atan(cone);
       const half = enemy.volley === "spread" ? CLASSIC_PURSUIT_VOLLEY.spreadAngle * (CLASSIC_PURSUIT_VOLLEY.spreadCount - 1) / 2 : 0;
       const angle = clamp7(Math.atan2(dx, dy), -limit + half, limit - half) + angleOffset;
       const speed = profile2.projectileSpeed;
