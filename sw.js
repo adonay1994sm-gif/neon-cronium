@@ -212,14 +212,43 @@ async function cacheFirst(request) {
   return response;
 }
 
+// Peticiones por partes (la música en <audio>, sobre todo en Safari). Si el
+// archivo está en la caché se responde solo ese trozo con un 206, así suena sin
+// conexión; si no está o el rango no se entiende, va a la red (auditoría 03/11,
+// A20; revisión del PR #57, P57-03).
+async function cachedRange(request, range) {
+  const cache = await caches.open(CACHE);
+  const cached = await cache.match(request.url);
+  const match = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+  if (!cached || !match || (match[1] === "" && match[2] === "")) return fetch(request);
+  const blob = await cached.blob();
+  const size = blob.size;
+  const start = match[1] === "" ? Math.max(0, size - Number(match[2])) : Number(match[1]);
+  const end =match[1] === "" || match[2] === "" ? size - 1 : Math.min(Number(match[2]), size - 1);
+  if (start >= size || start > end) {
+    return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } });
+  }
+  const part = blob.slice(start, end + 1);
+  return new Response(part, {
+    status: 206,
+    headers: {
+      "Content-Type": cached.headers.get("Content-Type") || "application/octet-stream",
+      "Content-Length": String(part.size),
+      "Content-Range": `bytes ${start}-${end}/${size}`,
+      "Accept-Ranges": "bytes"
+    }
+  });
+}
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
-  // Peticiones por partes (la música en <audio>, sobre todo en Safari): las
-  // atiende la red; responder con el archivo entero desde la caché puede
-  // impedir que suene (auditoría 03/11, A20).
-  if (event.request.headers?.get?.("range")) return;
+  const range = event.request.headers?.get?.("range");
+  if (range) {
+    event.respondWith(cachedRange(event.request, range));
+    return;
+  }
   const isCode = event.request.mode === "navigate" || /\.(?:html|js|css)$/.test(url.pathname);
   event.respondWith(isCode ? networkFirst(event.request) : cacheFirst(event.request));
 });

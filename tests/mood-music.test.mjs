@@ -123,3 +123,24 @@ test('blocked autoplay is not retried every frame; the next tap tries again', as
   assert.ok(attempts >= 2, 'the tap tries again');
   assert.equal(h.audios.some(audio => !audio.paused), true, 'and the music plays');
 });
+
+// Revisión del PR #57 (P57-02): el juego llama a update() y luego a unlock()
+// dentro del toque. Tras un primer intento rechazado, la pista del momento
+// tiene que recibir play() en ese mismo toque, no en un fotograma posterior.
+test('after a rejected try, the tap starts the current track itself (game order: update, then unlock)', async () => {
+  const h = harness();
+  let inGesture = false;
+  for (const audio of h.audios) audio.play = function () {
+    if (!inGesture) return Promise.reject(Object.assign(new Error('gesture'), {name: 'NotAllowedError'}));
+    this.paused = false; this.plays++; return Promise.resolve();
+  };
+  h.music.update({mood: 'menu'});
+  await Promise.resolve(); await Promise.resolve();
+  inGesture = true;
+  h.music.update({mood: 'menu'}); h.music.unlock();
+  inGesture = false;
+  await Promise.resolve(); await Promise.resolve();
+  for (let frame = 0; frame < 5; frame++) h.music.update({mood: 'menu'});
+  const menu = h.audios.find(audio => audio.out.gain.events.length > 0);
+  assert.equal(menu.paused, false, 'the menu music plays after the tap');
+});
