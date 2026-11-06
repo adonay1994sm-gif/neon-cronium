@@ -58,8 +58,10 @@ export function applyDifficulty(rules, {factor = 1, mode = DIFFICULTY_DEFAULT} =
   const settings = DIFFICULTY_MODES[normalizeDifficulty(mode)];
   const pressure = factor * settings.pressure;
   if (pressure === 1 && settings.capDelta === 0 && settings.repairEarlier === 0) return rules;
+  // El tope no baja de lo que el tramo ya tiene en Normal: un modo más difícil
+  // nunca trae menos patrullas (auditoría A16, propietario 06/11).
   const patrol = rules.patrol && freeze({...rules.patrol,
-    cap: Math.max(1, Math.min(DIFFICULTY_LIMITS.patrolCapMax, rules.patrol.cap + settings.capDelta)),
+    cap: Math.max(1, Math.min(Math.max(DIFFICULTY_LIMITS.patrolCapMax, rules.patrol.cap), rules.patrol.cap + settings.capDelta)),
     gap: Math.max(Math.min(rules.patrol.gap, DIFFICULTY_LIMITS.patrolGapMin), rules.patrol.gap / pressure)});
   const hazards = rules.hazards && freeze({...rules.hazards,
     gap: freeze(rules.hazards.gap.map(value => Math.max(DIFFICULTY_LIMITS.hazardGapMin, value / pressure))),
