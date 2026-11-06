@@ -1125,3 +1125,26 @@ test('after the rewarded revive the enemies still drop scrap', () => {
   const run = T.ev('classicSalvageRunId');
   assert.ok(run && run === T.ev('classicSalvageState.activeRun.id'), 'kills after the revive are paid into the open run');
 });
+
+// Revisión del PR #57 (P57-07): no basta con que cambie la partida; la chatarra
+// tiene que subir de verdad, también tras cerrar y reabrir la app.
+test('the same enemy pays again after dying with the beacon, even after reopening the app', () => {
+  const pay = T => T.ev(`(()=>{classicSalvageEnemySequence=0;
+    const item=spawnClassicScrap({classicScout:{role:'scout'},x:360,y:400});if(!item)return 0;
+    const before=classicSalvageState.balance;collectClassicScrap(item);return classicSalvageState.balance-before;})()`);
+  const first = harness();
+  first.w.localStorage.setItem(KEY, JSON.stringify({version: 1, unlocked: 1, sectors: {1: {completed: false, stars: 0, beacon: true}},
+    run: {sector: 1, stageNumber: 6, stageHull: 100, reviveUsed: true}}));
+  click(first.w, 'play');
+  assert.equal(first.T.stage(), 6);
+  assert.ok(pay(first.T) > 0, 'the enemy pays');
+  assert.equal(pay(first.T), 0, 'the same enemy does not pay twice in one attempt');
+  first.T.ev('hull=1'); first.T.hitNow(60); first.T.adv(2);
+  // Cerrar la app tras la explosión y volver a abrirla con los mismos datos.
+  const saved = Object.fromEntries(Object.keys(first.w.localStorage).map(key => [key, first.w.localStorage.getItem(key)]));
+  const second = harness({storage: saved});
+  click(second.w, 'play');
+  assert.equal(second.T.stage(), 6);
+  assert.ok(pay(second.T) > 0, 'after the death the same enemy pays again');
+});
+
