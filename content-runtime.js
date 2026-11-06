@@ -2703,7 +2703,7 @@ var NeonCampaign = (() => {
     if (pressure === 1 && settings.capDelta === 0 && settings.repairEarlier === 0) return rules;
     const patrol = rules.patrol && freeze2({
       ...rules.patrol,
-      cap: Math.max(1, Math.min(DIFFICULTY_LIMITS.patrolCapMax, rules.patrol.cap + settings.capDelta)),
+      cap: Math.max(1, Math.min(Math.max(DIFFICULTY_LIMITS.patrolCapMax, rules.patrol.cap), rules.patrol.cap + settings.capDelta)),
       gap: Math.max(Math.min(rules.patrol.gap, DIFFICULTY_LIMITS.patrolGapMin), rules.patrol.gap / pressure)
     });
     const hazards = rules.hazards && freeze2({

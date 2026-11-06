@@ -56,3 +56,15 @@ test('every mode stays fair: patrols, hazard gaps and speeds have hard limits', 
   assert.equal(normalizeDifficulty('hardcore'), 'hardcore');
   assert.equal(normalizeDifficulty('dificil'), 'dificil');
 });
+
+// Auditoría 03/11 (A16, propietario 06/11): el tope de justicia (4) no puede
+// dejar un modo alto con menos patrullas que Normal (tramo 9 del sector: 5).
+test('Hard and Hardcore never have fewer patrols than Normal', () => {
+  const routes = ['sector-1-gaia', ...VOYAGES.map(ficha => ficha.routeId)];
+  for (const route of routes) for (let stage = 1; stage <= 10; stage++) {
+    const normal = getVoyageStageRulesFor(route, stage, 'normal');
+    if (!normal?.patrol) continue;
+    for (const mode of ['dificil', 'hardcore'])
+      assert.ok(getVoyageStageRulesFor(route, stage, mode).patrol.cap >= normal.patrol.cap, `${route} ${stage} ${mode}`);
+  }
+});
