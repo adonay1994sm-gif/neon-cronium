@@ -1082,3 +1082,19 @@ test('outside the sector, attack turns of enemies that are gone are freed, and a
   T.ev("NeonCampaign.requestAttack(gaiaFallbackTokens,{id:'gone-3'},0)"); T.startLevel(0);
   assert.equal(T.ev('gaiaFallbackTokens'), null, 'a new run does not inherit taken turns');
 });
+
+// Auditoría 03/11 (A13, propietario 06/11): el reloj ×3 tras cumplir la cuota
+// adelantaba la historia del capítulo; en el sector el tramo dura lo suyo.
+test('meeting the quota does not speed up a sector stage', () => {
+  const {T} = harness();
+  startAt(T, 3); T.adv(.1);
+  assert.equal(T.stage(), 3);
+  const goal = T.ev('classicFlightView.stageGoal'), full = T.ev('classicFlightView.stageDuration');
+  T.ev(`collected=${goal};energySpawned=${goal}`);
+  let at = null;
+  for (let i = 0; i < (full + 10) * 60 && at === null; i++) {
+    T.ev('hull=100'); T.adv(1 / 60);
+    if (T.stage() === 4) at = i / 60;
+  }
+  assert.ok(at !== null && at >= full - 1, `stage 3 ended at ${at} s of ${full} s`);
+});
