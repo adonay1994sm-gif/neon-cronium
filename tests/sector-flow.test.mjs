@@ -1148,3 +1148,13 @@ test('the same enemy pays again after dying with the beacon, even after reopenin
   assert.ok(pay(second.T) > 0, 'after the death the same enemy pays again');
 });
 
+// Revisión del PR #57 (P57-06): si no se puede abrir la partida nueva al morir,
+// el revive sigue cobrando en la que había.
+test('if the new salvage run cannot be saved, the revive still pays scrap', () => {
+  const {T} = harness();
+  startAt(T, 5);
+  T.ev('classicSalvageLedger={...classicSalvageLedger,beginRun:()=>({ok:false,reason:"storage-unavailable"})}');
+  T.ev('hull=1'); T.hitNow(60); T.adv(2);
+  assert.equal(T.resumeReward(), true);
+  assert.ok(T.ev('classicSalvageRunId'), 'kills after the revive are still paid');
+});
