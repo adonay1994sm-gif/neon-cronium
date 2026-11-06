@@ -67,7 +67,9 @@ function chooseVolley(enemy, weights) {
 
 // Proyectiles por ataque, separación de la ráfaga doble y apertura del abanico.
 // Abanico abierto (spec 6.10, plan F3b): 5 disparos muy separados en un cono mayor.
-export const CLASSIC_PURSUIT_VOLLEY = Object.freeze({maxProjectiles: 5, doubleGap: .2, spreadAngle: .30, spreadCount: 5, cone: 1.2});
+// Solo el abanico usa ese cono; los tiros simples y dobles se quedan en ~33°
+// (auditoría A15, propietario 06/11).
+export const CLASSIC_PURSUIT_VOLLEY = Object.freeze({maxProjectiles: 5, doubleGap: .2, spreadAngle: .30, spreadCount: 5, cone: .65, spreadCone: 1.2});
 
 /** An encounter policy inside the existing item/update loop; owns no clock or RAF.
  * Aim uses bounded lead from past position samples, locked at weapon deployment.
@@ -282,11 +284,12 @@ export function advanceClassicPursuer(item, dt, player, spawnProjectile, gate = 
   const launch = angleOffset => {
     const aim = enemy.lockedTarget;
     const dy = Math.max(1, aim.y - (item.y + 38));
-    const dx = clamp(aim.x - item.x, -dy * CLASSIC_PURSUIT_VOLLEY.cone, dy * CLASSIC_PURSUIT_VOLLEY.cone);
+    const cone = enemy.volley === 'spread' ? CLASSIC_PURSUIT_VOLLEY.spreadCone : CLASSIC_PURSUIT_VOLLEY.cone;
+    const dx = clamp(aim.x - item.x, -dy * cone, dy * cone);
     // Los laterales del abanico se abren desde el tiro apuntado y se quedan
     // dentro del mismo cono hacia abajo; ninguno persigue tras salir.
     // El centro del abanico se desplaza lo justo para que quepa entero en el cono.
-    const limit = Math.atan(CLASSIC_PURSUIT_VOLLEY.cone);
+    const limit = Math.atan(cone);
     const half = enemy.volley === 'spread' ? CLASSIC_PURSUIT_VOLLEY.spreadAngle * (CLASSIC_PURSUIT_VOLLEY.spreadCount - 1) / 2 : 0;
     const angle = clamp(Math.atan2(dx, dy), -limit + half, limit - half) + angleOffset;
     const speed = profile.projectileSpeed;

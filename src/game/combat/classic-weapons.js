@@ -13,7 +13,8 @@ export const CLASSIC_WEAPON_RULES = Object.freeze({
   maxDelta: .05, maxProjectiles: 32, boundsMargin: 80,
   missile: Object.freeze({damage:18,speed:760,radius:10,duration:3.2,cooldown:.7}),
   types: Object.freeze({
-    pulse: weapon({id: 'pulse', label: 'Phaser', damageMultiplier: 1,
+    // Un solo nombre, PULSO (propietario, 03/11/2026): «Phaser» es la mejora verde.
+    pulse: weapon({id: 'pulse', label: 'Pulso', damageMultiplier: 1,
       description: 'Daño ×1: un pulso de 1 de daño por carga.', cooldown: .24, speed: 920,
       damage: 1, radius: 9, duration: 2.4, barrels: [{offset: 0, spread: 0}]}),
     twin: weapon({id: 'twin', label: 'Gemelo', damageMultiplier: 2,
@@ -33,6 +34,31 @@ export const CLASSIC_WEAPON_RULES = Object.freeze({
       cooldown: .56, speed: 1400, damage: 2, radius: 4, duration: 1.6, pierce: 3,
       barrels: [{offset: 0, spread: 0}]})
   })
+});
+
+// Niveles de Pulso y Gemelo (dec-armas-plan, 01/11/2026): se compran con
+// chatarra en el hangar y valen para siempre. Daño por ráfaga ×1, ×1,3, ×1,6
+// y ×2 (en Gemelo, si impactan todos los proyectiles); el nivel 1 es el arma de siempre.
+// Pulso 3 y 4 (propietario, 03/11/2026, dec-pulso-niveles-dano): el pulso central
+// hace el daño entero del nivel; los laterales del abanico se abren y a distancia
+// fallan, así que solo suman un poco de cerca (cifras: decisión técnica).
+const fan = side => [{offset: -6, spread: -.1, damage: side}, {offset: 0, spread: 0}, {offset: 6, spread: .1, damage: side}];
+const QUAD = Object.freeze([{offset: -18, spread: 0}, {offset: -6, spread: 0}, {offset: 6, spread: 0}, {offset: 18, spread: 0}]);
+// El nivel 1 conserva la descripción de siempre del arma.
+const level = (damageMultiplier, damage, radius, barrels, description) =>
+  Object.freeze({damageMultiplier, damage, radius, ...(description ? {description} : {}),
+    barrels: Object.freeze(barrels.map(barrel => Object.freeze({...barrel})))});
+export const CLASSIC_WEAPON_LEVELS = Object.freeze({
+  pulse: Object.freeze([null,
+    level(1, 1, 9, [{offset: 0, spread: 0}]),
+    level(1.3, 1.3, 11, [{offset: 0, spread: 0}], 'Nivel 2 · daño ×1,3: un pulso más grande.'),
+    level(1.6, 1.6, 9, fan(.3), 'Nivel 3 · daño ×1,6 en el pulso central, con dos pulsos de apoyo en abanico.'),
+    level(2, 2, 10, fan(.4), 'Nivel 4 · daño ×2 en el pulso central, con dos pulsos de apoyo con anillo.')]),
+  twin: Object.freeze([null,
+    level(2, 1, 7, [{offset: -10, spread: 0}, {offset: 10, spread: 0}]),
+    level(2.6, 1.3, 8, [{offset: -10, spread: 0}, {offset: 10, spread: 0}], 'Nivel 2 · daño ×2,6: dos balas más largas.'),
+    level(3.2, .8, 7, QUAD, 'Nivel 3 · daño ×3,2: cuatro balas.'),
+    level(4, 1, 8, QUAD, 'Nivel 4 · daño ×4: cuatro balas con estela.')])
 });
 
 function knownType(type) {
@@ -67,7 +93,8 @@ export function createClassicWeapons({type = 'pulse', unlocked = ['pulse'],
   if (!available.includes(type)) throw new RangeError('Selected weapon must be unlocked');
   return {
     version: CLASSIC_WEAPON_RULES.version, width, height,
-    selected: type, unlocked: available, weaponRanks: {scatter: 1, needle: 1}, charges: CLASSIC_WEAPON_RULES.maxCharges,
+    selected: type, unlocked: available, weaponRanks: {scatter: 1, needle: 1}, weaponLevels: {pulse: 1, twin: 1},
+    charges: CLASSIC_WEAPON_RULES.maxCharges, maxCharges: CLASSIC_WEAPON_RULES.maxCharges,
     rechargeSeconds, recharge: 0, cooldown: 0, elapsed: 0,
     unlimitedFire: false, missileCooldown: 0, missileSequence: 0,
     projectileSequence: 0, eventSequence: 0, shotSequence: 0, projectiles: []
@@ -87,9 +114,35 @@ export function setClassicRechargeInterval(state, seconds) {
   rechargeInterval(seconds);
   if (state.rechargeSeconds === seconds) return seconds;
   state.rechargeSeconds = seconds;
-  state.recharge = state.charges === CLASSIC_WEAPON_RULES.maxCharges ? 0 :
+  state.recharge = state.charges === top(state) ? 0 :
     Math.min(state.recharge, seconds - 1e-9);
   return seconds;
+}
+
+// Tamaño del cargador: 20 de serie; la línea de munición de la Forja lo sube
+// hasta 100 (dec-arbol-ampliado, 02/11/2026). Partidas antiguas sin el campo: 20.
+const top = state => state.maxCharges ?? CLASSIC_WEAPON_RULES.maxCharges;
+
+/** A bigger magazine bought in the Forja arrives loaded with its new rounds,
+ * once; recovery then fills up to the new top. */
+export function setClassicMaxCharges(state, size) {
+  // 100 con la línea de munición y +10 con el nodo clave Cargador ancho.
+  if (!Number.isInteger(size) || size < CLASSIC_WEAPON_RULES.maxCharges || size > 110) throw new RangeError('Invalid magazine size');
+  const before = top(state);
+  if (size === before) return size;
+  state.maxCharges = size;
+  state.charges = Math.min(size, state.charges + Math.max(0, size - before));
+  if (state.charges === size) state.recharge = 0;
+  return size;
+}
+
+/** Nodo clave Recarga en caliente (dec-nodos-clave, 02/11/2026): si el cargador
+ * se queda a cero, recupera al doble de velocidad hasta volver a llenarse. */
+export function setClassicHotReload(state, enabled) {
+  if (typeof enabled !== 'boolean') throw new TypeError('Hot reload must be true or false');
+  state.hotReload = enabled;
+  if (!enabled) state.hotReloading = false;
+  return enabled;
 }
 
 /** Installing a paid rank affects future shots, never live bolts or a cooldown. */
@@ -108,8 +161,27 @@ export function setClassicWeaponTuning(state, ranks = {}) {
   return {...next};
 }
 
+/** Los niveles comprados cambian los disparos siguientes, nunca los que ya vuelan. */
+export function setClassicWeaponLevels(state, levels = {}) {
+  if (!levels || typeof levels !== 'object' || Array.isArray(levels) ||
+      Object.keys(levels).some(id => !Object.hasOwn(CLASSIC_WEAPON_LEVELS, id))) throw new TypeError('Known weapon levels required');
+  const next = {};
+  for (const id of Object.keys(CLASSIC_WEAPON_LEVELS)) {
+    const value = levels[id] ?? 1;
+    if (!Number.isInteger(value) || value < 1 || value > 4) throw new RangeError('Weapon level must be 1 to 4');
+    next[id] = value;
+  }
+  state.weaponLevels = next;
+  return {...next};
+}
+
 function tunedWeaponDefinition(state) {
   const base = CLASSIC_WEAPON_RULES.types[state.selected];
+  const levels = CLASSIC_WEAPON_LEVELS[state.selected];
+  if (levels) {
+    const value = state.weaponLevels?.[state.selected] ?? 1;
+    return {...base, ...levels[value], level: value};
+  }
   if (state.selected === 'scatter' && state.weaponRanks?.scatter === 2) {
     return {...base, duration: .48,
       description: 'Daño ×3 si impactan los tres pulsos; apertura concentrada y alcance ampliado de 224 a 317.',
@@ -195,7 +267,7 @@ export function triggerClassicWeapon(state, {x, y, angle = -Math.PI / 2} = {}) {
   if (state.projectiles.length + definition.barrels.length > CLASSIC_WEAPON_RULES.maxProjectiles) {
     return {accepted: false, reason: 'capacity', events: [], projectiles: []};
   }
-  const wasFull = state.charges === CLASSIC_WEAPON_RULES.maxCharges;
+  const wasFull = state.charges === top(state);
   if (!state.unlimitedFire) {
     state.charges--;
     if (wasFull) state.recharge = 0;
@@ -210,12 +282,12 @@ export function triggerClassicWeapon(state, {x, y, angle = -Math.PI / 2} = {}) {
     // keeps two muzzle positions attached to the hull even when it banks.
     const projectile = {
       id: `${state.version}:projectile:${++state.projectileSequence}`, shotId,
-      weapon: state.selected, barrel: barrelIndex,
+      weapon: state.selected, barrel: barrelIndex, level: definition.level || 1,
       x: x - Math.sin(angle) * barrel.offset,
       y: y + Math.cos(angle) * barrel.offset,
       vx: Math.cos(direction) * definition.speed,
       vy: Math.sin(direction) * definition.speed,
-      damage: definition.damage, radius: definition.radius, pierce: definition.pierce || 1,
+      damage: barrel.damage ?? definition.damage, radius: definition.radius, pierce: definition.pierce || 1,
       duration: definition.duration, life: definition.duration,
       hitTargets: []
     };
@@ -240,16 +312,17 @@ export function advanceClassicWeapons(state, delta) {
   state.elapsed += dt;
   state.cooldown = Math.max(0, state.cooldown - dt);
   state.missileCooldown = Math.max(0, state.missileCooldown - dt);
-  if (!state.unlimitedFire && state.charges < CLASSIC_WEAPON_RULES.maxCharges) {
-    state.recharge += dt;
+  if (!state.unlimitedFire && state.charges < top(state)) {
+    if (state.hotReload && state.charges === 0) state.hotReloading = true;
+    state.recharge += state.hotReloading ? dt * 2 : dt;
     while (state.recharge + 1e-9 >= state.rechargeSeconds &&
-      state.charges < CLASSIC_WEAPON_RULES.maxCharges) {
+      state.charges < top(state)) {
       state.charges++;
       state.recharge = Math.max(0, state.recharge - state.rechargeSeconds);
       events.push(event(state, 'recharged', {charges: state.charges}));
     }
   }
-  if (state.charges === CLASSIC_WEAPON_RULES.maxCharges) state.recharge = 0;
+  if (state.charges === top(state)) { state.recharge = 0; state.hotReloading = false; }
   const margin = CLASSIC_WEAPON_RULES.boundsMargin;
   for (let index = state.projectiles.length - 1; index >= 0; index--) {
     const projectile = state.projectiles[index];
@@ -296,10 +369,10 @@ export function hitClassicProjectile(state, projectileId, targetId) {
 /** Deep copies of mutable arrays prevent HUD/diagnostics from changing combat. */
 export function classicWeaponSnapshot(state) {
   const definition = tunedWeaponDefinition(state);
-  return {...state, unlocked: [...state.unlocked], weaponRanks: {...state.weaponRanks},
+  return {...state, unlocked: [...state.unlocked], weaponRanks: {...state.weaponRanks}, weaponLevels: {...state.weaponLevels},
     label: definition.label, description: definition.description,
     damageMultiplier: definition.damageMultiplier,
-    rechargeProgress: state.charges === CLASSIC_WEAPON_RULES.maxCharges ? 0 :
+    rechargeProgress: state.charges === top(state) ? 0 :
       Math.min(1, state.recharge / state.rechargeSeconds),
     projectiles: state.projectiles.map(projectile => ({...projectile,
       hitTargets: [...projectile.hitTargets]}))};

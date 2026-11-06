@@ -6,7 +6,7 @@ const freeze = Object.freeze;
 const line = (text) => freeze({text});
 
 export const BASE_ACTORS = freeze({
-  mira: freeze({id: 'mira', name: 'Mira', role: 'Mecánica del taller C9'}),
+  mira: freeze({id: 'mira', name: 'Mira', role: 'Mecánica de la Forja C9'}),
   iria: freeze({id: 'iria', name: 'Comandante Iria', role: 'Mando de Gaia Nova'})
 });
 

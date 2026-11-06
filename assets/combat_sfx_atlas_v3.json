@@ -1,0 +1,142 @@
+{
+  "version": 3,
+  "src": "assets/combat_sfx_atlas_v3.m4a",
+  "sampleRate": 48000,
+  "channels": 1,
+  "duration": 11.95,
+  "gap": 0.12,
+  "cues": {
+    "phaser": {
+      "variants": [
+        {
+          "offset": 0.0,
+          "duration": 0.3
+        }
+      ],
+      "gain": 0.15,
+      "priority": 1,
+      "cooldown": 0.045,
+      "polyphony": 3
+    },
+    "missile-launch": {
+      "variants": [
+        {
+          "offset": 0.42,
+          "duration": 0.6
+        }
+      ],
+      "gain": 0.31,
+      "priority": 5,
+      "cooldown": 0.25,
+      "polyphony": 2
+    },
+    "impact-metal": {
+      "variants": [
+        {
+          "offset": 1.14,
+          "duration": 0.4
+        }
+      ],
+      "gain": 0.2,
+      "priority": 3,
+      "cooldown": 0.04,
+      "polyphony": 3
+    },
+    "impact-plasma": {
+      "variants": [
+        {
+          "offset": 1.66,
+          "duration": 0.45
+        }
+      ],
+      "gain": 0.22,
+      "priority": 3,
+      "cooldown": 0.04,
+      "polyphony": 3
+    },
+    "hull-hit": {
+      "variants": [
+        {
+          "offset": 2.23,
+          "duration": 0.6
+        }
+      ],
+      "gain": 0.29,
+      "priority": 6,
+      "cooldown": 0.12,
+      "polyphony": 2
+    },
+    "enemy-break": {
+      "variants": [
+        {
+          "offset": 2.95,
+          "duration": 1.0
+        }
+      ],
+      "gain": 0.31,
+      "priority": 5,
+      "cooldown": 0.1,
+      "polyphony": 2
+    },
+    "atlas-charge": {
+      "variants": [
+        {
+          "offset": 4.07,
+          "duration": 0.95
+        }
+      ],
+      "gain": 0.26,
+      "priority": 7,
+      "cooldown": 0.3,
+      "polyphony": 1
+    },
+    "atlas-collapse": {
+      "variants": [
+        {
+          "offset": 5.14,
+          "duration": 3.0
+        }
+      ],
+      "gain": 0.4,
+      "priority": 9,
+      "cooldown": 1,
+      "polyphony": 1
+    },
+    "enemy-phaser": {
+      "variants": [
+        {
+          "offset": 8.26,
+          "duration": 0.25
+        }
+      ],
+      "gain": 0.17,
+      "priority": 2,
+      "cooldown": 0.055,
+      "polyphony": 3
+    },
+    "enemy-heavy": {
+      "variants": [
+        {
+          "offset": 8.63,
+          "duration": 0.6
+        }
+      ],
+      "gain": 0.26,
+      "priority": 5,
+      "cooldown": 0.16,
+      "polyphony": 2
+    },
+    "boss-laser": {
+      "variants": [
+        {
+          "offset": 9.35,
+          "duration": 2.6
+        }
+      ],
+      "gain": 0.32,
+      "priority": 8,
+      "cooldown": 1,
+      "polyphony": 1
+    }
+  }
+}

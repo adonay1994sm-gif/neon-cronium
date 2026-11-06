@@ -104,6 +104,12 @@
         // row travels with this physical projectile, including its first frame.
         const frame=Math.floor(age*14)%4,size=54;
         ctx.drawImage(atlas,frame*cell,0,cell,cell,-size/2,-size/2,size,size);
+      } else if((shot.weapon==="pulse"||shot.weapon==="twin")&&spriteReady(SPRITES.weaponBolts)) {
+        // Armas por niveles (dec-armas-plan): el disparo pintado de su nivel,
+        // con la cabeza en la posición física del proyectil.
+        const atlas=SPRITES.weaponBolts,width=atlas.naturalWidth/4,height=atlas.naturalHeight/2;
+        const tall=shot.weapon==="pulse"?58+(shot.level||1)*4:60,wide=tall/2;
+        ctx.drawImage(atlas,((shot.level||1)-1)*width,shot.weapon==="twin"?height:0,width,height,-wide/2,-tall*.3,wide,tall);
       } else if(shot.weapon==='needle') {
         // The authored high-energy lance is compressed into a slender rail
         // pulse; the physics, penetration and cooldown belong to Aguja.
@@ -141,7 +147,7 @@
   function classicTwinFrame() {
     const cooldown = atlasBoss ? manualShotCooldown : classicWeapons?.cooldown || 0;
     if (cooldown > .10) return 2;
-    if (classicWeapons && classicWeapons.charges < 20 && classicWeapons.recharge > .10) return 1;
+    if (classicWeapons && classicWeapons.charges < (classicWeapons.maxCharges || 20) && classicWeapons.recharge > .10) return 1;
     return 0;
   }
 
@@ -156,37 +162,52 @@
     return true;
   }
 
-  // Satélite CH-03 (plan F3c). Celdas de la hoja: 0 reposo, 1-2 carga y rayo,
-  // 3 cañones, 4 láseres cruzados, 5 rejilla, 6 dañado, 7 destruido.
-  function drawCh03Satellite() {
-    if (typeof ch03Boss === "undefined" || !ch03Boss) return;
-    const boss = ch03Boss, size = 300;
-    if (boss.attack === "grid" && boss.grid && boss.state === "attack") {
-      // Columnas de la rejilla: aviso tenue, láser encendido brillante; la segura, libre.
-      const column = W / boss.grid.columns;
-      ctx.save();
-      for (let c = 0; c < boss.grid.columns; c++) {
-        if (c === boss.grid.safe) continue;
-        ctx.fillStyle = boss.grid.active ? "rgba(255,70,90,.42)" : "rgba(255,120,120,.12)";
-        ctx.fillRect(c * column + 6, boss.y, column - 12, H - boss.y);
-      }
-      ctx.restore();
-    }
-    if (boss.attack === "sweep" && boss.beam?.active && boss.state === "attack") {
-      ctx.save(); ctx.translate(boss.x, boss.y); ctx.rotate(-boss.beam.angle);
-      ctx.fillStyle = "rgba(255,60,80,.85)"; ctx.shadowBlur = 22; ctx.shadowColor = "#ff2d45";
-      ctx.fillRect(-NeonCampaign.CH03_RULES.sweep.width / 2, 0, NeonCampaign.CH03_RULES.sweep.width, H * 1.5);
-      ctx.fillStyle = "rgba(255,240,240,.9)"; ctx.fillRect(-4, 0, 8, H * 1.5);
-      ctx.restore();
-    }
-    if (!spriteReady(SPRITES.ch03)) return;
-    const cell = boss.state === "defeated" ? (boss.stateTime < .5 ? 6 : 7)
-      : boss.state === "warning" ? (boss.attack === "ring" ? 3 : boss.attack === "grid" ? 4 : 1)
-      : boss.state === "attack" ? (boss.attack === "sweep" ? 2 : boss.attack === "ring" ? 3 : 5)
-      : boss.hp <= boss.maxHp * .35 ? 6 : 0;
-    ctx.save(); ctx.translate(boss.x, boss.y);
-    drawGaiaCell(SPRITES.ch03, 4, cell, size);
+  // Subguardián del tramo 5 (dec-subguardian-plan, 31/10/2026). Hoja 4×2 en
+  // el orden de subguardianFrame. Láser pintado: 4 fotogramas del haz y la
+  // franja de aviso (celdas de 192×768 que se repiten a lo largo del rayo) e
+  // impacto en 4×2. El rayo nace en el emisor y va por detrás del cuerpo.
+  const SUB_BOSS_SIZE = 300, SUB_BEAM_WIDTH = 92;
+  function drawSubBossBeam(cell, angle, alpha) {
+    const image = SPRITES.subguardianLaser;
+    if (!spriteReady(image)) return;
+    const origin = NeonCampaign.subguardianEmitter(subBoss), cellWidth = image.naturalWidth / 5;
+    const tile = SUB_BEAM_WIDTH * image.naturalHeight / cellWidth;
+    ctx.save(); ctx.translate(origin.x, origin.y - subBoss.recoil); ctx.rotate(-angle); ctx.globalAlpha *= alpha;
+    for (let y = 0; y < H * 1.6; y += tile)
+      ctx.drawImage(image, cell * cellWidth, 0, cellWidth, image.naturalHeight, -SUB_BEAM_WIDTH / 2, y, SUB_BEAM_WIDTH, tile);
     ctx.restore();
+  }
+  // C9 llega en el tramo 6 (presentation/c9-docking.js). Hoja de la estación
+  // 2×2: cerrada, abriéndose, atracando y abierta con luces. Va por encima de
+  // la nave, así la compuerta la tapa al entrar.
+  function drawC9Docking() {
+    if (typeof c9Scene === "undefined" || !c9Scene || !spriteReady(SPRITES.c9Station)) return;
+    const image = SPRITES.c9Station, size = NeonCampaign.C9_DOCKING_RULES.size;
+    ctx.save(); ctx.translate(c9Scene.x, c9Scene.y);
+    drawGaiaCell(image, 2, NeonCampaign.c9DockingFrame(c9Scene), size);
+    ctx.restore();
+  }
+
+  function drawSubguardian() {
+    if (typeof subBoss === "undefined" || !subBoss) return;
+    const boss = subBoss;
+    if (boss.attack === "laser" && boss.beam && boss.state === "warning") {
+      // Aviso: la franja por donde empezará el barrido, latiendo.
+      drawSubBossBeam(4, boss.beam.angle, .45 + .35 * Math.sin(boss.stateTime * 14));
+    } else if (boss.attack === "laser" && boss.beam?.active && boss.state === "attack") {
+      drawSubBossBeam(Math.floor(boss.stateTime * 14) % 4, boss.beam.angle, Math.min(1, boss.stateTime / .08));
+    }
+    if (spriteReady(SPRITES.subguardian)) {
+      ctx.save(); ctx.translate(boss.x, boss.y - boss.recoil);
+      drawGaiaCell(SPRITES.subguardian, 4, NeonCampaign.subguardianFrame(boss), SUB_BOSS_SIZE);
+      ctx.restore();
+    }
+    if (subBossBurn && spriteReady(SPRITES.subguardianImpact)) {
+      // Salpicadura del láser sobre la nave alcanzada.
+      ctx.save(); ctx.translate(subBossBurn.x, subBossBurn.y);
+      drawGaiaCell(SPRITES.subguardianImpact, 4, Math.min(7, Math.floor(subBossBurn.age / .5 * 8)), 150);
+      ctx.restore();
+    }
   }
 
   function drawGuardianAtlas() {
@@ -259,6 +280,23 @@
     ctx.save();
     ctx.beginPath(); ctx.moveTo(atlasBoss.x - mouth, top); ctx.lineTo(atlasBoss.x + mouth, top);
     ctx.lineTo(band.x1, H); ctx.lineTo(band.x0, H); ctx.closePath();
+    const laser = SPRITES.subguardianLaser;
+    if (spriteReady(laser)) {
+      // Pintado (propietario, 31/10: «parece programación»): el haz del láser
+      // del subguardián ensanchado a la franja del Fulminante y recortado a su
+      // forma; el aviso, con la franja roja pintada.
+      // Un solo haz continuo a lo largo del eje del cono (sin escalones).
+      ctx.clip();
+      const cell = atlasBeam ? Math.floor(elapsed * 14) % 4 : 4, cellWidth = laser.naturalWidth / 5;
+      const dx = (band.x0 + band.x1) / 2 - atlasBoss.x, dy = H - top, length = Math.hypot(dx, dy);
+      const width = (band.x1 - band.x0) * 1.15, tile = width * laser.naturalHeight / cellWidth;
+      ctx.globalAlpha = atlasBeam ? 1 : .5 + .35 * Math.sin(elapsed * 14);
+      ctx.translate(atlasBoss.x, top); ctx.rotate(-Math.atan2(dx, dy));
+      for (let y = -tile * .1; y < length + 40; y += tile)
+        ctx.drawImage(laser, cell * cellWidth, 0, cellWidth, laser.naturalHeight, -width / 2, y, width, tile);
+      ctx.restore();
+      return;
+    }
     if (atlasBeam) {
       const glow = ctx.createLinearGradient(band.x0, 0, band.x1, 0);
       glow.addColorStop(0, "rgba(255,50,40,.35)"); glow.addColorStop(.5, "rgba(255,226,200,.9)"); glow.addColorStop(1, "rgba(255,50,40,.35)");
@@ -327,22 +365,47 @@
     return true;
   }
 
+  // Las naves del hangar que no son Astér vuelan con sus 5 poses de GPT
+  // (scripts/build-hangar-assets.py): 0 neutral, 1 y 2 alabeo con el morro a la
+  // izquierda y a la derecha, 3 aceleración, 4 frenado. Los choques no cambian.
+  function drawPosedShip(target, pose, size, reinforcement = 0) {
+    if (flownShip === "aster" || !spriteReady(SPRITES.flightPoses)) return false;
+    const row = NeonCampaign.SHIP_ROSTER.findIndex(ship => ship.id === flownShip);
+    if (row < 0) return false;
+    const image = SPRITES.flightPoses, cell = image.naturalWidth / 5;
+    target.drawImage(image, pose * cell, row * cell, cell, cell, -size / 2, -size / 2, size, size);
+    if (reinforcement > 0) {
+      target.save(); target.globalCompositeOperation = "screen";
+      target.globalAlpha *= Math.min(.5, reinforcement);
+      target.drawImage(image, pose * cell, row * cell, cell, cell, -size / 2, -size / 2, size, size);
+      target.restore();
+    }
+    return true;
+  }
+
   function syncShipPresentation() {
     const twin = hasClassicTwinMounts();
     if (shipPresentationSignature?.mode === shipRenderMode && shipPresentationSignature?.loadout === shipLoadout &&
-      shipPresentationSignature?.twin === twin) return;
+      shipPresentationSignature?.twin === twin && shipPresentationSignature?.ship === flownShip) return;
     if (twin && !spriteReady(SPRITES.flightWeapons)) return;
+    // Mientras cargan las poses se queda la imagen que hubiera.
+    const posed = flownShip !== "aster";
+    if (posed && !spriteReady(SPRITES.flightPoses)) return;
     let source = "assets/player_ship_identity_v1.webp";
-    if (spriteReady(SPRITES.modularShip)) {
+    if (posed || spriteReady(SPRITES.modularShip)) {
       const preview = document.createElement("canvas"); preview.width = preview.height = 384;
       const previewContext = preview.getContext("2d");
-      previewContext.translate(192, 170);
-      drawModularShip(previewContext, shipLoadout, 330, 0, 0, 100, 0, twin ? 0 : null);
+      if (posed) {
+        previewContext.translate(192, 192); drawPosedShip(previewContext, 0, 384);
+      } else {
+        previewContext.translate(192, 170);
+        drawModularShip(previewContext, shipLoadout, 330, 0, 0, 100, 0, twin ? 0 : null);
+      }
       source = preview.toDataURL("image/png");
     }
     document.querySelectorAll(".menu-ship-image, .briefing-ship").forEach(image => { image.src = source; });
     // A missing atlas must remain retryable; the portrait is only degradation.
-    if (spriteReady(SPRITES.modularShip)) shipPresentationSignature = {mode: shipRenderMode, loadout: shipLoadout, twin};
+    if (posed || spriteReady(SPRITES.modularShip)) shipPresentationSignature = {mode: shipRenderMode, loadout: shipLoadout, twin, ship: flownShip};
   }
 
   function drawShipIdentityFallback(target, size) {
@@ -367,7 +430,8 @@
     const size=servicing?165:270;
     target.save(); target.translate(preview.width / 2, servicing?218:preview.height * .49);
     const twin = hasClassicTwinMounts();
-    const assembled = drawModularShip(target, shipLoadout, size, t / 1000, 0, 100, 0, twin ? 0 : null);
+    const assembled = drawPosedShip(target, 0, size * 1.05) ||
+      drawModularShip(target, shipLoadout, size, t / 1000, 0, 100, 0, twin ? 0 : null);
     if (!assembled) {
       target.save(); target.scale(size / 512, size / 512);
       if (twin) drawClassicTwinMounts(target, 0);
@@ -444,7 +508,10 @@
     const steering=Number.isFinite(player.visualBank)?player.visualBank:clamp((player.target+player.drift-player.x)/95,-1,1);
     const reserve=typeof classicHullReserve==="number"&&classicHullReserve>0
       ?.08+(typeof classicShieldImpact==="number"?classicShieldImpact:0):0;
-    const assembled = drawModularShip(ctx, shipLoadout, assemblySize, elapsed,
+    const climb=player.targetY-player.y,calm=hull<34||state==="destroying";
+    const pose=calm?0:steering<-.35?1:steering>.35?2:climb<-24?3:climb>24?4:0;
+    const assembled = drawPosedShip(ctx,pose,assemblySize*1.05,reserve) ||
+      drawModularShip(ctx, shipLoadout, assemblySize, elapsed,
       steering, hull, impactReactionTimer,hasClassicTwinMounts()?classicTwinFrame():null,
       SHIP_VISUAL.bankStrength??1,reserve);
     ctx.restore();

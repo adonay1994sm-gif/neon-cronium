@@ -68,7 +68,7 @@ test('unit: preview transforms require the actual game markers and preserve ordi
   const html = await text('index.html');
   const transformed = previewGame(source);
   // En la preview, el modo desarrollo (?dev=1) guarda aparte; si no, el guardado de la preview.
-  assert.match(transformed, /createStorageService\(window\.NeonDev\?\.storage \|\| window\.NeonPreview\.storage\)/);
+  assert.match(transformed, /createStorageService\(HARDCORE\?\.storage \?\? \(window\.NeonDev\?\.storage \|\| window\.NeonPreview\.storage\)\)/);
   assert.doesNotMatch(transformed, /VER ANUNCIO Y REPARAR/);
   assert.equal(source, await text('game.js'));
   assert.match(previewPage(html), /preview-config\.js/);
@@ -357,7 +357,9 @@ test('built preview manifest consistently launches the offline selector', async 
 
 test('preview preserves core, content and every original asset byte for byte', async () => {
   for (const file of ['core-runtime.js', 'content-runtime.js', 'styles.css', ...(await readdir(join(root, 'www/assets'))).map(name => `assets/${name}`)]) {
-    assert.deepEqual(await readFile(join(root, 'www', file)), await readFile(join(dist, 'juego', file)), file);
+    // Huellas, no los archivos: si el paquete está viejo, comparar megas enteros agotaba la memoria (auditoría 25/10, A10).
+    assert.equal(sha256(await readFile(join(dist, 'juego', file))), sha256(await readFile(join(root, 'www', file))),
+      `${file} (si falla, regenera el paquete: BRANCH=main npm run build:preview)`);
   }
 });
 

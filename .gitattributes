@@ -1,0 +1,7 @@
+# Finales de línea LF en todos los equipos (también en Windows con
+# core.autocrlf=true). El build exige LF en src/game/.
+* text=auto eol=lf
+
+# Guardados con CRLF en origen: se dejan como están.
+.claude/skills/playwright-cli/LICENSE -text
+docs/playtests/session-template.csv -text

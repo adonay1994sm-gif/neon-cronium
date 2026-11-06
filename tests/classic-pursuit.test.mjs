@@ -355,7 +355,7 @@ test('v5 opponents mix single, double and spread volleys with irregular waits in
         // Abanico abierto desde la F3b (spec 6.10): cinco disparos.
         assert.equal(volley.length, CLASSIC_PURSUIT_VOLLEY.spreadCount);
         assert.ok(new Set(volley.map(shot => shot.vx.toFixed(3))).size === CLASSIC_PURSUIT_VOLLEY.spreadCount, 'a fan has distinct directions');
-        for (const shot of volley) assert.ok(shot.vy > 0 && Math.abs(shot.vx / shot.vy) <= CLASSIC_PURSUIT_VOLLEY.cone + 1e-9);
+        for (const shot of volley) assert.ok(shot.vy > 0 && Math.abs(shot.vx / shot.vy) <= CLASSIC_PURSUIT_VOLLEY.spreadCone + 1e-9);
       }
     }
   }
@@ -397,4 +397,21 @@ test('a patrol holds fire while holdFire is set (comet shower ceasefire) and res
     for (let frame = 0; frame < 900; frame++) step(item, player, shots);
     assert.ok(shots.length > before, `${role} attacks again afterwards`);
   }
+});
+
+// Auditoría 03/11 (A15, propietario 06/11): el cono grande es solo del abanico
+// abierto; los tiros simples y dobles vuelven a ~33° (0,65).
+test('only the open fan uses the wide cone; single and double shots stay near 33°', () => {
+  let widest = 0, widestFan = 0;
+  for (const role of ['raider', 'scout', 'interceptor']) for (const seed of [3, 21, 58, 90]) for (const px of [10, 710]) {
+    const item = enemyAt({role, seed}), player = {x: px, y: 640}, shots = [];
+    for (let frame = 0; frame < 3000; frame++) step(item, player, shots);
+    for (const shot of shots) {
+      const slope = Math.abs(shot.vx / shot.vy);
+      if (shot.volley === 'spread') widestFan = Math.max(widestFan, slope);
+      else widest = Math.max(widest, slope);
+    }
+  }
+  assert.ok(widest <= CLASSIC_PURSUIT_VOLLEY.cone + 1e-9 && CLASSIC_PURSUIT_VOLLEY.cone === .65, `aimed shots reach ${widest}`);
+  assert.ok(widestFan > CLASSIC_PURSUIT_VOLLEY.cone && widestFan <= CLASSIC_PURSUIT_VOLLEY.spreadCone + 1e-9, `fans reach ${widestFan}`);
 });

@@ -4,9 +4,9 @@
  * The current game event owner calls play once; policy suppresses duplicates,
  * prioritises damage and heavy machinery, and immediately stops paused audio.
  */
-export const COMBAT_SFX_VERSION = 2;
-export const COMBAT_SFX_SRC = 'assets/combat_sfx_atlas_v2.m4a';
-export const COMBAT_SFX_DURATION = 15.96;
+export const COMBAT_SFX_VERSION = 3;
+export const COMBAT_SFX_SRC = 'assets/combat_sfx_atlas_v3.m4a';
+export const COMBAT_SFX_DURATION = 11.95;
 export const COMBAT_SFX_VOICE_LIMIT = 8;
 export const COMBAT_SFX_GAIN_BUDGET = .95;
 
@@ -15,27 +15,31 @@ const cue = (offsets, duration, gain, priority, cooldown, polyphony) => Object.f
   gain, priority, cooldown, polyphony
 });
 
-// Exact seconds in the 48 kHz authoring master; 120 ms silent inter-cue guards.
-// assets/combat_sfx_atlas_v2.json is the traceable authoring/inventory equivalent.
-// Existing v1 performances retain their offsets; new weapon emissions are not
-// impacts and must be played by the real projectile/volley event owner.
+// Banco v3 (02/11/2026): efectos CC0 elegidos por el propietario. Segundos
+// exactos del maestro de 48 kHz con 120 ms de silencio entre sonidos; salen de
+// scripts/build-combat-sfx-v3.py y assets/combat_sfx_atlas_v3.json los repite.
 export const COMBAT_SFX_CUES = Object.freeze({
-  'phaser': cue([0, .32], .20, .15, 1, .045, 3),
-  'missile-launch': cue([.64, 1.34], .58, .31, 5, .25, 2),
-  'impact-metal': cue([2.04, 2.60], .44, .23, 3, .04, 3),
-  'impact-plasma': cue([3.16, 3.68], .40, .23, 3, .04, 3),
-  'hull-hit': cue([4.20, 4.90], .58, .29, 6, .12, 2),
-  'enemy-break': cue([5.60, 6.67], .95, .31, 5, .10, 2),
-  'atlas-charge': cue([7.74, 8.74], .88, .28, 7, .30, 1),
-  'atlas-collapse': cue([9.74, 11.71], 1.85, .40, 9, 1, 1),
-  'enemy-phaser': cue([13.68, 14.08], .28, .19, 2, .055, 3),
-  'enemy-heavy': cue([14.48, 15.22], .62, .28, 5, .16, 2)
+  'phaser': cue([0], 0.3, 0.15, 1, 0.045, 3),
+  'missile-launch': cue([0.42], 0.6, 0.31, 5, 0.25, 2),
+  'impact-metal': cue([1.14], 0.4, 0.2, 3, 0.04, 3),
+  'impact-plasma': cue([1.66], 0.45, 0.22, 3, 0.04, 3),
+  'hull-hit': cue([2.23], 0.6, 0.29, 6, 0.12, 2),
+  'enemy-break': cue([2.95], 1, 0.31, 5, 0.1, 2),
+  'atlas-charge': cue([4.07], 0.95, 0.26, 7, 0.3, 1),
+  'atlas-collapse': cue([5.14], 3, 0.4, 9, 1, 1),
+  'enemy-phaser': cue([8.26], 0.25, 0.17, 2, 0.055, 3),
+  'enemy-heavy': cue([8.63], 0.6, 0.26, 5, 0.16, 2),
+  'boss-laser': cue([9.35], 2.6, 0.32, 8, 1, 1)
 });
+
+// El banco de interfaz (ui-sfx.js) reutiliza este reproductor con su propio atlas.
+const COMBAT_BANK = Object.freeze({version: COMBAT_SFX_VERSION, src: COMBAT_SFX_SRC, duration: COMBAT_SFX_DURATION,
+  cues: COMBAT_SFX_CUES, voiceLimit: COMBAT_SFX_VOICE_LIMIT, gainBudget: COMBAT_SFX_GAIN_BUDGET});
 
 const disconnect = node => { try { node?.disconnect(); } catch { /* ended node */ } };
 const clamp = (value, low, high) => Math.max(low, Math.min(high, Number(value) || 0));
 
-export function createCombatSfx({context, output, fetchAsset = (...args) => fetch(...args)} = {}) {
+export function createCombatSfx({context, output, fetchAsset = (...args) => fetch(...args), bank = COMBAT_BANK} = {}) {
   if (!context?.createBufferSource || !context?.decodeAudioData || !context?.createGain || !output) return null;
   const bus = context.createGain();
   bus.gain.value = 1; bus.connect(output);
@@ -79,7 +83,7 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
       await Promise.resolve();
       try {
         if (disposed || generation !== attempt) return false;
-        const response = await fetchAsset(COMBAT_SFX_SRC);
+        const response = await fetchAsset(bank.src);
         if (!response?.ok) throw new Error('combat-sfx asset unavailable');
         const bytes = await response.arrayBuffer();
         if (disposed || generation !== attempt) return false;
@@ -90,8 +94,8 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
         if (disposed || generation !== attempt) return false;
         // Allow encoder padding, but never accept the old bank: otherwise an
         // offline mismatch would silently cut off the appended enemy weapons.
-        if (!Number.isFinite(decoded?.duration) || decoded.duration < COMBAT_SFX_DURATION - .12 ||
-            decoded.duration > COMBAT_SFX_DURATION + .40) {
+        if (!Number.isFinite(decoded?.duration) || decoded.duration < bank.duration - .12 ||
+            decoded.duration > bank.duration + .40) {
           throw new Error('combat-sfx atlas duration invalid');
         }
         buffer = decoded; failed = false;
@@ -108,8 +112,8 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
 
   function play(name, {eventId = null, pan = 0} = {}) {
     if (disposed || !enabled || paused || volume <= 0 || !buffer || context.state !== 'running') return false;
-    if (!Object.prototype.hasOwnProperty.call(COMBAT_SFX_CUES, name)) return false;
-    const definition = COMBAT_SFX_CUES[name];
+    if (!Object.prototype.hasOwnProperty.call(bank.cues, name)) return false;
+    const definition = bank.cues[name];
     if (!definition) return false;
     const id = typeof eventId === 'string' && eventId.length > 0 && eventId.length <= 160
       ? eventId : Number.isSafeInteger(eventId) && eventId >= 0 ? String(eventId) : null;
@@ -123,7 +127,7 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
     // Only higher-priority events can replace a playing burst. The entire
     // master peak is .70 (AAC overshoot measured separately); summed voice
     // gain stays below .95, retaining headroom for the existing music bus.
-    while (active.size >= COMBAT_SFX_VOICE_LIMIT || weight() + definition.gain > COMBAT_SFX_GAIN_BUDGET) {
+    while (active.size >= bank.voiceLimit || weight() + definition.gain > bank.gainBudget) {
       const candidate = [...active].filter(record => record.priority < definition.priority)
         .sort((a, b) => a.priority - b.priority || a.end - b.end)[0];
       if (!candidate) { remember(id); dropped++; return false; }
@@ -164,7 +168,7 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
       bus.gain.setTargetAtTime(volume, context.currentTime, .02);
       if (volume === 0) stopAll();
     },
-    snapshot: () => Object.freeze({version: COMBAT_SFX_VERSION, ready: Boolean(buffer), loading: Boolean(loading),
+    snapshot: () => Object.freeze({version: bank.version, ready: Boolean(buffer), loading: Boolean(loading),
       failed, disposed, paused, enabled, volume, activeVoices: active.size,
       activeGain: [...active].reduce((sum, record) => sum + record.level, 0),
       played, playedByCue: Object.freeze(Object.fromEntries(playedByCue)), dropped, stolen,

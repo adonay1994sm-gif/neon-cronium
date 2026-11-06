@@ -6,9 +6,11 @@
 export const SCRAP_ECONOMY_KEY = 'neonCronium.classicSalvage.v1';
 export const SCRAP_ECONOMY_RULES = Object.freeze({
   version: 1, revision: 2, silver: 100000, gold: 10000000, stellar: 100000000,
-  baseHullReserve: 30, reinforcedHullReserve: 45, maxMissiles: 3, missileUnitPrice: 6,
+  baseHullReserve: 30, reinforcedHullReserve: 45, maxMissiles: 3, missileUnitPrice: 6, keySwapPrice: 100,
   maxDropReceipts: 512, maxPurchaseReceipts: 128, maxInvalidBackups: 8
 });
+
+import {SHIP_ROSTER} from '../ship/ship-roster.js';
 
 export const SCRAP_REWARDS = Object.freeze({raider: 6, scout: 9, interceptor: 15, atlas: 600, debris: 6, satellite: 18, ch03: 120});
 const upgrade = definition => Object.freeze({...definition,
@@ -27,27 +29,63 @@ export const SCRAP_UPGRADES = Object.freeze({
   'coolant-feed-ii': upgrade({id: 'coolant-feed-ii', price: 110, branch: 'cooling', rank: 2,
     requires: ['coolant-feed'], label: 'Refrigeración II',
     description: 'Recupera un proyectil cada segundo de vuelo; conserva la carga y recuperación en curso.'}),
-  'weapon-scatter': upgrade({id: 'weapon-scatter', price: 70, weaponId: 'scatter', branch: 'scatter', rank: 1,
+  // Línea de munición (dec-arbol-ampliado, 02/11/2026): 20 → 100 cargas en
+  // cuatro rangos. Precios: decisión técnica; se ajustan jugando.
+  'ammo-1': upgrade({id: 'ammo-1', price: 60, branch: 'ammo', rank: 1, label: 'Munición I',
+    description: 'El cargador pasa de 20 a 40 disparos. Llegan cargados al instalarlo.'}),
+  'ammo-2': upgrade({id: 'ammo-2', price: 140, branch: 'ammo', rank: 2, requires: ['ammo-1'], label: 'Munición II',
+    description: 'El cargador pasa de 40 a 60 disparos.'}),
+  'ammo-3': upgrade({id: 'ammo-3', price: 260, branch: 'ammo', rank: 3, requires: ['ammo-2'], label: 'Munición III',
+    description: 'El cargador pasa de 60 a 80 disparos.'}),
+  'ammo-4': upgrade({id: 'ammo-4', price: 400, branch: 'ammo', rank: 4, requires: ['ammo-3'], label: 'Munición IV',
+    description: 'El cargador pasa de 80 a 100 disparos.'}),
+  // Nodos clave (dec-nodos-clave, 02/11/2026): cada pareja se compra una vez
+  // eligiendo una opción; cambiarla cuesta keySwapPrice (switchKeyNode).
+  'key-1': upgrade({id: 'key-1', price: 300, branch: 'key', rank: 1, requires: ['ammo-2'], label: 'Nodo clave · munición',
+    choices: Object.freeze(['hot-reload', 'magnet']), description: 'Eliges una: Recarga en caliente o Imán de chatarra.'}),
+  'key-2': upgrade({id: 'key-2', price: 300, branch: 'key', rank: 2, requires: ['hull-plating-ii'], label: 'Nodo clave · blindaje',
+    choices: Object.freeze(['reactive-armor', 'wide-magazine']), description: 'Eliges una: Blindaje reactivo o Cargador ancho.'}),
+  'weapon-scatter': upgrade({id: 'weapon-scatter', retired: true, price: 70, weaponId: 'scatter', branch: 'scatter', rank: 1,
     requires: ['twin-preparation'], label: 'Abanico I',
     description: 'Tres pulsos divergentes de 1 de daño; alcance corto para interceptar grupos cercanos.',
-    tradeoff: 'Exige acercarse: sus pulsos se disipan antes que un Phaser.'}),
-  'scatter-focus': upgrade({id: 'scatter-focus', price: 120, weaponId: 'scatter', branch: 'scatter', rank: 2,
+    tradeoff: 'Exige acercarse: sus pulsos se disipan antes que el Pulso.'}),
+  'scatter-focus': upgrade({id: 'scatter-focus', retired: true, price: 120, weaponId: 'scatter', branch: 'scatter', rank: 2,
     requires: ['weapon-scatter'], label: 'Abanico II · convergencia',
     description: 'Concentra la apertura de 18° a 13° y amplía el alcance de 224 a 317; mantiene tres pulsos.',
     tradeoff: 'Gana alcance pero cubre menos anchura.'}),
-  'weapon-needle': upgrade({id: 'weapon-needle', price: 95, weaponId: 'needle', branch: 'needle', rank: 1,
+  'weapon-needle': upgrade({id: 'weapon-needle', retired: true, price: 95, weaponId: 'needle', branch: 'needle', rank: 1,
     requires: ['twin-preparation'], label: 'Aguja I',
     description: 'Proyectil estrecho de 2 de daño que perfora hasta tres objetivos alineados.',
-    tradeoff: 'Menor anchura de impacto y cadencia más lenta que el Phaser.'}),
-  'needle-resonance': upgrade({id: 'needle-resonance', price: 140, weaponId: 'needle', branch: 'needle', rank: 2,
+    tradeoff: 'Menor anchura de impacto y cadencia más lenta que el Pulso.'}),
+  'needle-resonance': upgrade({id: 'needle-resonance', retired: true, price: 140, weaponId: 'needle', branch: 'needle', rank: 2,
     requires: ['weapon-needle'], label: 'Aguja II · resonancia',
     description: 'Perfora cuatro objetivos y dispara cada 0,46 s en lugar de cada 0,56 s.',
     tradeoff: 'Mantiene el daño directo de 2: destaca frente a objetivos alineados.'})
 });
+// Abanico y Aguja salieron de la Forja (dec-armas-plan, 01/11/2026): siguen
+// aquí solo para leer guardados antiguos; al cargar se devuelve su chatarra.
+export const RETIRED_UPGRADES = Object.freeze(Object.keys(SCRAP_UPGRADES).filter(sku => SCRAP_UPGRADES[sku].retired));
+// Niveles 2 a 4 de Pulso y Gemelo, comprados en el hangar (dec-armas-plan).
+export const SCRAP_WEAPON_LEVELS = Object.freeze(Object.fromEntries(['pulse', 'twin'].flatMap(weaponId =>
+  [[2, 300], [3, 800], [4, 1800]].map(([level, price]) => [`level-${weaponId}-${level}`, upgrade({id: `level-${weaponId}-${level}`,
+    weaponId, level, price, requires: level > 2 ? [`level-${weaponId}-${level - 1}`] : [], label: `Nivel ${level}`})]))));
+// Naves de chatarra del hangar (01/11/2026): la compra se apunta aquí, en el
+// mismo guardado que resta la chatarra. No salen en la Forja C9.
+export const SCRAP_SHIPS = Object.freeze(Object.fromEntries(SHIP_ROSTER.filter(ship => ship.access.type === 'scrap')
+  .map(ship => [`ship-${ship.id}`, upgrade({id: `ship-${ship.id}`, shipId: ship.id, price: ship.access.price, label: ship.name})])));
+const catalogue = sku => SCRAP_UPGRADES[sku] || SCRAP_SHIPS[sku] || SCRAP_WEAPON_LEVELS[sku];
+const inCatalogue = sku => has(SCRAP_UPGRADES, sku) || has(SCRAP_SHIPS, sku) || has(SCRAP_WEAPON_LEVELS, sku);
 
 // Consumibles: se gastan y se pueden volver a comprar. No ocupan recibos de
 // mejoras: el registro guarda lo gastado en ellos y el último recibo (como los
 // misiles), y acepta el precio que se pagó aunque luego cambie.
+// Opciones de los nodos clave, con su texto para la Forja.
+export const KEY_NODES = Object.freeze({
+  'hot-reload': Object.freeze({slot: 'key-1', label: 'Recarga en caliente', description: 'Si vacías el cargador, se recarga al doble de velocidad hasta llenarse.'}),
+  magnet: Object.freeze({slot: 'key-1', label: 'Imán de chatarra', description: 'Atraes la chatarra desde el doble de distancia.'}),
+  'reactive-armor': Object.freeze({slot: 'key-2', label: 'Blindaje reactivo', description: 'Tras un golpe, 1 segundo más sin recibir daño.'}),
+  'wide-magazine': Object.freeze({slot: 'key-2', label: 'Cargador ancho', description: '10 disparos más en el cargador.'})
+});
 export const SCRAP_CONSUMABLES = Object.freeze({'sector-beacon': Object.freeze({price: 40})});
 
 const integer = value => Number.isSafeInteger(value) && value >= 0;
@@ -79,11 +117,17 @@ export function classicWorkshopState(record) {
   const saved = normalizeScrapRecord(record);
   const upgrades = saved?.upgrades || [];
   const owns = sku => upgrades.includes(sku);
+  const ammoRank = [4, 3, 2, 1].find(rank => owns(`ammo-${rank}`)) || 0;
+  const choice = id => Object.values(saved?.keyChoices || {}).includes(id);
   return {reserveCapacity: hullReserveCapacity(saved),
     rechargeSeconds: owns('coolant-feed-ii') ? 1 : owns('coolant-feed') ? 1.5 : 2,
+    maxCharges: 20 + 20 * ammoRank + (choice('wide-magazine') ? 10 : 0),
     defenseRank: owns('hull-plating-ii') ? 2 : owns('hull-reinforcement') ? 1 : 0,
     coolingRank: owns('coolant-feed-ii') ? 2 : owns('coolant-feed') ? 1 : 0,
-    weaponIds: ['scatter', 'needle'].filter(id => owns(`weapon-${id}`)),
+    ammoRank,
+    keyNodes: {hotReload: choice('hot-reload'), magnet: choice('magnet'), reactiveArmor: choice('reactive-armor'), wideMagazine: choice('wide-magazine')},
+    weaponIds: [],
+    weaponLevels: Object.fromEntries(['pulse', 'twin'].map(id => [id, owns(`level-${id}-4`) ? 4 : owns(`level-${id}-3`) ? 3 : owns(`level-${id}-2`) ? 2 : 1])),
     weaponRanks: {scatter: owns('scatter-focus') ? 2 : owns('weapon-scatter') ? 1 : 0,
       needle: owns('needle-resonance') ? 2 : owns('weapon-needle') ? 1 : 0}};
 }
@@ -122,7 +166,7 @@ export function createScrapRecord() {
   return {version: 1, revision: 2, balance: 0, earned: 0, spent: 0, runSequence: 0,
     activeRun: null, upgrades: [], purchases: [], missileAmmo: 3, missileShotsSpent: 0,
     missileRoundsPurchased: 0, missileRefillSequence: 0, lastMissileRefill: null,
-    consumableSpent: 0, lastConsumable: null};
+    consumableSpent: 0, lastConsumable: null, keyChoices: {}, keySwaps: 0, lastKeySwap: null};
 }
 
 /** Unknown versions and malformed monetary relationships are never migrated by guessing. */
@@ -134,8 +178,8 @@ export function normalizeScrapRecord(value) {
       (!legacy&&value.revision!==SCRAP_ECONOMY_RULES.revision) ||
       !['balance', 'earned', 'spent', 'runSequence'].every(key => integer(value[key])) ||
       value.earned < value.spent || value.balance !== value.earned - value.spent ||
-      !Array.isArray(value.upgrades) || value.upgrades.length > Object.keys(SCRAP_UPGRADES).length ||
-      upgrades.some(sku => typeof sku !== 'string' || !has(SCRAP_UPGRADES, sku)) ||
+      !Array.isArray(value.upgrades) || value.upgrades.length > Object.keys(SCRAP_UPGRADES).length + Object.keys(SCRAP_SHIPS).length + Object.keys(SCRAP_WEAPON_LEVELS).length ||
+      upgrades.some(sku => typeof sku !== 'string' || !inCatalogue(sku)) ||
       new Set(upgrades).size !== upgrades.length ||
       !Array.isArray(value.purchases) || value.purchases.length > SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return null;
   const missileAmmo=legacy?3:value.missileAmmo;
@@ -164,18 +208,31 @@ export function normalizeScrapRecord(value) {
   } else if(!object(lastConsumable)||!identifier(lastConsumable.id)||typeof lastConsumable.sku!=='string'||
     !has(SCRAP_CONSUMABLES,lastConsumable.sku)||!integer(lastConsumable.price)||lastConsumable.price<1||
     lastConsumable.price>consumableSpent)return null;
+  // Nodos clave (02/11/2026): guardados anteriores no tienen estos campos.
+  const keyChoices=has(value,'keyChoices')?value.keyChoices:{};
+  const keySwaps=has(value,'keySwaps')?value.keySwaps:0;
+  const lastKeySwap=has(value,'lastKeySwap')?value.lastKeySwap:null;
+  const keyChoiceValid=(sku,choice)=>Boolean(SCRAP_UPGRADES[sku]?.choices?.includes(choice));
+  if(!object(keyChoices)||!integer(keySwaps)||!Number.isSafeInteger(keySwaps*SCRAP_ECONOMY_RULES.keySwapPrice))return null;
+  if(keySwaps===0) {
+    if(lastKeySwap!==null)return null;
+  } else if(!object(lastKeySwap)||lastKeySwap.id!==`c9:key:${keySwaps}`||!keyChoiceValid(lastKeySwap.sku,lastKeySwap.choice))return null;
   const transactionIds = new Set(), purchased = new Set();
   let spent = 0;
   for (const receipt of value.purchases) {
     const sku=upgradeName(receipt?.sku);
     if (!object(receipt) || !identifier(receipt.id) || transactionIds.has(receipt.id) || typeof sku !== 'string' ||
-        !has(SCRAP_UPGRADES, sku) || purchased.has(sku) ||
-        !SCRAP_UPGRADES[sku].receiptPrices.includes(receipt.price)) return null;
+        !inCatalogue(sku) || purchased.has(sku) ||
+        !catalogue(sku).receiptPrices.includes(receipt.price)) return null;
     transactionIds.add(receipt.id); purchased.add(sku); spent += receipt.price;
   }
-  if ([...purchased].some(sku => SCRAP_UPGRADES[sku].requires.some(required => !purchased.has(required)))) return null;
-  if (spent+missileRoundsPurchased*SCRAP_ECONOMY_RULES.missileUnitPrice+consumableSpent !== value.spent || upgrades.length !== purchased.size ||
-      upgrades.some(sku => !purchased.has(sku))) return null;
+  if ([...purchased].some(sku => catalogue(sku).requires.some(required => !purchased.has(required)))) return null;
+  if (spent+missileRoundsPurchased*SCRAP_ECONOMY_RULES.missileUnitPrice+consumableSpent+keySwaps*SCRAP_ECONOMY_RULES.keySwapPrice !== value.spent ||
+      upgrades.length !== purchased.size || upgrades.some(sku => !purchased.has(sku))) return null;
+  // Cada pareja comprada tiene exactamente una elección válida, y solo esas.
+  const keySlots=upgrades.filter(sku=>catalogue(sku).choices);
+  if(Object.keys(keyChoices).length!==keySlots.length||keySlots.some(sku=>!keyChoiceValid(sku,keyChoices[sku]))||
+    (lastKeySwap&&!keySlots.includes(lastKeySwap.sku)))return null;
   if (value.activeRun !== null) {
     const run = value.activeRun;
     if (!object(run) || run.sequence !== value.runSequence || run.sequence < 1 ||
@@ -202,7 +259,8 @@ export function normalizeScrapRecord(value) {
     missileAmmo,missileShotsSpent,missileRoundsPurchased,missileRefillSequence,
     lastMissileRefill:lastMissileRefill===null?null:{id:lastMissileRefill.id,
       sequence:lastMissileRefill.sequence,amount:lastMissileRefill.amount,price:lastMissileRefill.price},
-    consumableSpent,lastConsumable:lastConsumable===null?null:{id:lastConsumable.id,sku:lastConsumable.sku,price:lastConsumable.price}};
+    consumableSpent,lastConsumable:lastConsumable===null?null:{id:lastConsumable.id,sku:lastConsumable.sku,price:lastConsumable.price},
+    keyChoices:{...keyChoices},keySwaps,lastKeySwap:lastKeySwap===null?null:{id:lastKeySwap.id,sku:lastKeySwap.sku,choice:lastKeySwap.choice}};
 }
 
 /**
@@ -273,8 +331,16 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
     }
     current = normalizeScrapRecord(parsed);
     if(current===null)return {error:preserveInvalid(loaded.value)};
+    const retired=current.purchases.filter(receipt=>RETIRED_UPGRADES.includes(receipt.sku));
     const migrating=!has(parsed,'revision')||parsed.upgrades.includes('shield-cell')||
-      parsed.purchases.some(receipt=>receipt.sku==='shield-cell');
+      parsed.purchases.some(receipt=>receipt.sku==='shield-cell')||retired.length>0;
+    if(retired.length) {
+      // Devolución de Abanico y Aguja: se quitan con sus recibos y se devuelve lo pagado.
+      const refund=retired.reduce((total,receipt)=>total+receipt.price,0);
+      current={...current,balance:current.balance+refund,spent:current.spent-refund,
+        upgrades:current.upgrades.filter(sku=>!RETIRED_UPGRADES.includes(sku)),
+        purchases:current.purchases.filter(receipt=>!RETIRED_UPGRADES.includes(receipt.sku))};
+    }
     if(migrating) {
       const backup=backupRaw(loaded.value,migrationBackupKey);
       if(!backup.ok){current=null;return {error:backup};}
@@ -373,10 +439,12 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
     next.missileAmmo--;next.missileShotsSpent=sequence;
     return commit(next,loaded.raw,{duplicate:false,shotId,remaining:next.missileAmmo});
   }
-  function purchase({transactionId, sku:requestedSku} = {}) {
+  function purchase({transactionId, sku:requestedSku, choice} = {}) {
     const sku=upgradeName(requestedSku);
     if (!identifier(transactionId) || typeof sku !== 'string' ||
-      (!has(SCRAP_UPGRADES, sku)&&sku!=='missile-refill')) throw new TypeError('A stable transaction ID and catalogue SKU are required');
+      (!inCatalogue(sku)&&sku!=='missile-refill')) throw new TypeError('A stable transaction ID and catalogue SKU are required');
+    if (catalogue(sku)?.choices && !catalogue(sku).choices.includes(choice)) throw new TypeError('A key node needs one of its choices');
+    if (transactionId.startsWith('c9:key:')) throw new TypeError('Key node change receipts are reserved');
     if(sku==='missile-refill')return refillMissiles(transactionId);
     if(transactionId.startsWith('c9:missiles:'))throw new TypeError('Missile refill transaction IDs are reserved');
     const loaded = readState();
@@ -386,21 +454,46 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
       : blocked('transaction-id-conflict');
     if (current.lastConsumable?.id === transactionId) return blocked('transaction-id-conflict');
     if (current.upgrades.includes(sku)) return {ok: false, status: 'unavailable', reason: 'already-owned', state: copy(current)};
+    if (catalogue(sku).retired) return {ok: false, status: 'unavailable', reason: 'retired', state: copy(current)};
     if (current.purchases.length >= SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return blocked('purchase-receipt-capacity');
-    const requires = SCRAP_UPGRADES[sku].requires.filter(required => !current.upgrades.includes(required));
+    const requires = catalogue(sku).requires.filter(required => !current.upgrades.includes(required));
     if (requires.length) return {ok: false, status: 'unavailable', reason: 'prerequisite-required',
       requires, state: copy(current)};
-    const price = SCRAP_UPGRADES[sku].price;
+    const price = catalogue(sku).price;
     if (current.balance < price) return {ok: false, status: 'unavailable', reason: 'insufficient-funds', price,
       missing: price - current.balance, state: copy(current)};
     const next = copy(current);
     next.balance -= price; next.spent += price; next.upgrades.push(sku);
     next.purchases.push({id: transactionId, sku, price});
+    if (catalogue(sku).choices) next.keyChoices = {...next.keyChoices, [sku]: choice};
     return commit(next, loaded.raw, {sku, price, duplicate: false});
+  }
+  /** Cambiar la elección de un nodo clave cuesta keySwapPrice. Recibos
+   * c9:key:<n> en orden: repetir el último no cobra dos veces. */
+  function switchKeyNode({transactionId, sku, choice} = {}) {
+    const sequence = operationSequence(transactionId, 'c9:key:');
+    if (sequence === null || typeof sku !== 'string' || !SCRAP_UPGRADES[sku]?.choices?.includes(choice))
+      throw new TypeError('A c9:key:<sequence> receipt, a key node and one of its choices are required');
+    const loaded = readState();
+    if (loaded.error) return loaded.error;
+    if (sequence <= current.keySwaps) return current.lastKeySwap?.id === transactionId &&
+      (current.lastKeySwap.sku !== sku || current.lastKeySwap.choice !== choice) ? blocked('transaction-id-conflict')
+      : success('duplicate', {duplicate: true, sku, choice, price: 0});
+    if (sequence !== current.keySwaps + 1) return blocked('key-swap-sequence-conflict');
+    if (!current.upgrades.includes(sku)) return {ok: false, status: 'unavailable', reason: 'not-owned', state: copy(current)};
+    if (current.keyChoices[sku] === choice) return {ok: false, status: 'unavailable', reason: 'already-chosen', state: copy(current)};
+    const price = SCRAP_ECONOMY_RULES.keySwapPrice;
+    if (current.balance < price) return {ok: false, status: 'unavailable', reason: 'insufficient-funds', price,
+      missing: price - current.balance, state: copy(current)};
+    const next = copy(current);
+    next.balance -= price; next.spent += price; next.keySwaps = sequence;
+    next.keyChoices = {...next.keyChoices, [sku]: choice};
+    next.lastKeySwap = {id: transactionId, sku, choice};
+    return commit(next, loaded.raw, {sku, choice, price, duplicate: false});
   }
   function buyConsumable({transactionId, sku} = {}) {
     if (!identifier(transactionId) || typeof sku !== 'string' || !has(SCRAP_CONSUMABLES, sku) ||
-      transactionId.startsWith('c9:missiles:')) throw new TypeError('A stable transaction ID and consumable SKU are required');
+      transactionId.startsWith('c9:missiles:') || transactionId.startsWith('c9:key:')) throw new TypeError('A stable transaction ID and consumable SKU are required');
     const loaded = readState();
     if (loaded.error) return loaded.error;
     if (current.lastConsumable?.id === transactionId) return current.lastConsumable.sku === sku
@@ -417,7 +510,8 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
   }
   return Object.freeze({key, backupKey, migrationBackupKey, load, beginRun, claimDrop,
     grant: ({runId, rewardId, enemyType} = {}) => claimDrop({runId, dropId: rewardId, enemyType}),
-    purchase,buyConsumable,spendMissile,
+    purchase,buyConsumable,spendMissile,switchKeyNode,
+    nextKeySwapId:()=>current===null?null:`c9:key:${current.keySwaps+1}`,
     nextMissileShotId:()=>current===null?null:`missile:${current.missileShotsSpent+1}`,
     nextMissileRefillId:()=>current===null?null:`c9:missiles:${current.missileRefillSequence+1}`,
     getState: () => current === null ? null : copy(current),

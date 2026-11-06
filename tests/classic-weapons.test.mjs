@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {CLASSIC_WEAPON_RULES, createClassicWeapons, selectClassicWeapon, unlockClassicWeapon,
   triggerClassicWeapon, advanceClassicWeapons, hitClassicProjectile,
   classicWeaponSnapshot, setClassicRechargeInterval, setClassicUnlimitedFire,
-  canTriggerClassicMissile, triggerClassicMissile, setClassicWeaponTuning} from '../src/game/combat/classic-weapons.js';
+  canTriggerClassicMissile, triggerClassicMissile, setClassicWeaponTuning, setClassicWeaponLevels, setClassicMaxCharges, setClassicHotReload} from '../src/game/combat/classic-weapons.js';
 
 const origin = {x: 360, y: 1000};
 const run = (state, seconds, events = []) => {
@@ -655,4 +655,77 @@ test('a physical missile hits exactly one target once and never creates repeated
 test('the model has no independent clock, random source, renderer or persistence', async () => {
   const source = await readFile(new URL('../src/game/combat/classic-weapons.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /requestAnimationFrame|setInterval|setTimeout|Math\.random|Date\.now|localStorage|document\.|window\./);
+});
+
+// Armas por niveles (dec-armas-plan, 01/11/2026): Pulso y Gemelo, niveles 1 a 4.
+test('Pulse and Twin fire their bought level: damage per volley x1, x1.3, x1.6 and x2', () => {
+  for (const [type, base] of [['pulse', 1], ['twin', 2]]) {
+    for (const [value, factor, barrels] of [[1, 1, type === 'pulse' ? 1 : 2], [2, 1.3, type === 'pulse' ? 1 : 2], [3, 1.6, type === 'pulse' ? 3 : 4], [4, 2, type === 'pulse' ? 3 : 4]]) {
+      const state = createClassicWeapons({type, unlocked: ['pulse', 'twin']});
+      setClassicWeaponLevels(state, {[type]: value});
+      const shot = triggerClassicWeapon(state, origin);
+      assert.equal(shot.projectiles.length, barrels, `${type} ${value}`);
+      assert.ok(shot.projectiles.every(projectile => projectile.level === value));
+      // Pulso 3 y 4 (propietario, 03/11/2026, dec-pulso-niveles-dano): el pulso
+      // central hace el daño entero aunque los laterales fallen a distancia.
+      const damage = type === 'pulse' ? shot.projectiles.find(projectile => projectile.barrel === (barrels === 3 ? 1 : 0)).damage
+        : shot.projectiles.reduce((total, projectile) => total + projectile.damage, 0);
+      assert.ok(Math.abs(damage - base * factor) < 1e-9, `${type} level ${value}: ${damage}`);
+      assert.equal(classicWeaponSnapshot(state).damageMultiplier, base * factor);
+      assert.equal(state.charges, 19, 'one charge per volley at every level');
+    }
+  }
+  assert.throws(() => setClassicWeaponLevels(createClassicWeapons(), {pulse: 5}), RangeError);
+  assert.throws(() => setClassicWeaponLevels(createClassicWeapons(), {scatter: 2}), TypeError);
+});
+
+// Árbol ampliado de la Forja (dec-arbol-ampliado, 02/11/2026): munición 20 → 100.
+test('a bigger magazine from the Forja adds the new rounds once, recovers up to the new top and rejects bad sizes', () => {
+  const state = createClassicWeapons();
+  assert.equal(state.maxCharges, 20);
+  state.charges = 5;
+  assert.equal(setClassicMaxCharges(state, 40), 40);
+  assert.equal(state.charges, 25, 'the 20 new rounds arrive loaded');
+  assert.equal(setClassicMaxCharges(state, 40), 40);
+  assert.equal(state.charges, 25, 'repeating the same size changes nothing');
+  run(state, 2 * 20);
+  assert.equal(state.charges, 40, 'recovery fills up to the new top');
+  assert.equal(classicWeaponSnapshot(state).rechargeProgress, 0);
+  for (const bad of [19, 111, 30.5, Number.NaN]) assert.throws(() => setClassicMaxCharges(state, bad));
+  assert.equal(state.maxCharges, 40);
+  assert.equal(state.charges, 40);
+});
+
+// Nodos clave (dec-nodos-clave, 02/11/2026).
+test('wide magazine: the Forja may raise the magazine to 110 rounds', () => {
+  const state = createClassicWeapons();
+  assert.equal(setClassicMaxCharges(state, 110), 110);
+  assert.equal(state.charges, 110);
+});
+
+test('hot reload: after running dry the magazine recovers twice as fast until it is full again', () => {
+  const plain = createClassicWeapons(), hot = createClassicWeapons();
+  assert.equal(setClassicHotReload(hot, true), true);
+  for (const state of [plain, hot]) state.charges = 0;
+  // Sin munición vacía no hay prisa: solo cuenta tras quedarse a cero.
+  run(plain, 10); run(hot, 10);
+  assert.equal(plain.charges, 5);
+  assert.equal(hot.charges, 10, 'double speed while recovering from empty');
+  run(hot, 20);
+  assert.equal(hot.charges, 20);
+  const partial = createClassicWeapons(); setClassicHotReload(partial, true);
+  partial.charges = 10; run(partial, 10);
+  assert.equal(partial.charges, 15, 'a half magazine recovers at the normal speed');
+  assert.throws(() => setClassicHotReload(hot, 'yes'));
+});
+
+test('Pulse 3 and 4: the centre pulse alone beats level 2 at range, the side pulses only add a little up close', () => {
+  const sides = {3: .3, 4: .4};
+  for (const value of [3, 4]) {
+    const state = createClassicWeapons();
+    setClassicWeaponLevels(state, {pulse: value});
+    const [left, centre, right] = triggerClassicWeapon(state, origin).projectiles;
+    assert.ok(centre.damage > 1.3, `level ${value} centre ${centre.damage} beats level 2`);
+    assert.equal(left.damage, sides[value]); assert.equal(right.damage, sides[value]);
+  }
 });

@@ -50,25 +50,22 @@ async function ready(options) {
   const h = harness(options); assert.equal(await h.sfx.load(), true); h.sfx.setPaused(false); return h;
 }
 
-test('authoring manifest matches exact runtime offsets, and all 20 performances are original distinct PCM', () => {
-  const manifest = JSON.parse(fs.readFileSync(new URL('assets/combat_sfx_atlas_v2.json', base)));
+// Banco v3 (02/11/2026): efectos CC0 elegidos por el propietario.
+test('the v3 manifest matches the runtime offsets and every source sound is a recorded CC0 file', () => {
+  const manifest = JSON.parse(fs.readFileSync(new URL('assets/combat_sfx_atlas_v3.json', base)));
   assert.equal(manifest.src, COMBAT_SFX_SRC);
   assert.equal(manifest.duration, COMBAT_SFX_DURATION);
   assert.deepEqual(manifest.cues, COMBAT_SFX_CUES);
-  const measurements = JSON.parse(fs.readFileSync(new URL('art-source/audio/combat-sfx-v2/measurements.json', base)));
-  assert.equal(measurements.stems.length, 20);
-  assert.equal(new Set(measurements.stems.map(item => item.sha256)).size, 20);
-  assert.ok(measurements.estimatedDecodedFloat32Bytes < 3.1 * 1024 * 1024);
-  assert.ok(measurements.runtimeBytes < 350000);
-  const sourceRoot = new URL('art-source/audio/combat-sfx-v2/', base);
-  for (const stem of measurements.stems) {
-    const bytes = fs.readFileSync(new URL(stem.path, sourceRoot));
-    assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), stem.sha256);
-    assert.equal(stem.clippedSamples, 0);
-    assert.ok(stem.peakDbfs < -1.5);
+  assert.ok(COMBAT_SFX_CUES['boss-laser'], 'the subguardian laser has its own sound');
+  const provenance = fs.readFileSync(new URL('art-source/audio/combat-sfx-v3/PROVENANCE.md', base), 'utf8');
+  const builder = fs.readFileSync(new URL('scripts/build-combat-sfx-v3.py', base), 'utf8');
+  const sources = [...new Set([...builder.matchAll(/\('([a-z0-9_]+\.(?:ogg|wav|mp3))'/gi)].map(match => match[1]))];
+  assert.ok(sources.length >= 10);
+  for (const name of sources) {
+    assert.ok(fs.existsSync(new URL(`art-source/audio/combat-sfx-v3/${name}`, base)), name);
+    assert.match(provenance, new RegExp(name.replace('.', '\\.')), `${name} has its provenance`);
   }
-  const bytes = fs.readFileSync(new URL(COMBAT_SFX_SRC, base));
-  assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), measurements.runtimeSha256);
+  assert.ok(fs.statSync(new URL(COMBAT_SFX_SRC, base)).size < 350000);
 });
 
 test('v2 preserves all existing original PCM performances and adds weapon launches distinct from impacts', () => {
@@ -117,34 +114,35 @@ test('concurrent loads share one network request and decoder allocation, includi
   assert.equal(h.sfx.snapshot().decodedBytes, 3064320);
 });
 
-test('a real playback uses exactly one bounded segment and alternates distinct performances', async () => {
+test('a real playback uses exactly one bounded segment of its cue', async () => {
   const h = await ready(); h.context.currentTime = 5;
+  const [{offset, duration}] = COMBAT_SFX_CUES.phaser.variants;
   assert.equal(h.sfx.play('phaser', {eventId: 'shot-a', pan: -.4}), true);
-  assert.deepEqual(h.calls.sources[0].starts, [[5, 0, .2]]);
+  assert.deepEqual(h.calls.sources[0].starts, [[5, offset, duration]]);
   assert.equal(h.calls.panners[0].pan.value, -.4);
-  h.context.currentTime += .21;
+  h.context.currentTime += duration + .01;
   assert.equal(h.sfx.play('phaser', {eventId: 'shot-b', pan: 99}), true);
-  assert.deepEqual(h.calls.sources[1].starts, [[5.21, .32, .2]]);
+  assert.deepEqual(h.calls.sources[1].starts, [[5 + duration + .01, offset, duration]]);
   assert.equal(h.calls.panners[1].pan.value, .75);
-  h.context.currentTime += .21; h.sfx.play('phaser', {eventId: 'shot-c'});
-  assert.equal(h.calls.sources[2].starts[0][1], 0);
 });
 
-test('enemy firing uses its own emission slices, alternates variants, and never borrows an impact', async () => {
+test('enemy firing uses its own emission slices and never borrows an impact', async () => {
   const h = await ready();
+  const shot = COMBAT_SFX_CUES['enemy-phaser'].variants[0], heavy = COMBAT_SFX_CUES['enemy-heavy'].variants[0];
   assert.equal(h.sfx.play('enemy-phaser', {eventId: 'patrol-1:shot-1', pan: -.35}), true);
-  assert.deepEqual(h.calls.sources.at(-1).starts, [[0, 13.68, .28]]);
+  assert.deepEqual(h.calls.sources.at(-1).starts, [[0, shot.offset, shot.duration]]);
   h.context.currentTime = .3;
   assert.equal(h.sfx.play('enemy-phaser', {eventId: 'patrol-1:shot-2'}), true);
-  assert.deepEqual(h.calls.sources.at(-1).starts, [[.3, 14.08, .28]]);
+  assert.deepEqual(h.calls.sources.at(-1).starts, [[.3, shot.offset, shot.duration]]);
   h.context.currentTime = .6;
   assert.equal(h.sfx.play('enemy-heavy', {eventId: 'atlas-1:attack-1:volley-1', pan: .4}), true);
-  assert.deepEqual(h.calls.sources.at(-1).starts, [[.6, 14.48, .62]]);
+  assert.deepEqual(h.calls.sources.at(-1).starts, [[.6, heavy.offset, heavy.duration]]);
   h.context.currentTime = 1.25;
   assert.equal(h.sfx.play('enemy-heavy', {eventId: 'atlas-1:attack-1:volley-2'}), true);
-  assert.deepEqual(h.calls.sources.at(-1).starts, [[1.25, 15.22, .62]]);
   assert.deepEqual(h.sfx.snapshot().playedByCue, {'enemy-phaser': 2, 'enemy-heavy': 2});
   assert.equal(h.sfx.snapshot().playedByCue['impact-plasma'], undefined);
+  for (const impact of ['impact-metal', 'impact-plasma', 'hull-hit'])
+    assert.notEqual(COMBAT_SFX_CUES[impact].variants[0].offset, shot.offset);
   assert.throws(() => {h.sfx.snapshot().playedByCue['enemy-heavy'] = 99;}, TypeError);
 });
 

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-31",
+  "origin": "GPT (generador de imágenes) a petición del propietario, encargos camp-art-s1-subguardian y camp-art-s1-laser-subjefe; descargado del baúl",
+  "use": "Subguardián del tramo 5 del sector 1 (sustituye al CH-03): hoja 4×2 de 640 px (reposo, inclinado izquierda y derecha, dañado, cañones, carga del láser, disparo del láser, derrota) y su láser por piezas (tramo repetible 256×1024, animación 4×1, arranque 4×2 de 384, impacto 4×2 de 384, aviso 256×1024).",
+  "notes": "laser_arranque_v1: GPT dibujó una carcasa propia alrededor de la carga; no coincide con el emisor del subguardián. Usar los estados 6 y 7 de la hoja del subguardián para la carga y el disparo, o pedir de nuevo solo la luz.",
+  "files": {
+    "laser_animacion_v1.webp": "74c3894ebea07db651d8dd66e9ad5a15e0ad67bdd0c7201b927e336fef832d2c",
+    "laser_arranque_v1.webp": "960be8e61222cfe9f27d59866eea0b6fadb09ad38f390a1e17d53c8a82bf3172",
+    "laser_aviso_v1.webp": "9f4947bdaddd5b192d0c2d9413edf5c807f7671d1a2daaca0cc3be264be66cd8",
+    "laser_impacto_v1.webp": "05c01bdd9592b9e6aa92750d8121a880169a6d0923042a2ca5ed31f249032316",
+    "laser_tramo_v1.webp": "253b37657a4bda1164bfbdc227e2153807082de23934793d7f0a313f52f4e552",
+    "subguardian_estados_v1.webp": "d937383dca496eaa5c1e15e67f1704fa4b3e8af0fc47b35e63036d42238229ed"
+  }
+}

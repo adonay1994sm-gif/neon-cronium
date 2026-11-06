@@ -104,7 +104,7 @@ await test("manifiesto y archivos conservados coinciden exactamente con el disco
   const result = await audit(root);
   assert.equal(result.ok, true, JSON.stringify(result, null, 2));
   assert.equal(result.runtimeCount, assetManifest.assetCount);
-  assert.equal(result.preservedCount, 2);
+  assert.equal(result.preservedCount, 1); // solo assets/.gitkeep: el arte retirado se borra (25/10)
   assert.equal(result.actualBytes, assetManifest.runtimeBytes);
 });
 
@@ -146,7 +146,7 @@ await test("service worker incluye recursos activos y excluye referencias visual
   ];
   for (const path of required) assert.ok(corePaths.has(path), `no precargado: ${path}`);
   for (const path of [...assetManifest.groups.filter(group=>group.precache===false).flatMap(group=>group.paths),...assetManifest.standalone.filter(item=>item.precache===false).map(item=>item.path)]) assert.equal(corePaths.has(path),false,`referencia retirada precargada: ${path}`);
-  assert.equal(swContext.__SW_TEST__.CACHE, "neon-cronium-pre-release-7-2-0-orbital-hud-2");
+  assert.equal(swContext.__SW_TEST__.CACHE, "neon-cronium-pre-release-7-2-0-orbital-hud-3");
 });
 
 await test("todas las referencias locales de HTML existen", async () => {
@@ -202,7 +202,7 @@ await test("recursos iOS y web sincronizado son coherentes", async () => {
   const splash = await readFile(join(root, "ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png"));
   assert.deepEqual(pngSize(icon), { width: 1024, height: 1024 });
   assert.deepEqual(pngSize(splash), { width: 2732, height: 2732 });
-  for (const path of ["index.html", "game.js", "content-runtime.js", "native-admob.js", "assets/ship_frame_05.webp", "assets/smoke_frame_02.webp"]) {
+  for (const path of ["index.html", "game.js", "content-runtime.js", "native-admob.js", "assets/player_ship_identity_v1.webp", "assets/smoke_frame_02.webp"]) {
     const [web, ios] = await Promise.all([
       readFile(join(root, "www", path)),
       readFile(join(root, "ios/App/App/public", path))

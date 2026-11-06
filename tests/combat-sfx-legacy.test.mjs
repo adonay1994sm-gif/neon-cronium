@@ -7,6 +7,7 @@ import * as weapons from '../src/game/combat/classic-weapons.js';
 import * as guardian from '../src/game/combat/guardian-atlas.js';
 import {createScrapLedger} from '../src/game/progression/scrap-economy.js';
 import {resolveHullReinforcement} from '../src/game/combat/hull-reinforcement.js';
+import {COMBAT_SFX_DURATION} from '../src/game/audio/combat-sfx.js';
 
 // Actual legacy sources + actual new sound policy, with Web Audio nodes tagged
 // at their native boundary. No source rewriting, clocks or saved-game injection.
@@ -22,7 +23,7 @@ function harness({ready = true, fx = 70, music = 50} = {}) {
     oscillators: [], sources: [], gains: [], voyage: [], writes: [], timeline: [], scrap: []};
   const records = new Map(); let blocked = false, bank;
   const parameter = () => ({value: 0, values: [], setValueAtTime(v,t) {this.value = v; this.values.push([v,t]);},
-    setTargetAtTime(v,t,d) {this.value = v; this.values.push([v,t,d]);}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {}});
+    setTargetAtTime(v,t,d) {this.value = v; this.values.push([v,t,d]);}, cancelScheduledValues() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {}});
   const node = extra => ({connections: [], disconnected: 0,
     connect(target) {this.connections.push(target); return target;}, disconnect() {this.disconnected++;}, ...extra});
   class SharedAudioContext {
@@ -39,7 +40,7 @@ function harness({ready = true, fx = 70, music = 50} = {}) {
       calls.oscillators.push(oscillator); return oscillator;
     }
     async decodeAudioData() {calls.decode++; if (!ready) throw new Error('fixture: codec unavailable');
-      return {duration: 15.96, length: 766080, numberOfChannels: 1};}
+      return {duration: COMBAT_SFX_DURATION, length: Math.round(COMBAT_SFX_DURATION * 48000), numberOfChannels: 1};}
     async suspend() {this.state = 'suspended';}
     async resume() {this.state = 'running';}
   }

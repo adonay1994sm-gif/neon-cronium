@@ -1,4 +1,4 @@
-const CACHE = "neon-cronium-pre-release-7-2-0-orbital-hud-2";
+const CACHE = "neon-cronium-pre-release-7-2-0-orbital-hud-3";
 const CORE = [
   "assets/menu_hangar_bg_v1.webp",
   "assets/menu_frame_v1.webp",
@@ -6,13 +6,52 @@ const CORE = [
   "assets/menu_hangar_button_v1.webp",
   "assets/menu_arrow_v1.webp",
   "assets/menu_gear_v1.webp",
+  "assets/ui_window_v1.webp",
+  "assets/ui_button_main_v1.webp",
+  "assets/ui_button_main_pressed_v1.webp",
+  "assets/ui_button_secondary_v1.webp",
+  "assets/ui_button_secondary_pressed_v1.webp",
+  "assets/ui_button_danger_v1.webp",
+  "assets/ui_button_ad_v1.webp",
+  "assets/ui_stat_card_v1.webp",
+  "assets/ui_howto_icons_v1.webp",
+  "assets/ui_star_full_v1.webp",
+  "assets/ui_star_empty_v1.webp",
+  "assets/ui_sector_frame_v1.webp",
+  "assets/ui_beacon_big_v1.webp",
+  "assets/ui_defeat_cracks_v1.webp",
+  "assets/ui_slider_track_v1.webp",
+  "assets/ui_slider_fill_v1.webp",
+  "assets/ui_slider_thumb_v1.webp",
+  "assets/ui_toggle_off_v1.webp",
+  "assets/ui_toggle_on_v1.webp",
+  "assets/ui_select_v1.webp",
+  "assets/ui_separator_v1.webp",
   "assets/orbitron_wght_v1.ttf",
   "assets/exo2_latin_wght_v1.woff2",
-  "assets/combat_sfx_atlas_v2.m4a",
-  "assets/combat_sfx_atlas_v2.json",
+  "assets/combat_sfx_atlas_v3.m4a",
+  "assets/combat_sfx_atlas_v3.json",
+  "assets/ui_sfx_atlas_v2.m4a",
+  "assets/ui_sfx_atlas_v2.json",
+  "assets/hangar_ships_v1.webp",
+  "assets/ship_ability_icons_v1.webp",
+  "assets/ship_flight_poses_v1.webp",
+  "assets/subguardian_atlas_v1.webp",
+  "assets/subguardian_laser_v1.webp",
+  "assets/subguardian_impact_v1.webp",
+  "assets/weapon_levels_v1.webp",
+  "assets/weapon_bolts_v1.webp",
+  "assets/c9_ship_v1.webp",
+  "assets/hangar_slot_normal_v1.webp",
+  "assets/hangar_slot_chosen_v1.webp",
+  "assets/hangar_slot_locked_v1.webp",
+  "assets/hangar_slot_paid_v1.webp",
+  "assets/hangar_ability_plate_v1.webp",
   "assets/cronium_energy_atlas_v2.webp",
-  "assets/chapter1_opening_score_v1.m4a",
-  "assets/chapter1_voyage_score_v1.m4a",
+  "assets/music_menu_v1.m4a",
+  "assets/music_vuelo_v1.m4a",
+  "assets/music_subjefe_v1.m4a",
+  "assets/music_jefe_v1.m4a",
   "assets/chapter1_portraits_v1.webp",
   "assets/chapter1_missile_atlas_v1.webp",
   "assets/c9_upgrade_icons_v1.webp",
@@ -24,7 +63,6 @@ const CORE = [
   "assets/mission_sector1_v1.webp",
   "assets/mission_sector2_v1.webp",
   "assets/hull_impact_sparks_v1.webp",
-  "assets/cronos_prime_trail_v1.webp",
   "assets/atlas_explosion_v1.webp",
   "assets/lava_core_mine_atlas_v1.webp",
   "assets/gaia_tracker_atlas_v1.webp",
@@ -65,13 +103,6 @@ const CORE = [
   "assets/planet_violeta_atlas_v1.webp",
   "assets/planet_tormentoso_atlas_v1.webp",
   "assets/force_shield_atlas_v1.webp",
-  "assets/core_frame_00.webp",
-  "assets/core_frame_01.webp",
-  "assets/core_frame_02.webp",
-  "assets/core_frame_03.webp",
-  "assets/core_frame_04.webp",
-  "assets/core_frame_05.webp",
-  "assets/cronium_fragment_v1.webp",
   "assets/phaser_frame_00.webp",
   "assets/phaser_frame_01.webp",
   "assets/phaser_frame_02.webp",
@@ -120,8 +151,7 @@ const CORE = [
   "assets/shield_effect.webp",
   "assets/shield_idle.webp",
   "assets/explosion_small.webp",
-  "assets/chronos_shockwave_atlas_v1.webp",
-  "assets/chronos_detached_module_v1.webp"
+  "assets/chronos_shockwave_atlas_v1.webp"
 ];
 
 // addAll es "todo o nada": si un solo archivo falla, la instalación entera
@@ -186,6 +216,10 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  // Peticiones por partes (la música en <audio>, sobre todo en Safari): las
+  // atiende la red; responder con el archivo entero desde la caché puede
+  // impedir que suene (auditoría 03/11, A20).
+  if (event.request.headers?.get?.("range")) return;
   const isCode = event.request.mode === "navigate" || /\.(?:html|js|css)$/.test(url.pathname);
   event.respondWith(isCode ? networkFirst(event.request) : cacheFirst(event.request));
 });

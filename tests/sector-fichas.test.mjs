@@ -12,7 +12,7 @@ test('the sector 1 route has ten stages of 45 to 60 seconds', () => {
 });
 
 test('the sub-boss fights in stage 5 and the boss in stage 10', () => {
-  assert.deepEqual(S1_GAIA.encounters[4].boss, {id: 'ch03', role: 'subjefe'});
+  assert.deepEqual(S1_GAIA.encounters[4].boss, {id: 'subguardian', role: 'subjefe'});
   assert.deepEqual(S1_GAIA.encounters[9].boss, {id: 'guardian-atlas', role: 'jefe'});
   S1_GAIA.encounters.forEach((rules, index) => {
     if (index !== 4 && index !== 9) assert.equal(rules.boss, null, `stage ${index + 1}`);
@@ -32,7 +32,11 @@ test('C9 docks at the start of stage 6 with only the entry quota', () => {
 
 test('stages 1 to 4 bring in the new Gaia profiles before the sub-boss', () => {
   const early = new Set(S1_GAIA.encounters.slice(0, 4).flatMap(rules => rules.patrol ? [...rules.patrol.roster] : []));
-  for (const id of ['tracker', 'sower', 'aegis']) assert.ok(early.has(id), id);
+  for (const id of ['tracker', 'aegis']) assert.ok(early.has(id), id);
+});
+
+test('the Sembrador stays out of sector 1 until its logic is redone (owner, 31/10)', () => {
+  for (const rules of S1_GAIA.encounters) assert.ok(!rules.patrol || !rules.patrol.roster.includes('sower'));
 });
 
 test('sectors are found by id', () => {
@@ -49,7 +53,11 @@ test('the sector opens with the Chronos intro', () => {
   assert.equal(S1_GAIA.intro, true);
   assert.equal(S1_GAIA.recoveryAt, 9);
   assert.equal(S1_GAIA.cinematicDuration, 90);
-  assert.deepEqual(introEvents(S1_GAIA), introEvents(S1_V1_CHRONOS_GAIA));
+  // Normas del propietario (24/10): el Gemelo se gana venciendo a Atlas, así
+  // que el sector no suelta el emisor flotante del viaje antiguo.
+  assert.equal(S1_GAIA.events.some(event => event.type === 'twin-module-marker'), false);
+  assert.deepEqual(introEvents(S1_GAIA),
+    introEvents(S1_V1_CHRONOS_GAIA).filter(event => event.type !== 'twin-module-marker'));
 });
 
 test('the sector ends with Atlas', () => {

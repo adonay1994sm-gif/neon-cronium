@@ -14,9 +14,11 @@ const immutable = object => Object.freeze(object);
 const ROSTERS = immutable({
   escape: immutable(['raider', 'scout']),
   flank: immutable(['raider', 'tracker', 'scout']),
-  mines: immutable(['sower', 'raider', 'interceptor']),
+  // Sin el Sembrador de momento (propietario, 31/10/2026): hay que rehacer
+  // su lógica (tarea sembrador-minas). Vuelve aquí y en elite cuando esté.
+  mines: immutable(['raider', 'interceptor']),
   shield: immutable(['aegis', 'interceptor', 'tracker', 'scout']),
-  elite: immutable(['alpha', 'aegis', 'interceptor', 'sower']),
+  elite: immutable(['alpha', 'aegis', 'interceptor']),
   gate: immutable(['interceptor', 'tracker', 'aegis', 'raider'])
 });
 // attackers: cuántos enemigos pueden atacar a la vez (turnos de ataque) y
@@ -42,7 +44,7 @@ export const S1_GAIA = immutable({
     ['Campo de restos',50,11,'Cruza los restos; algo te sigue por detrás','Campo de restos','Salida orbital','wreckage-crossing',.15,.80,.52],
     ['La red exterior',52,17,'La red de Gaia siembra minas en tu ruta','Salida orbital','Red exterior de Gaia','net-edge',.12,.60,.58],
     ['Cuarentena',52,23,'Rompe los escudos de la Égida y sigue adelante','Red exterior de Gaia','Anillo de satélites','quarantine',.16,.62,.64],
-    ['El satélite CH-03',56,27,'Derriba el satélite de defensa que cierra el anillo','Anillo de satélites','Corredor de enlace','sub-boss',.18,.66,.70],
+    ['El subguardián',56,27,'Derriba al subguardián que cierra el anillo','Anillo de satélites','Corredor de enlace','sub-boss',.18,.66,.70],
     ['Enlace C9',48,27,'Repara en C9 y prueba tu nave en el corredor','Corredor de enlace','Lado nocturno','service-stop',.06,.34,.30],
     ['El Alfa',54,38,'El Alfa del C-17 lidera la caza en la oscuridad','Lado nocturno','Escolta del C-17','alpha-hunt',.08,.28,.72],
     ['Lluvia en el acceso',52,44,'Cruza la lluvia de meteoritos sin dejar de combatir','Escolta del C-17','Piquetes de Gaia','meteor-rain',.14,.58,.76],
@@ -53,17 +55,16 @@ export const S1_GAIA = immutable({
     {id:'sector-1-intruder',type:'attack',at:2.25,attackerId:'cronium-raider',targetId:'chronos-reactor'},
     {id:'sector-1-breach',type:'rupture',at:9,resourceId:'cronium',cause:'hostile-reactor-strike'},
     {id:'sector-1-perimeter-exit',type:'departure',at:108,originId:'chronos-scientific-centre'},
-    {id:'sector-1-recovered-module',type:'twin-module-marker',at:90,moduleId:'twin-emitter',resourceId:'cronium'},
     {id:'sector-1-gaia-beacon',type:'gaia-beacon',at:470,destinationId:'gaia-atlas-approach'}
   ].map(event => immutable(event))),
   service: immutable({stage: 6, approach: 1.2, visibleApproach: 2.4, departure: 2.4,
-    renamedStage: 'Corredor de Gaia', renamedObjective: 'Prueba tu nave en el corredor; C9 sigue disponible en la pausa'}),
+    renamedStage: 'Corredor de Gaia', renamedObjective: 'Prueba tu nave en el corredor; C9 vuelve tras vencer a Atlas'}),
   encounters: immutable([
     encounter(1, [2, ROSTERS.escape, 8], {attackers: 1}),
     encounter(2, [3, ROSTERS.flank, 7], {attackers: 1}),
     encounter(3, [3, ROSTERS.mines, 7], {repairAt: 30, horde: HORDE}),
     encounter(7, [4, ROSTERS.shield, 6], {comets: 'aimed'}),
-    encounter(4, [2, ROSTERS.flank, 9], {boss: {id: 'ch03', role: 'subjefe'}}),
+    encounter(4, [2, ROSTERS.flank, 9], {boss: {id: 'subguardian', role: 'subjefe'}}),
     encounter(5, [2, ROSTERS.escape, 8], {attackers: 3}),
     encounter(8, [4, ROSTERS.elite, 6], {repairAt: 32, attackers: 3, horde: HORDE}),
     encounter(9, [4, ROSTERS.elite, 6], {comets: 'aimed', attackers: 3}),

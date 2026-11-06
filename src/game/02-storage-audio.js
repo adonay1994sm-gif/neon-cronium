@@ -8,16 +8,20 @@
     const savedQuality = ["low", "normal", "high"].includes(source.effectsQuality)
       ? source.effectsQuality
       : source.effects === false ? "low" : DEFAULT_SETTINGS.effectsQuality;
+    // Propietario (25/10): el 100 antiguo pasa una vez a 135; lo elegido después se respeta.
+    const savedSensitivity = Math.round(finite(source.sensitivity, DEFAULT_SETTINGS.sensitivity, 60, 150) / 5) * 5;
     return {
       music: Math.round(finite(source.music, DEFAULT_SETTINGS.music, 0, 100)),
       fx: Math.round(finite(source.fx, DEFAULT_SETTINGS.fx, 0, 100)),
-      sensitivity: Math.round(finite(source.sensitivity, DEFAULT_SETTINGS.sensitivity, 60, 150) / 5) * 5,
+      sensitivity: source.sensitivityMigrated !== true && savedSensitivity === 100 ? DEFAULT_SETTINGS.sensitivity : savedSensitivity,
+      sensitivityMigrated: true,
       autoFire: source.autoFire === true,
       vibration: typeof source.vibration === "boolean" ? source.vibration : DEFAULT_SETTINGS.vibration,
       reduceEffects: typeof source.reduceEffects === "boolean" ? source.reduceEffects
         : Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
+      leftHanded: source.leftHanded === true,
       effectsQuality: savedQuality,
-      difficulty: ["facil", "normal", "hardcore"].includes(source.difficulty) ? source.difficulty : DEFAULT_SETTINGS.difficulty,
+      difficulty: ["facil", "normal", "dificil", "hardcore"].includes(source.difficulty) ? source.difficulty : DEFAULT_SETTINGS.difficulty,
       flightTutorial: source.flightTutorial&&typeof source.flightTutorial==='object' ? source.flightTutorial : null,
       effects: savedQuality !== "low"
     };
@@ -223,8 +227,14 @@
   // updateScore; no score timer, RAF or permanently running drone is created.
   let voyageScore = null;
   let chapterScore = null;
+  // Música nueva por momento (propietario, 02/11/2026). Sustituye al sintetizador
+  // de viaje y a las pistas del capítulo, que ya no se crean.
+  let moodMusic = null;
   let masterBus = null;
   let combatSfx = null;
+  let uiSfx = null;
+  let musicDuck = null;
+  let fallbackTones = 0;
   let voyageScoreContext = "transit";
   let scoreSuspended = false;
   const activeToneVoices = new Set();
@@ -250,7 +260,11 @@
       }
       musicGain = audioCtx.createGain();
       musicGain.gain.value = 0;
-      musicGain.connect(masterBus);
+      // La música pasa por su propia etapa para poder bajarla en golpes y
+      // avisos sin tocar los efectos (paso 3 de audio).
+      musicDuck = audioCtx.createGain();
+      musicDuck.gain.value = 1;
+      musicGain.connect(musicDuck).connect(masterBus);
     } catch {
       return null;
     }
@@ -261,12 +275,8 @@
     const ac = ensureAudio();
     if (!ac) return;
     if (ac.state === "suspended") ac.resume().catch(() => {});
-    if (!voyageScore && typeof NeonCampaign !== "undefined" && typeof NeonCampaign.createVoyageScore === "function") {
-      voyageScore = NeonCampaign.createVoyageScore({context: ac, output: musicGain});
-      voyageScore.setContext(voyageScoreContext);
-    }
-    if(!chapterScore&&ac.createMediaElementSource) {
-      try {chapterScore=NeonCampaign.createChapterScore({context:ac,output:musicGain});} catch {chapterScore=null;}
+    if(!moodMusic&&ac.createMediaElementSource&&typeof NeonCampaign?.createMoodMusic==="function") {
+      try {moodMusic=NeonCampaign.createMoodMusic({context:ac,output:musicGain});} catch {moodMusic=null;}
     }
     if(!combatSfx&&typeof NeonCampaign.createCombatSfx==="function") {
       combatSfx=NeonCampaign.createCombatSfx({context:ac,output:masterBus||ac.destination});
@@ -275,6 +285,12 @@
     else if(combatSfx?.snapshot().failed)combatSfx.load();
     scoreSuspended = false;
     updateAudioVolumes();
+    // Dentro del toque: la música del momento empieza ya y el otro reproductor
+    // queda desbloqueado para los fundidos (Safari en iPhone).
+    if (moodMusic && settings.music > 0) {
+      moodMusic.update({mood: musicMood(), paused: false, enabled: true});
+      moodMusic.unlock();
+    }
   }
 
   function signalScoreContext(context) {
@@ -283,13 +299,18 @@
     return voyageScore?.setContext(context) ?? true;
   }
 
+  // Momento de la música: menú fuera de la partida; en vuelo, jefe y
+  // subguardián tienen la suya mientras luchan.
+  function musicMood() {
+    if (!["playing", "paused", "destroying"].includes(state)) return "menu";
+    if (typeof atlasBoss !== "undefined" && atlasBoss && !atlasBoss.resolved) return "jefe";
+    if (typeof subBoss !== "undefined" && subBoss && !subBoss.resolved) return "subjefe";
+    return "vuelo";
+  }
+
   function updateScore(dt, paused = false) {
     combatSfx?.setPaused(paused||scoreSuspended||state!=="playing");
-    if (!voyageScore) return;
-    const rendered=chapterScore?.update({active:Boolean(classicChapterStory),
-      elapsed:classicFlightView?.elapsed||0,paused:paused||scoreSuspended,enabled:settings.music>0});
-    voyageScore.setPaused(paused || scoreSuspended || Boolean(rendered));
-    voyageScore.advance(dt);
+    moodMusic?.update({mood: musicMood(), paused: paused || scoreSuspended, enabled: settings.music > 0});
   }
 
   function stopToneVoices() {
@@ -302,7 +323,9 @@
   async function suspendAudio() {
     scoreSuspended = true;
     chapterScore?.suspend();
+    moodMusic?.suspend();
     combatSfx?.setPaused(true);
+    uiSfx?.setPaused(true);
     voyageScore?.setPaused(true);
     stopToneVoices();
     if (audioCtx?.state === "running") await audioCtx.suspend().catch(() => {});
@@ -321,16 +344,20 @@
     combatSfx?.setEnabled(settings.fx>0);
     combatSfx?.setVolume(settings.fx/100);
     combatSfx?.setPaused(scoreSuspended||state!=="playing");
+    uiSfx?.setEnabled(settings.fx>0);
+    uiSfx?.setVolume(settings.fx/100);
     if (settings.fx <= 0) stopToneVoices();
-    if(settings.music<=0)chapterScore?.suspend();
+    if(settings.music<=0){chapterScore?.suspend();moodMusic?.suspend();}
     if (musicGain && audioCtx) {
-      const value = (settings.music / 100) * 0.26;
+      // Propietario (02/11/2026): la música tapaba el juego; tope 0,26 → 0,15 (−4,8 dB).
+      const value = (settings.music / 100) * 0.15;
       musicGain.gain.setTargetAtTime(value, audioCtx.currentTime, 0.08);
     }
   }
 
   function combatSound(cue,x=player.x,eventId=null) {
     if(state!=="playing"||scoreSuspended||settings.fx<=0)return;
+    if(cue==="hull-hit")duckMusic(.25);
     if(combatSfx?.snapshot().ready) {
       // A rejected voice means muted/paused/throttled, never a fallback beep.
       combatSfx.play(cue,{pan:clamp(x/W*2-1,-.75,.75),eventId});return;
@@ -339,8 +366,43 @@
       "enemy-phaser":[280,.08,"triangle",.04],"enemy-heavy":[120,.16,"sawtooth",.045],
       "impact-metal":[620,.05,"triangle",.035],"impact-plasma":[180,.04,"square",.025],
       "hull-hit":[95,.22,"sawtooth",.08],"enemy-break":[920,.05,"triangle",.04],
-      "atlas-charge":[135,.28,"triangle",.065],"atlas-collapse":[640,.28,"sine",.06]};
-    if(fallback[cue])tone(...fallback[cue]);
+      "atlas-charge":[135,.28,"triangle",.065],"atlas-collapse":[640,.28,"sine",.06],"boss-laser":[110,.4,"sawtooth",.06]};
+    if(fallback[cue]){fallbackTones++;tone(...fallback[cue]);}
+  }
+
+  // Baja la música −6 dB en 0,05 s y la devuelve en 0,4 s tras «hold»
+  // segundos: golpe al casco, jefe, ruptura y transmisiones de LIRA o N-7.
+  function duckMusic(hold = .3) {
+    if (!musicDuck || !audioCtx) return;
+    const now = audioCtx.currentTime, gain = musicDuck.gain;
+    gain.cancelScheduledValues(now);
+    gain.setTargetAtTime(.501, now, .05 / 3);
+    gain.setTargetAtTime(1, now + hold, .4 / 3);
+  }
+
+  // Sonidos de interfaz y avisos (Kenney CC0, ui-sfx.js): suenan también en
+  // menús y pausa. Mientras el banco carga, o si falla, queda el pitido de antes.
+  const UI_FALLBACK_TONES={"ui-tick":[620,.05,"triangle",.04],confirm:[720,.10,"triangle",.035],
+    "weapon-switch":[650,.12,"triangle",.045],"pickup-scrap":[760,.045,"sine",.025],"pickup-cronium":[560,.06,"triangle",.055],
+    "ammo-ready":[520,.035,"sine",.025],"power-up":[780,.15,"triangle",.075],repair:[690,.18,"sine",.08],
+    transmission:[315,.06,"sine",.035],"stage-start":[540,.11,"triangle",.07],"stage-complete":[760,.12,"triangle",.08],
+    unlock:[900,.18,"triangle",.06],"gate-warning":[180,.12,"square",.045],"gate-clear":[760,.08,"triangle",.055],
+    defeat:[110,.30,"sawtooth",.06],"ship-destroyed":[70,.48,"sawtooth",.095],rupture:[72,.5,"sawtooth",.05],
+    "boss-alert":[135,.28,"triangle",.065]};
+  function uiSound(cue,x=W/2) {
+    if(settings.fx<=0||scoreSuspended)return;
+    if(cue==="boss-alert")duckMusic(.6);
+    if(cue==="rupture")duckMusic(1.5);
+    const ac=ensureAudio();
+    if(!ac)return;
+    if(ac.state==="suspended")ac.resume().catch(()=>{});
+    if(!uiSfx&&typeof NeonCampaign.createUiSfx==="function") {
+      uiSfx=NeonCampaign.createUiSfx({context:ac,output:masterBus||ac.destination});
+      uiSfx?.setVolume(settings.fx/100);uiSfx?.load();
+    }
+    else if(uiSfx?.snapshot().failed)uiSfx.load();
+    if(uiSfx?.snapshot().ready){uiSfx.setPaused(false);uiSfx.play(cue,{pan:clamp(x/W*2-1,-.75,.75)});return;}
+    if(UI_FALLBACK_TONES[cue]){fallbackTones++;tone(...UI_FALLBACK_TONES[cue]);}
   }
 
   function tone(frequency = 440, duration = 0.06, type = "sine", base = 0.06) {
@@ -377,6 +439,7 @@
 
   function syncSettingsUI() {
     document.body.classList.toggle("reduced-effects", settings.reduceEffects);
+    document.body.classList.toggle("left-handed", settings.leftHanded);
     ui.musicVolume.value = settings.music;
     ui.fxVolume.value = settings.fx;
     ui.sensitivity.value = settings.sensitivity;
@@ -384,17 +447,43 @@
     ui.effectsQuality.value = settings.effectsQuality;
     if (ui.difficulty) ui.difficulty.value = settings.difficulty;
     ui.reduceEffects.checked = settings.reduceEffects;
+    ui.leftHanded.checked = settings.leftHanded;
     ui.autoFire.checked = settings.autoFire;
     ui.musicValue.textContent = `${settings.music}%`;
     ui.fxValue.textContent = `${settings.fx}%`;
     ui.sensitivityValue.textContent = `${settings.sensitivity}%`;
+    paintRanges();
+  }
+
+  // Las barras pintadas leen la parte recorrida de --fill (0…1) en su fila.
+  function paintRanges() {
+    for (const range of [ui.musicVolume, ui.fxVolume, ui.sensitivity]) {
+      range.parentElement.style.setProperty("--fill", Math.max(.001, (range.value - range.min) / (range.max - range.min)));
+    }
   }
 
   function openSettings(from = "menu") {
     settingsReturn = from;
     syncSettingsUI();
+    // Siempre desde arriba: si no, la segunda vez se abría a mitad (auditoría 25/10, A2).
+    const panel = ui.settingsPanel.querySelector(".settings-panel");
+    if (panel) panel.scrollTop = 0;
     overlay(ui.settingsPanel);
     startMusic();
+    showAudioDiagnostics();
+  }
+
+  // Diagnóstico temporal (30/10): con #audio en la dirección, Ajustes dice si
+  // los bancos de sonido cargaron o si suenan los pitidos de respaldo.
+  function showAudioDiagnostics() {
+    if (location.hash !== "#audio" || !ui.settingsPanel) return;
+    let line = document.getElementById("audioDiagnostics");
+    if (!line) {
+      line = document.createElement("p"); line.id = "audioDiagnostics"; line.setAttribute("role", "status");
+      ui.settingsPanel.querySelector(".settings-panel")?.prepend(line);
+    }
+    const bank = sfx => !sfx ? "sin crear" : sfx.snapshot().ready ? "cargado" : sfx.snapshot().failed ? "FALLÓ" : "cargando";
+    line.textContent = `AUDIO · contexto ${audioCtx?.state || "sin crear"} · combate ${bank(combatSfx)} · interfaz ${bank(uiSfx)} · pitidos de respaldo ${fallbackTones}`;
   }
 
   function closeSettings() {

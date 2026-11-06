@@ -110,7 +110,7 @@
     const formation = createDebrisFormation();
     gates.push(formation);
     clearProtectedCorridors(formation);
-    tone(180, 0.12, "square", 0.045);
+    uiSound("gate-warning");
   }
 
   function updateGateSystem(dt, scale) {
@@ -148,7 +148,7 @@
         if (safe) {
           score += 25;
           pulseRing(player.x, player.y, level().accent, 120, 0.48);
-          tone(760, 0.08, "triangle", 0.055);
+          uiSound("gate-clear");
           toast("Paso orbital limpio: +25");
         } else {
           damageShip(38, player.x, player.y - 15);
@@ -169,8 +169,10 @@
     item.rs=Number.isFinite(item.rs)?item.rs:0;
     item.p=Number.isFinite(item.p)?item.p:0;
     const dx=player.x-item.x,dy=player.y-item.y,distance=Math.hypot(dx,dy);
-    if(item.bossSalvage || distance<=150) {
-      const speed=item.bossSalvage?1100:360+240*(1-Math.min(1,distance/150));
+    // Nodo clave Imán de chatarra (02/11/2026): el doble de alcance.
+    const reach=typeof classicKeyNodes!=="undefined"&&classicKeyNodes.magnet?300:150;
+    if(item.bossSalvage || distance<=reach) {
+      const speed=item.bossSalvage?1100:360+240*(1-Math.min(1,distance/reach));
       const travel=Math.min(distance,speed*dt);
       if(distance>0){item.x+=dx/distance*travel;item.y+=dy/distance*travel;}
     } else {
@@ -283,7 +285,8 @@
 
     advanceClassicFlight(dt);
     if(state!=="playing"){updateEffects(dt);return;}
-    if (typeof updateCh03Encounter === "function") updateCh03Encounter(dt);
+    if (typeof updateSubBossEncounter === "function") updateSubBossEncounter(dt);
+    if (typeof updateC9Scene === "function") updateC9Scene(dt);
     if (!atlasBoss && !classicFlightView) {
       spawnTimer -= dt;
       if (spawnTimer <= 0) {
@@ -344,7 +347,9 @@
     if (!atlasBoss) updateGateSystem(dt, scale);
 
     // Un turno de ataque de quien ya no está (derribado o fuera) se libera ya.
-    const attackTokens = typeof sectorAttackTokens === "undefined" ? null : sectorAttackTokens;
+    // También los turnos de reserva de fuera del sector (auditoría 03/11, A17).
+    const attackTokens = (typeof sectorAttackTokens === "undefined" ? null : sectorAttackTokens)
+      || (typeof gaiaFallbackTokens === "undefined" ? null : gaiaFallbackTokens);
     if (attackTokens) {
       const alive = new Set(items.map(item => item.id));
       for (const id of [...attackTokens.holders.keys(), ...attackTokens.waiting.keys()])
@@ -359,6 +364,12 @@
       // Recovering the final fragment can replace the field with the Atlas
       // arena synchronously. The old loop indexes must not read that old field.
       if (!item) continue;
+      // Alto el fuego de C9: lo hostil se retira hacia arriba y se apaga.
+      if (item.c9Retreat) {
+        item.y -= 320 * dt; item.alpha = Math.max(0, (item.alpha ?? 1) - dt * 1.4);
+        if (item.alpha <= 0 || item.y < -90) items.splice(index, 1);
+        continue;
+      }
       if(item.salvagePickup) {
         if(!advanceClassicSalvagePickup(item,dt*scale)){items.splice(index,1);continue;}
       } else if(item.showerComet) {

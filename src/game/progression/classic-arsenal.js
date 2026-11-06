@@ -2,6 +2,10 @@ import {classicWorkshopState} from './scrap-economy.js';
 
 const WEAPON_IDS = Object.freeze(['pulse', 'twin', 'lance', 'scatter', 'needle']);
 const BOSS_WEAPONS = Object.freeze({'guardian-atlas': 'twin'});
+// Lanza, Abanico y Aguja salieron (dec-armas-plan, 01/11/2026): vuelven con el
+// jefe de su sector. Un guardado antiguo las pierde y vuela con Pulso; la
+// chatarra que costaron la devuelve la bodega (scrap-economy).
+const RETIRED_WEAPONS = Object.freeze(['lance', 'scatter', 'needle']);
 const owns = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 
 // This is the existing equipment record, not a new campaign or save key.
@@ -30,8 +34,9 @@ export function normalizeClassicEquipment(value) {
   // valid transaction. The completion journal can retry the complete record.
   if (value.bossRewards?.some(id => !value.unlocked.includes(BOSS_WEAPONS[id]))) return null;
 
+  const unlocked = [...new Set(value.unlocked)].filter(id => !RETIRED_WEAPONS.includes(id));
   return {version: 1, recoveredTwin: value.recoveredTwin,
-    unlocked: [...new Set(value.unlocked)], selected: value.selected,
+    unlocked, selected: unlocked.includes(value.selected) ? value.selected : 'pulse',
     ...(owns(value, 'lanceCalibrated') ? {lanceCalibrated: value.lanceCalibrated} : {}),
     ...(owns(value, 'twinPrepared') ? {twinPrepared: value.twinPrepared} : {}),
     ...(owns(value, 'bossRewards') ? {bossRewards: [...new Set(value.bossRewards)]} : {})};

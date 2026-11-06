@@ -77,6 +77,7 @@ function harness({assembled = true, health = 100, selected = 'pulse', ready = tr
     clamp: (number, low, high) => Math.max(low, Math.min(high, number)),
     hasClassicTwinMounts: () => selected === 'twin', classicTwinFrame: () => 0,
     drawModularShip: (...args) => {calls.push({method: 'drawModularShip', health: args[5]}); return assembled;},
+    drawPosedShip: () => false,
     drawShipIdentityFallback: () => {calls.push({method: 'identityFallback'}); return true;},
     drawClassicTwinMounts: () => calls.push({method: 'historicalMounts'}),
     frameFrom: (name, frame) => {frameRequests.push({name, frame}); return image(name, 128, 128);},

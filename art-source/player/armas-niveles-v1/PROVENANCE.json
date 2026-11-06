@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-01",
+  "origin": "GPT (generador de imágenes) a petición del propietario, encargo camp-art-armas-niveles; descargado del baúl",
+  "use": "Disparos del jugador por nivel: 4 columnas (N1-N4) × 4 filas (Pulso, Gemelo, Lanza, Abanico), celdas de 256 px. Hoy se usan Pulso y Gemelo (dec-armas-plan).",
+  "build": "python3 scripts/build-weapon-levels.py",
+  "files": {
+    "armas_niveles_v1.webp": "67c0ee44619ea877f909473b1d8548caa72d0c9d5006d46e26624aa75058760b"
+  }
+}

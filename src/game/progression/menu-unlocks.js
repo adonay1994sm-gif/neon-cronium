@@ -4,6 +4,8 @@
  * CONTINUAR VIAJE; en el tramo 6 se abre el hangar y ya no se cierra, aunque
  * mueras y vuelvas al tramo 1. La ruta y las naves llegarán tras el jefe,
  * cuando existan el mapa de la galaxia y la segunda nave.
+ * También recuerda si ya se vio la intro de Chronos: los intentos siguientes
+ * empiezan tras ella (auditoría del 25/10, A1).
  * Clave propia: no toca el guardado del sector. Funciones puras.
  */
 export const MENU_UNLOCKS_KEY = 'neonCronium.menu.v1';
@@ -12,7 +14,8 @@ const HANGAR_STAGE = 6, STAGE_COUNT = 10;
 export function normalizeMenuUnlocks(raw) {
   const valid = Boolean(raw) && typeof raw === 'object' && raw.version === 1 && typeof raw.hangar === 'boolean'
     && raw.seen && typeof raw.seen === 'object' && !Array.isArray(raw.seen);
-  return {version: 1, hangar: valid ? raw.hangar : false, seen: {hangar: valid && raw.seen.hangar === true}};
+  return {version: 1, hangar: valid ? raw.hangar : false,
+    seen: {hangar: valid && raw.seen.hangar === true, intro: valid && raw.seen.intro === true}};
 }
 
 export function menuView(sectorSave, unlocks) {

@@ -25,9 +25,10 @@ function context() {
   }, set(target, key, value) { target[key] = value; return true; }});
 }
 
-function harness({unlocked = '2', query = ''} = {}) {
+function harness({unlocked = '2', query = '', storage = {}, blockStorage = false} = {}) {
   const dom = new JSDOM(html, {url: `https://neon.test/${query}`, runScripts: 'outside-only', pretendToBeVisual: true});
   const w = dom.window;
+  for (const [key, value] of Object.entries(storage)) w.localStorage.setItem(key, value);
   w.HTMLCanvasElement.prototype.getContext = () => context();
   w.HTMLCanvasElement.prototype.getBoundingClientRect = () => ({x: 0, y: 0, left: 0, top: 0, right: 390, bottom: 844, width: 390, height: 844});
   w.requestAnimationFrame = () => 1; w.cancelAnimationFrame = () => {}; w.navigator.vibrate = () => true;
@@ -35,6 +36,8 @@ function harness({unlocked = '2', query = ''} = {}) {
   w.Image = class { constructor() { this.complete = false; this.naturalWidth = 0; this.naturalHeight = 0; }
     set src(v) { this._src = v; this.complete = true; this.naturalWidth = 1536; this.naturalHeight = 768; } get src() { return this._src || ''; } };
   w.localStorage.setItem('neon-unlocked-v2', unlocked);
+  // Navegador que bloquea los datos del sitio (auditoría 03/11, A02).
+  if (blockStorage) Object.defineProperty(w, 'localStorage', {get() { throw new w.DOMException('blocked', 'SecurityError'); }});
   // Azar con semilla fija: las pruebas que cuentan patrullas o peligros no
   // pueden depender de la suerte (revisión 3, prueba intermitente).
   let seed = 0x9e3779b9;
@@ -131,6 +134,42 @@ test('a fresh sector plays the Chronos opening and the tutorial', () => {
   assert.ok(drawnTexts.some(text => /^image:.*chronos_intro_station_atlas/.test(text)), 'the Chronos station is drawn');
 });
 
+// A1 (auditoría 25/10): la intro de Chronos no se repite en cada intento.
+const opening = T => T.ev('classicChapterView?.opening.film===true');
+const menuMemory = w => JSON.parse(w.localStorage.getItem('neonCronium.menu.v1') || 'null');
+
+test('once skipped, a retry of the sector starts after the Chronos opening', () => {
+  const {w, T} = harness();
+  T.startSector('S1');
+  T.adv(1);
+  assert.equal(opening(T), true, 'the first attempt plays the opening');
+  click(w, 'chapterSkip');
+  assert.equal(menuMemory(w).seen.intro, true);
+  T.finishGame('hull');
+  click(w, 'retry');
+  T.adv(.1);
+  assert.equal(T.stage(), 1);
+  assert.equal(story(T), true, 'the chapter keeps its later lines');
+  assert.equal(opening(T), false, 'the retry skips the opening');
+  assert.ok(T.ev('classicFlightView.elapsed') >= T.ev('NeonCampaign.CHRONOS_INTRO_TIMELINE.gone'));
+  assert.equal(w.document.getElementById('chapterSkip').classList.contains('hidden'), true);
+});
+
+test('watching the whole opening also counts as seen', () => {
+  const {w, T} = harness();
+  T.startSector('S1');
+  T.adv(1);
+  assert.equal(menuMemory(w)?.seen?.intro ?? false, false, 'not seen while it plays');
+  T.adv(15);
+  assert.equal(opening(T), false);
+  assert.equal(menuMemory(w).seen.intro, true);
+  const next = harness();
+  next.w.localStorage.setItem('neonCronium.menu.v1', w.localStorage.getItem('neonCronium.menu.v1'));
+  next.T.startSector('S1');
+  next.T.adv(.1);
+  assert.equal(opening(next.T), false, 'a new session remembers it too');
+});
+
 test('no patrol spawns before recoveryAt', () => {
   const {T} = harness();
   T.startSector('S1');
@@ -167,7 +206,7 @@ test('a sector stage spawns CRONIUM and patrols', () => {
 });
 
 test('stages that open with new Gaia enemies play without errors', () => {
-  // Tramos 3, 4 y 7 abren con sower, aegis y alpha (ficha del sector 1).
+  // Tramos 3, 4 y 7 abren con raider (el Sembrador está fuera de momento), aegis y alpha.
   for (const stageNumber of [3, 4, 7]) {
     const {T} = harness({query: '?dev=1'});
     startAt(T, stageNumber);
@@ -181,6 +220,28 @@ test('stages that open with new Gaia enemies play without errors', () => {
 
 // Tarea 4: revivir al 25 % una vez por intento; al volver a caer, tramo 1.
 const rewardShown = w => !w.document.getElementById('reward').classList.contains('hidden');
+
+test('a new player only has JUGAR: the hangar button stays hidden', () => {
+  const {w} = harness({unlocked: '1'});
+  assert.equal(w.document.getElementById('openHangar').classList.contains('hidden'), true);
+  assert.equal(w.document.getElementById('playLabel').textContent, 'JUGAR');
+});
+
+// Revisión tras el PR #56: recorre el juego real, no solo menuView.
+test('the hangar opens at stage 6 and stays in the menu after dying', () => {
+  const {w, T} = harness();
+  T.startSector('S1');
+  T.toStage(6);
+  T.finishGame('hull');
+  T.goHome();
+  const button = w.document.getElementById('openHangar');
+  assert.equal(w.document.getElementById('playLabel').textContent, 'JUGAR');
+  assert.equal(button.classList.contains('hidden'), false);
+  assert.equal(button.classList.contains('is-new'), true);
+  button.click();
+  assert.equal(JSON.parse(w.localStorage.getItem('neonCronium.menu.v1')).seen.hangar, true);
+  assert.equal(button.classList.contains('is-new'), false);
+});
 
 test('dying in the sector saves a restart at stage 1', () => {
   const {w, T} = harness();
@@ -341,7 +402,7 @@ test('a removed enemy frees its token in the same frame', () => {
 
 // Plan F3b, tarea 7: los enemigos de Gaia en el juego.
 test('each Gaia roster entry spawns its own enemy', () => {
-  for (const [stage, kind] of [[2, 'tracker'], [3, 'sower'], [4, 'aegis'], [7, 'alpha']]) {
+  for (const [stage, kind] of [[2, 'tracker'], [4, 'aegis'], [7, 'alpha']]) {
     const {T} = harness({query: '?dev=1'});
     startAt(T, stage);
     T.ev('DEV.invulnerable=true');
@@ -471,85 +532,126 @@ test('a tracker leaves the screen instead of staying behind the ship forever', (
   assert.equal(T.ev('items.includes(window.__r)'), false);
 });
 
-// Plan F3c, tarea 3: CH-03 defiende el tramo 5.
-const ch03Fight = T => { startAt(T, 5); T.ev('DEV.invulnerable=true'); T.adv(9); }; // aparece a los 6 s y entra en 2 s
+// El subguardián defiende el tramo 5 (dec-subguardian-plan, 31/10/2026;
+// antes el CH-03 del plan F3c).
+const subFight = T => { startAt(T, 5); T.ev('DEV.invulnerable=true'); T.adv(9); }; // aparece a los 6 s y entra en 2 s
+const aimLaser = "Object.assign(subBoss,{state:'attack',attack:'laser',stateTime:0,beam:{angle:Math.atan2(player.x-subBoss.x,player.y-subBoss.y-NeonCampaign.SUBGUARDIAN_RULES.emitterY),direction:1,active:true}})";
 
-test('CH-03 appears 6 s into stage 5 and holds the route', () => {
+test('the subguardian appears 6 s into stage 5 and holds the route', () => {
   const {T} = harness({query: '?dev=1'});
-  ch03Fight(T);
-  assert.equal(T.ev('Boolean(ch03Boss)'), true);
+  subFight(T);
+  assert.equal(T.ev('Boolean(subBoss)'), true);
   const elapsed = T.ev('classicFlightView.stageElapsed');
   T.adv(20);
   assert.equal(T.stage(), 5);
   assert.ok(Math.abs(T.ev('classicFlightView.stageElapsed') - elapsed) < .1, 'the stage clock is held');
 });
 
-test('patrols stop while CH-03 fights', () => {
+test('patrols stop while the subguardian fights', () => {
   const {T} = harness({query: '?dev=1'});
-  ch03Fight(T);
+  subFight(T);
   const patrols = T.ev('classicPatrolSequence');
   T.adv(15);
   assert.equal(T.ev('classicPatrolSequence'), patrols);
 });
 
-test('beating CH-03 resumes the route and drops scrap', () => {
+test('it comes with Atlas\'s 4 escorts, which fall with it', () => {
   const {T} = harness({query: '?dev=1'});
-  ch03Fight(T);
-  T.ev('NeonCampaign.hitCh03Satellite(ch03Boss, 999)');
+  subFight(T);
+  assert.equal(T.ev("items.filter(item=>item.gaia?.kind==='atlasEscort').length"), 4);
+  T.ev('NeonCampaign.hitSubguardian(subBoss, 999)');
+  T.adv(1 / 60);
+  assert.equal(T.ev("items.filter(item=>item.gaia?.kind==='atlasEscort').length"), 0);
+});
+
+test('beating the subguardian resumes the route and drops the same scrap as CH-03', () => {
+  const {T} = harness({query: '?dev=1'});
+  subFight(T);
+  T.ev('NeonCampaign.hitSubguardian(subBoss, 999)');
   T.adv(2);
-  assert.equal(T.ev('ch03Boss'), null);
-  assert.equal(T.ev('ch03Beaten'), true);
+  assert.equal(T.ev('subBoss'), null);
+  assert.equal(T.ev('subBossBeaten'), true);
   // La chatarra del jefe vuela hacia la nave: o sigue en pantalla o ya se cobró.
   assert.ok(T.ev("items.some(item=>item.salvagePickup&&item.enemyType==='ch03')||classicSalvageState.activeRun.claimed.some(receipt=>receipt.id==='ch03')"));
   assert.equal(T.toStage(6), 6);
 });
 
-test('its beam and grid hurt the ship', () => {
+test('its laser hurts the ship and shows its splash on it', () => {
   const {T} = harness();
   startAt(T, 5); T.adv(8);
-  T.ev("hullGrace=0;classicHullReserve=0;Object.assign(ch03Boss,{state:'attack',attack:'sweep',stateTime:0,beam:{angle:Math.atan2(player.x-ch03Boss.x,player.y-ch03Boss.y),direction:1,active:true}})");
+  T.ev(`hullGrace=0;classicHullReserve=0;${aimLaser}`);
   const before = T.hull();
   T.adv(1 / 60);
-  assert.ok(T.hull() < before, 'the beam hurts');
-  T.ev("hullGrace=0;classicHullReserve=0;const c=Math.floor(player.x/(W/6));Object.assign(ch03Boss,{state:'attack',attack:'grid',beam:null,grid:{columns:6,step:0,safe:(c+3)%6,active:true,time:0}})");
-  const mid = T.hull();
-  T.adv(1 / 60);
-  assert.ok(T.hull() < mid, 'the grid hurts');
+  assert.equal(before - T.hull(), 14, 'the laser hurts like the CH-03 sweep did');
+  assert.equal(T.ev('Boolean(subBossBurn)'), true);
 });
 
-test('dying during CH-03 and reviving keeps its damage; retrying restarts at stage 1', () => {
+test('dying during the subguardian and reviving keeps its damage; retrying restarts at stage 1', () => {
   const {T} = harness();
   startAt(T, 5); T.adv(9);
-  T.ev('NeonCampaign.hitCh03Satellite(ch03Boss, 15)');
-  const hp = T.ev('ch03Boss.hp');
-  assert.ok(hp < 40, 'the hit counted');
+  T.ev('NeonCampaign.hitSubguardian(subBoss, 15)');
+  const hp = T.ev('subBoss.hp');
+  assert.ok(hp < 60, 'the hit counted');
   T.ev('hull=0'); T.finishGame('hull'); T.resumeReward();
-  assert.equal(T.ev('ch03Boss.hp'), hp);
+  assert.equal(T.ev('subBoss.hp'), hp);
   T.finishGame('hull'); T.startLevel(0);
-  assert.deepEqual([T.stage(), T.ev('ch03Boss')], [1, null]);
+  assert.deepEqual([T.stage(), T.ev('subBoss')], [1, null]);
 });
 
-test('CH-03 only fights in the sector', () => {
+// Propietario (01/11): chocar contra un jefe o un subjefe hace mucho daño.
+test('ramming the subguardian costs 30 hull once and throws the ship out of its body', () => {
+  const {T} = harness();
+  startAt(T, 5); T.adv(9);
+  T.ev("hullGrace=0;classicHullReserve=0;items=[];Object.assign(subBoss,{state:'idle',stateTime:0,attack:null,beam:null});player.x=player.target=subBoss.x;player.y=player.targetY=subBoss.y+20");
+  const before = T.hull();
+  T.adv(1 / 60);
+  assert.equal(before - T.hull(), 30);
+  assert.ok(Math.hypot(T.ev('player.x-subBoss.x'), T.ev('player.y-subBoss.y')) > 80, 'pushed out of the body');
+  T.ev("hullGrace=0;player.x=player.target=subBoss.x;player.y=player.targetY=subBoss.y+20");
+  const mid = T.hull();
+  T.adv(1 / 60);
+  assert.equal(mid, T.hull(), 'at most one ram per second');
+});
+
+test('the ship cannot fly into Atlas: its flight area ends below the boss body', () => {
+  const {T} = harness();
+  startAt(T, 10); toFinish(T); T.adv(4);
+  // El cuerpo sólido de Atlas (su radio r) queda muy por encima del techo del vuelo.
+  assert.ok(T.ev('classicFlightBounds.minY-atlasBoss.y') > T.ev('atlasBoss.r+SHIP_COLLISION_HALF_WIDTH') * 1.5);
+});
+
+test('the subguardian only fights in the sector', () => {
   const {T} = harness();
   T.startSideVoyage('S1-V2'); T.toStage(5); T.adv(10);
-  assert.equal(T.ev('ch03Boss'), null);
+  assert.equal(T.ev('subBoss'), null);
 });
 
 // Baliza de reaparición (plan F3c, tarea 4): 40 chatarra en la parada de C9.
+// Desde el 02/11 la parada abre la Forja y la baliza se compra dentro.
 const giveScrap = (T, scouts) => T.ev(`for(let i=0;i<${scouts};i++)classicSalvageState=classicSalvageLedger.claimDrop({runId:classicSalvageRunId,dropId:'prueba:'+i,enemyType:'scout'}).state`);
-const offerShown = w => w.document.getElementById('beaconOffer').classList.contains('show');
+const forgeOpen = w => w.document.getElementById('flightDock').classList.contains('show');
+const offerShown = w => forgeOpen(w) && !w.document.getElementById('beaconBuy').classList.contains('hidden');
 // ?dev=1 guarda aparte, con el prefijo neon-dev-v1:.
 const devSave = w => JSON.parse(w.localStorage.getItem(`neon-dev-v1:${KEY}`) || 'null');
-const toService = T => { T.ev('DEV.invulnerable=true'); T.adv(4); };
+// Desde el 02/11 C9 llega, abre la compuerta y hay que meter la nave dentro.
+const dockC9 = T => {
+  for (let i = 0; i < 80 && !T.ev("ui.flightDock.classList.contains('show')"); i++) {
+    T.ev("if(c9Scene&&c9Scene.phase==='await'){const g=NeonCampaign.c9Gate(c9Scene);player.x=player.target=g.x;player.y=player.targetY=g.y;}");
+    T.adv(.25);
+  }
+};
+const toService = T => { T.ev('DEV.invulnerable=true'); T.adv(4); dockC9(T); };
 
-test('after beating CH-03, C9 offers the beacon', () => {
+test('after beating the subguardian, the stage-6 stop opens the Forja with the beacon inside', () => {
   const {w, T} = harness({query: '?dev=1'});
   startAt(T, 6); giveScrap(T, 5); toService(T);
   assert.equal(offerShown(w), true);
   assert.equal(T.st().state, 'paused');
-  assert.equal(w.document.getElementById('beaconBuy').textContent, 'COMPRAR · 40 CHATARRA');
-  click(w, 'beaconSkip');
-  assert.deepEqual([offerShown(w), T.st().state], [false, 'playing']);
+  assert.equal(T.hull(), 100, 'the stop repairs the hull');
+  assert.match(w.document.getElementById('beaconBuy').textContent, /BALIZA DE REAPARICIÓN · 40 CHATARRA/);
+  click(w, 'flightDockContinue');
+  assert.deepEqual([forgeOpen(w), T.st().state, T.stage()], [false, 'playing', 6]);
+  assert.equal(T.ev('classicFlightView.waitingFor'), null, 'the route goes on after leaving the Forja');
 });
 
 test('buying it saves the beacon and charges 40 scrap', () => {
@@ -558,7 +660,8 @@ test('buying it saves the beacon and charges 40 scrap', () => {
   click(w, 'beaconBuy');
   assert.equal(devSave(w).sectors[1].beacon, true);
   assert.equal(T.ev('classicSalvageState.balance'), 5);
-  assert.deepEqual([offerShown(w), T.st().state], [false, 'playing']);
+  assert.deepEqual([offerShown(w), forgeOpen(w), T.st().state], [false, true, 'paused'], 'bought: the button goes, the Forja stays');
+  assert.match(w.document.getElementById('c9PurchaseStatus').textContent, /Baliza activa/);
 });
 
 test('without enough scrap the button explains it and nothing is charged', () => {
@@ -575,7 +678,7 @@ test('without enough scrap the button explains it and nothing is charged', () =>
 test('with the beacon, dying after stage 6 restarts at stage 6; completing the sector clears it', () => {
   const {w, T} = harness({query: '?dev=1'});
   startAt(T, 6); giveScrap(T, 5); toService(T);
-  click(w, 'beaconBuy');
+  click(w, 'beaconBuy'); click(w, 'flightDockContinue');
   T.ev('DEV.invulnerable=false');
   T.toStage(8);
   T.ev('hull=0'); T.finishGame('hull');
@@ -585,27 +688,67 @@ test('with the beacon, dying after stage 6 restarts at stage 6; completing the s
   assert.match(w.document.getElementById('playSector').textContent, /CON BALIZA/);
   click(w, 'play');
   assert.equal(T.stage(), 6);
+  // Al volver al tramo 6 se atraca otra vez en C9: se sale de la Forja y se sigue.
+  T.toStage(7); dockC9(T); assert.equal(forgeOpen(w), true); click(w, 'flightDockContinue');
+  T.adv(3);
   T.toStage(10); T.finish();
   assert.deepEqual([devSave(w).sectors[1].completed, devSave(w).sectors[1].beacon], [true, false]);
 });
 
-test('the panel is not offered twice or when the beacon is already owned', () => {
+// Llegada de C9 (propietario, 02/11): alto el fuego total, atraque y salida.
+test('at the stage-6 stop C9 arrives under a total ceasefire, docks the ship and leaves after the Forja', () => {
+  const {w, T} = harness({query: '?dev=1'});
+  startAt(T, 6); T.ev('DEV.invulnerable=false'); T.adv(3.9);
+  T.ev("window.__e=spawnGaiaEnemy('tracker');window.__e.y=400");
+  T.adv(.2);
+  assert.equal(T.ev("Boolean(c9Scene)"), true, 'C9 is on its way');
+  assert.equal(forgeOpen(w), false, 'the Forja waits for the docking');
+  assert.equal(T.ev("window.__e.c9Retreat||!items.includes(window.__e)"), true, 'enemies retreat');
+  const hull = T.hull();
+  T.ev("classicHullReserve=0;hullGrace=0;damageShip(30)");
+  assert.equal(T.hull(), hull, 'no damage during the ceasefire');
+  dockC9(T);
+  assert.equal(forgeOpen(w), true);
+  click(w, 'flightDockContinue');
+  assert.equal(T.ev("c9Scene&&c9Scene.phase"), 'release');
+  T.adv(3);
+  assert.equal(T.ev("c9Scene"), null, 'C9 has gone');
+  assert.equal(T.stage(), 6);
+});
+
+test('the beacon is not offered once owned, or without beating the subguardian', () => {
   const {w, T} = harness({query: '?dev=1'});
   startAt(T, 6); giveScrap(T, 5); toService(T);
-  click(w, 'beaconSkip');
-  T.ev('offerSectorBeacon()'); T.adv(2);
-  assert.equal(offerShown(w), false);
+  click(w, 'flightDockContinue'); T.adv(2);
+  assert.equal(offerShown(w), false, 'the Forja does not reopen after the stop');
   const owned = harness({query: '?dev=1'});
   owned.w.localStorage.setItem(`neon-dev-v1:${KEY}`, JSON.stringify({version: 1, unlocked: 1, sectors: {1: {completed: false, stars: 0, beacon: true}}, run: null}));
   startAt(owned.T, 6); giveScrap(owned.T, 5); toService(owned.T);
-  assert.equal(offerShown(owned.w), false);
+  assert.deepEqual([forgeOpen(owned.w), offerShown(owned.w)], [true, false]);
   const early = harness({query: '?dev=1'});
-  startAt(early.T, 4); giveScrap(early.T, 5); early.T.ev('DEV.invulnerable=true'); early.T.toStage(6); early.T.adv(4);
-  assert.equal(offerShown(early.w), false, 'sin vencer al CH-03 en este intento no se ofrece');
+  startAt(early.T, 4); giveScrap(early.T, 5); early.T.ev('DEV.invulnerable=true'); early.T.toStage(6); early.T.adv(4); dockC9(early.T);
+  assert.equal(offerShown(early.w), false, 'sin vencer al subguardián en este intento no se ofrece');
 });
 
 // Furia de Atlas (plan F3c, tarea 6): escoltas, drones, rayo y escenario roto.
 const atlasFight = T => { startAt(T, 10); T.ev('DEV.invulnerable=true'); toFinish(T); T.adv(3); };
+
+// Propietario (31/10): con Atlas en pantalla sus esbirros eran inmortales.
+test('during the Atlas fight its drones and escorts can be shot down, but its shots still cannot', () => {
+  const {T} = harness({query: '?dev=1'});
+  atlasFight(T);
+  assert.equal(T.ev('Boolean(atlasBoss)'), true);
+  let shots = 900;
+  const shoot = target => T.ev(`(()=>{const t=${target};const f=NeonCampaign.triggerClassicMissile(classicWeapons,{x:t.x,y:t.y+60,shotId:'missile:${++shots}'});
+    const p=f.projectiles[0];p.previousX=t.x;p.previousY=t.y+60;p.x=t.x;p.y=t.y;return interceptClassicProjectile(t);})()`);
+  T.ev("spawnAtlasDrones({count:1,x:360,y:500});window.__d=items.find(item=>item.atlasDrone)");
+  T.ev("window.__d.hp=1");
+  assert.equal(shoot('window.__d'), true, 'a drone can be destroyed');
+  T.ev("classicWeapons.missileCooldown=0;spawnAtlasEscorts(1);window.__e=items.find(item=>item.gaia?.kind==='atlasEscort');window.__e.hp=1");
+  assert.equal(shoot('window.__e'), true, 'an escort can be destroyed');
+  T.ev("classicWeapons.missileCooldown=0;window.__s=gaiaShot({x:360,y:700,vx:0,vy:200,damage:10});items.push(window.__s)");
+  assert.equal(shoot('window.__s'), false, 'Atlas\'s own shots are not intercepted');
+});
 const enrage = T => T.ev("Object.assign(atlasBoss,{state:'exposed',vulnerability:true});for(const e of NeonCampaign.hitGuardianAtlas(atlasBoss,atlasBoss.maxHp-Math.floor(atlasBoss.maxHp*.3)).events)consumeAtlasEvent(e)");
 const escorts = T => T.ev("items.filter(item=>item.gaia?.kind==='atlasEscort').length");
 
@@ -670,29 +813,25 @@ test('fury darkens the scene', () => {
   assert.equal(T.ev('atlasFuryScene'), false);
 });
 
-// Revisión final F3c (auditor-codigo): un golpe por ataque del CH-03.
-test('CH-03 hurts once per sweep and once per grid step', () => {
+// Revisión final F3c (auditor-codigo): un golpe por barrido del láser.
+test('the subguardian laser hurts once per sweep', () => {
   const {T} = harness();
   startAt(T, 5); T.adv(8);
-  T.ev("hullGrace=0;classicHullReserve=0;items=[];const c=Math.floor(player.x/(W/6));Object.assign(ch03Boss,{state:'attack',attack:'grid',stateTime:0,beam:null,grid:{columns:6,step:0,safe:(c+3)%6,active:true,time:0}})");
+  T.ev(`hullGrace=0;classicHullReserve=0;items=[];${aimLaser};subBoss.attacks++`);
   const before = T.hull();
-  T.adv(.45);
-  assert.equal(before - T.hull(), 16, 'one grid step hits once');
-  T.ev("hullGrace=0;items=[];Object.assign(ch03Boss,{state:'attack',attack:'sweep',stateTime:0,grid:null,attacks:ch03Boss.attacks+1,beam:{angle:Math.atan2(player.x-ch03Boss.x,player.y-ch03Boss.y)-(14+30)/Math.hypot(player.x-ch03Boss.x,player.y-ch03Boss.y),direction:1,active:true}})");
-  const mid = T.hull();
   T.adv(.4);
   // El mismo barrido vuelve sobre la nave pasada la gracia (como con la nave lejos).
-  T.ev("items=[];ch03Boss.beam.angle=Math.atan2(player.x-ch03Boss.x,player.y-ch03Boss.y)");
+  T.ev("items=[];subBoss.beam.angle=Math.atan2(player.x-subBoss.x,player.y-subBoss.y-NeonCampaign.SUBGUARDIAN_RULES.emitterY)");
   T.adv(.1);
-  assert.equal(mid - T.hull(), 14, 'one sweep hits once');
+  assert.equal(before - T.hull(), 14, 'one sweep hits once');
 });
 
-test('beating CH-03 in stage 5 makes C9 offer the beacon in stage 6', () => {
+test('beating the subguardian in stage 5 makes C9 offer the beacon in stage 6', () => {
   const {w, T} = harness({query: '?dev=1'});
-  ch03Fight(T); giveScrap(T, 5);
-  T.ev('NeonCampaign.hitCh03Satellite(ch03Boss, 999)');
+  subFight(T); giveScrap(T, 5);
+  T.ev('NeonCampaign.hitSubguardian(subBoss, 999)');
   T.adv(2);
-  T.toStage(6); T.adv(4);
+  T.toStage(6); T.adv(4); dockC9(T);
   assert.equal(offerShown(w), true);
 });
 
@@ -709,12 +848,12 @@ test('a beam that starts during the hit grace still burns the ship once the grac
   assert.equal(T.hull(), start - 26);
 });
 
-test('leaving to the menu during CH-03 removes the satellite', () => {
+test('leaving to the menu during the subguardian removes it', () => {
   const {T} = harness();
   startAt(T, 5); T.adv(9);
-  assert.equal(T.ev('Boolean(ch03Boss)'), true);
+  assert.equal(T.ev('Boolean(subBoss)'), true);
   T.goHome();
-  assert.equal(T.ev('ch03Boss'), null);
+  assert.equal(T.ev('subBoss'), null);
 });
 
 test('in fury the open core is drawn with the core animation, not the closed fury pose', () => {
@@ -729,14 +868,14 @@ test('in fury the open core is drawn with the core animation, not the closed fur
   assert.ok(drawnTexts.includes('image:assets/atlas_fury_atlas_v1.webp'));
 });
 
-test('a paid beacon that could not be saved is kept when the panel closes', () => {
+test('a paid beacon that could not be saved is kept when leaving the Forja', () => {
   const {w, T} = harness({query: '?dev=1'});
   startAt(T, 6); giveScrap(T, 5); toService(T);
   T.ev("window.__realSave=saveSector;saveSector=()=>false");
   click(w, 'beaconBuy');
-  assert.equal(offerShown(w), true, 'the panel stays open and asks to retry');
+  assert.equal(offerShown(w), true, 'the button stays and asks to retry');
   T.ev("saveSector=window.__realSave");
-  click(w, 'beaconSkip');
+  click(w, 'flightDockContinue');
   assert.equal(devSave(w)?.sectors?.[1]?.beacon, true);
   assert.equal(T.ev('classicSalvageState.balance'), 5, 'charged once');
 });
@@ -750,4 +889,239 @@ test('the sector reaches Atlas with exactly the CRONIUM of the last stage', () =
   assert.ok(T.ev('collected<level().goal'), 'the stage quota is below the old level quota');
   T.adv(.5);
   assert.equal(T.ev('Boolean(atlasBoss)'), true);
+});
+
+test('sector 1 never drops the floating Gemelo emitter: the weapon is earned by beating Atlas', () => {
+  // Normas del propietario (24/10): una arma por jefe; C9 no se abre por recoger una pieza.
+  const {w, T} = harness();
+  T.startSector('S1');
+  let seen = false;
+  for (const stage of [2, 3, 4]) {
+    T.toStage(stage);
+    for (let i = 0; i < 40 && !seen; i++) { T.adv(1); seen = T.ev("items.some(item=>item.type==='flightModule')"); }
+  }
+  assert.equal(seen, false);
+  assert.equal(T.ev('classicEquipment.recoveredTwin'), false);
+  assert.equal(w.document.getElementById('openFlightDock').classList.contains('hidden'), true);
+});
+
+test('the C9 workshop stays closed in mid-flight during the sector, even after Atlas', () => {
+  // Decisión «regla-y-menu» (24/10): C9 se abre entre partidas, no en pleno vuelo.
+  const {w, T} = harness();
+  startAt(T, 3);
+  T.ev("classicEquipment={...classicEquipment,recoveredTwin:true,twinPrepared:true,unlocked:['pulse','twin']};syncClassicFlightHud()");
+  T.adv(2);
+  assert.equal(T.st().state, 'playing');
+  assert.equal(w.document.getElementById('classicC9').classList.contains('hidden'), true);
+});
+
+test('the HUD names the sector, not a voyage', () => {
+  // Auditoría 25/10 (A6): decía «VIAJE S1».
+  const {w, T} = harness();
+  T.startSector('S1'); T.adv(.5);
+  const level = w.document.getElementById('hudLevel');
+  assert.deepEqual([level.previousElementSibling.textContent, level.textContent], ['SECTOR', '1']);
+});
+
+test('settings always open at the top of the list', () => {
+  // Auditoría 25/10 (A2): la segunda vez se abría a mitad y ocultaba el título.
+  const {w, T} = harness();
+  const panel = w.document.querySelector('#settingsPanel .settings-panel');
+  panel.scrollTop = 400;
+  T.ev('openSettings("menu")');
+  assert.equal(panel.scrollTop, 0);
+});
+
+// Auditoría 25/10 (A4): desde el menú, la Forja tiene un solo botón de salida.
+test('the Forja opened from the menu offers one clear way back to the menu', () => {
+  const {w, T} = harness();
+  T.ev('classicEquipment={...classicEquipment,recoveredTwin:true};syncClassicFlightHud()');
+  click(w, 'openFlightDock');
+  assert.equal(w.document.getElementById('flightDockContinue').textContent, 'VOLVER AL MENÚ');
+  assert.equal(w.document.getElementById('flightDockHome').classList.contains('hidden'), true);
+  click(w, 'flightDockContinue');
+  assert.equal(T.st().state, 'menu');
+});
+
+// HARDCORE (propietario 24/10 y 30/10): partida aparte que se borra entera al
+// morir, sin revivir ni baliza; se elige en Ajustes con aviso.
+const HC = 'neon-hardcore-v1:';
+const hardcoreSettings = JSON.stringify({difficulty: 'hardcore'});
+// HARDCORE solo cuenta si se confirmó en Ajustes (auditoría 03/11, A04).
+const HC_OK = {'neon-hardcore-confirmed-v1': '1'};
+const runAt = stageNumber => JSON.stringify({version: 1, unlocked: 1, sectors: {}, run: {sector: 1, stageNumber, stageHull: 90, reviveUsed: false}});
+
+test('HARDCORE plays its own save and leaves the normal one alone', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, ...HC_OK, [KEY]: runAt(7), [HC + KEY]: runAt(3)}});
+  assert.equal(w.document.body.classList.contains('hardcore-mode'), true);
+  click(w, 'play');
+  assert.equal(T.stage(), 3, 'the HARDCORE run, not the normal one');
+  assert.equal(JSON.parse(w.localStorage.getItem(KEY)).run.stageNumber, 7);
+});
+
+test('dying in HARDCORE erases the whole HARDCORE save, with no revive and no beacon', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, ...HC_OK, [KEY]: runAt(7), [HC + KEY]: runAt(3),
+    [HC + 'neonCronium.menu.v1']: JSON.stringify({version: 1, hangar: true, seen: {hangar: true}})}});
+  click(w, 'play');
+  T.ev('subBossBeaten=true');
+  assert.equal(T.ev('offerSectorBeacon()'), false, 'no beacon in HARDCORE');
+  T.finishGame('hull');
+  assert.equal(rewardShown(w), false, 'no rewarded revive');
+  assert.equal(T.ev('resumeReward()'), false);
+  assert.deepEqual(Object.keys(w.localStorage).filter(key => key.startsWith(HC)), [], 'nothing of HARDCORE is left');
+  assert.equal(JSON.parse(w.localStorage.getItem(KEY)).run.stageNumber, 7, 'the normal save is intact');
+  assert.equal(JSON.parse(w.localStorage.getItem('neon-settings-v5')).difficulty, 'hardcore', 'settings are shared and kept');
+  assert.match(w.document.getElementById('retry').textContent, /EMPEZAR DE CERO/);
+});
+
+test('choosing HARDCORE in Ajustes asks first and only switches after confirming', () => {
+  const {w, T} = harness();
+  T.ev('reloadGame=()=>{window.__reloaded=(window.__reloaded||0)+1}');
+  const select = w.document.getElementById('difficulty'), confirm = w.document.getElementById('hardcoreConfirm');
+  select.value = 'hardcore'; select.dispatchEvent(new w.Event('change'));
+  assert.equal(confirm.classList.contains('hidden'), false, 'the warning shows');
+  assert.equal(T.ev('settings.difficulty'), 'normal', 'nothing changes yet');
+  click(w, 'hardcoreNo');
+  assert.equal(confirm.classList.contains('hidden'), true);
+  assert.equal(select.value, 'normal');
+  select.value = 'hardcore'; select.dispatchEvent(new w.Event('change'));
+  click(w, 'hardcoreYes');
+  assert.equal(JSON.parse(w.localStorage.getItem('neon-settings-v5')).difficulty, 'hardcore');
+  assert.equal(w.localStorage.getItem('neon-hardcore-confirmed-v1'), '1', 'the confirmation is remembered');
+  assert.equal(w.__reloaded, 1, 'the game restarts on the HARDCORE save');
+});
+
+test('leaving HARDCORE in Ajustes goes back to the normal save', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, ...HC_OK}});
+  T.ev('reloadGame=()=>{window.__reloaded=(window.__reloaded||0)+1}');
+  const select = w.document.getElementById('difficulty');
+  select.value = 'normal'; select.dispatchEvent(new w.Event('change'));
+  assert.equal(JSON.parse(w.localStorage.getItem('neon-settings-v5')).difficulty, 'normal');
+  assert.equal(w.__reloaded, 1);
+});
+
+// Nodos clave (dec-nodos-clave, 02/11/2026) en vuelo real.
+test('key nodes in flight: reactive armour gives 1.3 s of grace after a hit and the magnet pulls scrap from twice as far', () => {
+  const {T} = harness({query: '?dev=1'});
+  startAt(T, 2); T.ev('DEV.invulnerable=false'); T.adv(1);
+  T.ev("classicHullReserve=0;hullGrace=0;damageShip(5)");
+  assert.equal(T.ev('hullGrace'), .3, 'normal grace');
+  T.ev("classicKeyNodes={...classicKeyNodes,reactiveArmor:true};hullGrace=0;damageShip(5)");
+  assert.equal(T.ev('hullGrace'), 1.3, 'reactive armour');
+  const pulled = magnet => T.ev(`(()=>{classicKeyNodes={...classicKeyNodes,magnet:${magnet}};
+    const item={salvagePickup:true,x:player.x,y:player.y-220,vx:0,vy:0,life:10};const before=item.y;
+    advanceClassicSalvagePickup(item,.1);return item.y-before;})()`);
+  assert.ok(pulled(true) > 20, 'at 220 px the magnet pulls the scrap towards the ship');
+  assert.ok(pulled(false) < 20, 'without the magnet it only drifts');
+});
+
+// Auditoría 03/11 (A01): Escape con la Forja de la parada abierta dejaba C9
+// atracada para siempre, la ruta esperando y la nave invencible.
+test('Escape with the stop Forja open sends C9 away and the route goes on', () => {
+  const {w, T} = harness({query: '?dev=1'});
+  startAt(T, 6); T.ev('DEV.invulnerable=false'); T.adv(3.9); dockC9(T);
+  assert.equal(forgeOpen(w), true);
+  w.document.body.focus();
+  w.dispatchEvent(new w.KeyboardEvent('keydown', {key: 'Escape', bubbles: true}));
+  assert.equal(forgeOpen(w), false);
+  assert.equal(T.ev("c9Scene&&c9Scene.phase"), 'release', 'C9 lets the ship go');
+  T.adv(3);
+  assert.equal(T.ev("c9Scene"), null, 'C9 has gone and the ceasefire is over');
+  assert.equal(T.ev("classicFlightView.waitingFor"), null, 'the route is not stuck at the stop');
+  const hull = T.hull();
+  T.ev("classicHullReserve=0;hullGrace=0;damageShip(30)");
+  assert.ok(T.hull() < hull, 'the ship can be hurt again');
+});
+
+// Auditoría 03/11 (A02-A04): fallos de HARDCORE.
+test('with site data blocked by the browser the game still loads to the menu', () => {
+  const {T} = harness({blockStorage: true});
+  assert.equal(T.st().state, 'menu');
+});
+
+test('HARDCORE erases its save the moment the ship explodes, so closing the app then cannot keep it', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, ...HC_OK, [KEY]: runAt(7), [HC + KEY]: runAt(3),
+    [HC + 'neonCronium.menu.v1']: JSON.stringify({version: 1, hangar: true, seen: {hangar: true}})}});
+  click(w, 'play');
+  T.hit(500);
+  assert.equal(T.st().state, 'destroying', 'the explosion is still playing');
+  assert.deepEqual(Object.keys(w.localStorage).filter(key => key.startsWith(HC)), [], 'already erased');
+  assert.equal(JSON.parse(w.localStorage.getItem(KEY)).run.stageNumber, 7, 'the normal save is intact');
+});
+
+test('an old settings file with difficulty "hardcore" but no confirmation does not switch to the HARDCORE save', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, [KEY]: runAt(7), [HC + KEY]: runAt(3)}});
+  assert.equal(w.document.body.classList.contains('hardcore-mode'), false);
+  click(w, 'play');
+  assert.equal(T.stage(), 7, 'it keeps playing the normal save');
+});
+
+// Auditoría 03/11 (A09): el cartel del subguardián tapaba la ruta y las
+// transmisiones; ahora usa la franja compacta de combate, como Atlas.
+test('the subguardian fight uses the compact boss strip and gives the screen back when it falls', () => {
+  const {w, T} = harness();
+  startAt(T, 5); T.adv(11);
+  assert.equal(T.ev('Boolean(subBoss)&&subBoss.state!=="entry"'), true);
+  assert.equal(w.document.body.classList.contains('atlas-combat'), true, 'compact strip, transmissions hidden');
+  T.ev('NeonCampaign.hitSubguardian(subBoss, 999)'); T.adv(3);
+  assert.equal(T.ev('subBoss'), null);
+  assert.equal(w.document.body.classList.contains('atlas-combat'), false);
+  assert.equal(T.ev('ui.atlasEncounter.classList.contains("hidden")'), true);
+});
+
+// Auditoría 03/11 (A17): fuera del sector los enemigos de Gaia piden turno a
+// gaiaFallbackTokens; los turnos de los derribados no se liberaban nunca.
+test('outside the sector, attack turns of enemies that are gone are freed, and a new run starts clean', () => {
+  const {T} = harness({query: '?dev=1'});
+  startAt(T, 2); T.adv(.5);
+  T.ev("sectorAttackTokens=null;gaiaFallbackTokens=NeonCampaign.createAttackTokens({max:2});"
+    + "NeonCampaign.requestAttack(gaiaFallbackTokens,{id:'gone-1'},0);NeonCampaign.requestAttack(gaiaFallbackTokens,{id:'gone-2'},0)");
+  assert.equal(T.ev('gaiaFallbackTokens.holders.size'), 2);
+  T.adv(1 / 30);
+  assert.equal(T.ev('gaiaFallbackTokens.holders.size'), 0, 'their turns are free again');
+  T.ev("NeonCampaign.requestAttack(gaiaFallbackTokens,{id:'gone-3'},0)"); T.startLevel(0);
+  assert.equal(T.ev('gaiaFallbackTokens'), null, 'a new run does not inherit taken turns');
+});
+
+// Auditoría 03/11 (A13, propietario 06/11): el reloj ×3 tras cumplir la cuota
+// adelantaba la historia del capítulo; en el sector el tramo dura lo suyo.
+test('meeting the quota does not speed up a sector stage', () => {
+  const {T} = harness();
+  startAt(T, 3); T.adv(.1);
+  assert.equal(T.stage(), 3);
+  const goal = T.ev('classicFlightView.stageGoal'), full = T.ev('classicFlightView.stageDuration');
+  T.ev(`collected=${goal};energySpawned=${goal}`);
+  let at = null;
+  for (let i = 0; i < (full + 10) * 60 && at === null; i++) {
+    T.ev('hull=100'); T.adv(1 / 60);
+    if (T.stage() === 4) at = i / 60;
+  }
+  assert.ok(at !== null && at >= full - 1, `stage 3 ended at ${at} s of ${full} s`);
+});
+
+// Auditoría 03/11 (A14, propietario 06/11): con baliza se vuelve al tramo 6,
+// y los enemigos ya derribados allí vuelven a soltar chatarra, como sin baliza.
+test('after dying with the beacon, the retry from stage 6 drops scrap again', () => {
+  const salvageRun = T => T.ev('classicSalvageState?.activeRun?.id||null');
+  const {w, T} = harness();
+  w.localStorage.setItem(KEY, JSON.stringify({version: 1, unlocked: 1, sectors: {1: {completed: false, stars: 0, beacon: true}},
+    run: {sector: 1, stageNumber: 7, stageHull: 100, reviveUsed: true}}));
+  click(w, 'play');
+  assert.equal(T.stage(), 7);
+  const first = salvageRun(T);
+  T.ev('hull=1'); T.hitNow(60); T.adv(2);
+  assert.equal(sectorSave(w).run.stageNumber, 6, 'the beacon brings you back to stage 6');
+  assert.notEqual(salvageRun(T), first, 'closing the app after the explosion keeps the new run');
+  click(w, 'retry');
+  assert.equal(T.stage(), 6);
+  assert.notEqual(salvageRun(T), first, 'enemies of the retry drop scrap again');
+});
+
+test('after the rewarded revive the enemies still drop scrap', () => {
+  const {T} = harness();
+  startAt(T, 5);
+  T.ev('hull=1'); T.hitNow(60); T.adv(2);
+  assert.equal(T.resumeReward(), true);
+  const run = T.ev('classicSalvageRunId');
+  assert.ok(run && run === T.ev('classicSalvageState.activeRun.id'), 'kills after the revive are paid into the open run');
 });

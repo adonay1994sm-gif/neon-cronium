@@ -809,6 +809,8 @@ body.flight-mode #flightDock .c9-branch::before { content: ""; position: absolut
 body.flight-mode #flightDock .c9-branch h4 { margin: 0; min-height: 30px; padding-left: 0; color: #acd4dc; font-size: 10px; line-height: 1.4; letter-spacing: .04em; }
 body.flight-mode #flightDock .c9-branch button { position: relative; z-index: 1; flex-direction: column; align-items: flex-start; min-height: 190px; width: 100%; padding: 12px; gap: 9px; }
 body.flight-mode #flightDock .c9-branch .c9-upgrade-art { align-self: flex-start; }
+/* «O» entre las dos opciones de un nodo clave (auditoría 03/11, A11). */
+body.flight-mode #flightDock .c9-branch .c9-or { position: relative; z-index: 1; align-self: center; margin: -6px 0; padding: 0 12px; color: var(--ui-amber); font: 800 12px/1 var(--font-display); letter-spacing: .2em; }
 body.flight-mode #flightDock .c9-actions { z-index: 4; position: sticky; bottom: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 7px; margin: 0 -18px; padding: 12px 18px 16px; background: #0c2130f7; border-top: 1px solid #809fab; }
 body.flight-mode #flightDock .c9-actions button { grid-column: auto; min-height: 48px; margin: 0; padding: 10px 12px; font-size: 12px; }
 body.flight-mode #flightDock .c9-actions button:last-child { min-height: 44px; font-size: 11px; }
@@ -1187,7 +1189,7 @@ body.flight-mode #flightDock .c9-upgrades button[data-node-state="installed"] {
 body.flight-mode #flightDock .c9-upgrades button[data-node-state="installed"] .c9-upgrade-copy b,
 body.flight-mode #flightDock .c9-upgrades button[data-node-state="installed"] .c9-upgrade-copy small { color: var(--ui-paper); }
 /* Insignias del árbol (hoja 6x2) */
-body.flight-mode #flightDock .c9-upgrade-art:is([data-upgrade="hull"], [data-upgrade="hull-ii"], [data-upgrade="coolant"], [data-upgrade="coolant-ii"], [data-upgrade="missiles"]),
+body.flight-mode #flightDock .c9-upgrade-art:is([data-upgrade="hull"], [data-upgrade="hull-ii"], [data-upgrade="coolant"], [data-upgrade="coolant-ii"], [data-upgrade="ammo"], [data-upgrade^="key-"], [data-upgrade="missiles"]),
 body.flight-mode #flightDock #flightInstallTwin .c9-upgrade-art {
   background-image: url('assets/skill_tree_icons_v1.webp'); background-size: 600% 200%; filter: drop-shadow(0 0 6px rgba(92,245,255,.25));
 }
@@ -1195,6 +1197,12 @@ body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="hull"] { 
 body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="hull-ii"] { background-position: 60% 100%; }
 body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="coolant"] { background-position: 80% 0; }
 body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="coolant-ii"] { background-position: 40% 100%; }
+body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="ammo"] { background-position: 0 0; }
+/* Nodos clave: el Blindaje reactivo comparte de momento el hexágono con Blindaje II. */
+body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="key-hot-reload"] { background-position: 20% 100%; }
+body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="key-magnet"] { background-position: 80% 100%; }
+body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="key-reactive-armor"] { background-position: 60% 100%; }
+body.flight-mode #flightDock #c9-systems .c9-upgrade-art[data-upgrade="key-wide-magazine"] { background-position: 0 100%; }
 body.flight-mode #flightDock #flightInstallTwin .c9-upgrade-art { background-position: 100% 100%; }
 body.flight-mode #flightDock #c9-supplies .c9-upgrade-art[data-upgrade="missiles"] { background-position: 60% 0; }
 /* Botones finales: aplicar en cian, como la maqueta */
@@ -1225,10 +1233,10 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
    de fondo con la nave sobre la plataforma, marcos pintados que se estiran con
    border-image y el engranaje pintado. La plataforma está al 50 % / 38 % del
    fondo; background-position la deja en ese mismo punto de la pantalla. */
-#menu.menu-gpt{background:#040c15 url("assets/menu_hangar_bg_v1.webp") 50% 38%/cover no-repeat}
+#menu.menu-gpt{background:var(--ui-deep) url("assets/menu_hangar_bg_v1.webp") 50% 38%/cover no-repeat}
 #menu.menu-gpt::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
-  background:linear-gradient(180deg,#040c15c7 0,#040c1500 17%,#040c1500 50%,#040c15d9 66%,#040c15 84%)}
-#menu.menu-gpt .menu-topline{border-bottom-color:#a1eee833}
+  background:linear-gradient(180deg,color-mix(in srgb,var(--ui-deep) 78%,transparent) 0,transparent 17%,transparent 50%,color-mix(in srgb,var(--ui-deep) 85%,transparent) 66%,var(--ui-deep) 84%)}
+#menu.menu-gpt .menu-topline{border-bottom-color:color-mix(in srgb,var(--ui-cyan) 20%,transparent)}
 #menu.menu-gpt .menu-scene{top:38%;bottom:auto;width:min(42%,180px);height:auto;max-height:none;transform:translate(-50%,-86%);animation:menuShipHover 5s ease-in-out infinite}
 #menu.menu-gpt .menu-ship-image{display:block;height:auto;filter:drop-shadow(0 18px 18px #000a)}
 @keyframes menuShipHover{50%{transform:translate(-50%,calc(-86% - 6px))}}
@@ -1239,7 +1247,7 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
 #menu.menu-gpt #settings{display:none}
 #menu.menu-gpt .menu-actions{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 #menu.menu-gpt :is(.hero-cta,.menu-hangar-button){position:relative;display:flex;align-items:center;justify-content:flex-start;gap:0;width:100%;
-  min-height:68px;margin:0;padding:0 64px 0 42px;border:0;border-radius:0;clip-path:none;box-shadow:none;background:none;color:#f2f0e6;text-align:left;
+  min-height:68px;margin:0;padding:0 64px 0 42px;border:0;border-radius:0;clip-path:none;box-shadow:none;background:none;color:var(--ui-paper);text-align:left;
   border-image:url("assets/menu_frame_v1.webp") 40 160 fill / 16px 62px stretch}
 #menu.menu-gpt :is(.hero-cta,.menu-hangar-button)::before{content:none}
 #menu.menu-gpt .hero-cta{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px}
@@ -1247,15 +1255,243 @@ body.flight-mode #flightDock #flightDockContinue:active:not(:disabled)::before {
   transform:translateY(-50%);background:url("assets/menu_arrow_v1.webp") center/contain no-repeat}
 #menu.menu-gpt :is(.hero-cta,.menu-hangar-button):active:not(:disabled){transform:translateY(1px);background:none;
   border-image-source:url("assets/menu_frame_pressed_v1.webp");filter:brightness(1.25)}
-#menu.menu-gpt :is(.hero-cta,.menu-hangar-button):focus-visible{outline:2px solid #d1ffff;outline-offset:3px}
-#menu.menu-gpt .hero-cta > span{font-size:18px;font-weight:800;letter-spacing:.05em}
-#menu.menu-gpt :is(.hero-cta,.menu-hangar-button) small{font-size:10px;font-weight:700;letter-spacing:.14em;color:#a1eee8;opacity:1}
+#menu.menu-gpt :is(.hero-cta,.menu-hangar-button):focus-visible{outline:2px solid var(--ui-cyan);outline-offset:3px}
+#menu.menu-gpt .hero-cta > span{font-size:16px;font-weight:800;letter-spacing:.05em}
+#menu.menu-gpt :is(.hero-cta,.menu-hangar-button) small{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--ui-cyan);opacity:1}
 #menu.menu-gpt .menu-hangar-button{overflow:hidden}
 #menu.menu-gpt .menu-hangar-button.hidden{display:none}
 /* La nave aparcada ocupa la derecha del botón, por dentro del marco. */
 #menu.menu-gpt .menu-hangar-button::before{content:"";position:absolute;z-index:0;top:4px;bottom:4px;left:auto;right:52px;width:62%;
   background:url("assets/menu_hangar_button_v1.webp") right center/auto 100% no-repeat;clip-path:none;box-shadow:none}
-#menu.menu-gpt .menu-button-text{position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;font-size:15px;font-weight:800;letter-spacing:.05em;text-shadow:0 2px 6px #000}
-#menu.menu-gpt .menu-new{display:none;position:absolute;z-index:2;top:9px;left:42px;padding:1px 6px;font:800 9px/1.4 var(--font-display);letter-spacing:.12em;color:#092028;background:#ffb84d}
+#menu.menu-gpt .menu-button-text{position:relative;z-index:1;display:flex;flex-direction:column;gap:3px;font-size:16px;font-weight:800;letter-spacing:.05em;text-shadow:0 2px 6px #000}
+#menu.menu-gpt .menu-new{display:none;position:absolute;z-index:2;top:9px;left:42px;padding:1px 6px;font:800 10px/1.4 var(--font-display);letter-spacing:.12em;color:var(--ui-on-cyan);background:var(--ui-amber)}
 #menu.menu-gpt .menu-hangar-button.is-new .menu-new{display:block}
 #menu.menu-gpt .menu-hangar-button.is-new .menu-button-text{padding-top:14px}
+/* Revisión tras el PR #56: la regla del menú pesaba más que «reducir movimiento»
+   y que el foco de teclado de body.flight-mode (que pintaba el marco de marfil). */
+@media(prefers-reduced-motion:reduce){#menu.menu-gpt .menu-scene{animation:none}}
+#menu.menu-gpt :is(.hero-cta,.menu-hangar-button):focus-visible{background:none}
+#menu.menu-gpt .menu-hangar-button:focus-visible::before{top:4px;bottom:4px;left:auto;right:52px}
+/* Ventanas con los marcos pintados de GPT (encargos art-ui-paneles-v2 y
+   art-ui-marco-principal-v2; scripts/build-ui-frames.py). El #menu queda
+   fuera: tiene su propio marco. */
+.overlay:not(#menu) > .panel{background:none;border:0;border-radius:0;box-shadow:none;backdrop-filter:none;padding:40px 36px;
+  border-image:url("assets/ui_window_v1.webp") 170 fill / 56px stretch}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward){position:relative;min-height:54px;margin-top:10px;padding:10px 22px 10px 40px;line-height:1.25;border:0;border-radius:0;
+  box-shadow:none;background:none;clip-path:none;color:var(--ui-paper);font-weight:800;letter-spacing:.06em;text-align:left;
+  border-image:url("assets/ui_button_secondary_v1.webp") 24 84 fill / 16px 56px stretch}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward)::before{content:none}
+.overlay:not(#menu) .panel .primary{border-image:url("assets/ui_button_main_v1.webp") 30 84 fill / 20px 56px stretch}
+.overlay:not(#menu) .panel .danger{color:var(--ui-red);border-image:url("assets/ui_button_danger_v1.webp") 20 84 fill / 14px 56px stretch}
+.overlay:not(#menu) .panel .reward{color:var(--ui-amber);border-image:url("assets/ui_button_ad_v1.webp") 20 84 fill / 14px 56px stretch}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward):active:not(:disabled){transform:translateY(1px);background:none;filter:brightness(1.15)}
+.overlay:not(#menu) .panel .primary:active:not(:disabled){border-image-source:url("assets/ui_button_main_pressed_v1.webp")}
+.overlay:not(#menu) .panel .secondary:not(.danger):active:not(:disabled){border-image:url("assets/ui_button_secondary_pressed_v1.webp") 28 84 fill / 16px 56px stretch}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward):focus-visible{background:none;outline:2px solid var(--ui-cyan);outline-offset:3px}
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward):disabled{background:none;filter:grayscale(.8) brightness(.6);color:var(--ui-muted)}
+.overlay:not(#menu) :is(.final,.summary-grid > div){border:0;border-radius:0;box-shadow:none;background:none;padding:12px 16px;
+  border-image:url("assets/ui_stat_card_v1.webp") 44 60 fill / 16px 22px stretch}
+#menu.menu-gpt .hero-cta{border-image:url("assets/ui_button_main_v1.webp") 30 84 fill / 22px 60px stretch}
+#menu.menu-gpt .hero-cta:active:not(:disabled){border-image-source:url("assets/ui_button_main_pressed_v1.webp")}
+/* Piezas pintadas de GPT para las ventanas (encargos art-ui-iconos-como-jugar-v2
+   y art-ui-ventanas-piezas-v2; scripts/build-ui-pieces.py). */
+#instructions :is(.rules,.ability-list) i{position:static;display:block;width:40px;height:40px;flex:0 0 40px;border:0;border-radius:0;box-shadow:none;filter:none;
+  font-size:0;color:transparent;background:url("assets/ui_howto_icons_v1.webp") 0 0/600% 200% no-repeat}
+#instructions :is(.rules,.ability-list) i::before,#instructions :is(.rules,.ability-list) i::after{content:none}
+#instructions i.howto-phaser,#instructions i.phaser-a{background-position:20% 0}
+#instructions i.energy{background-position:40% 0}
+#instructions i.meteor{background-position:60% 0}
+#instructions i.debris-corridor{background-position:80% 0}
+#instructions i.shield-a{background-position:100% 0}
+#instructions i.tractor-a{background-position:0 100%}
+#instructions i.slow-a{background-position:20% 100%}
+#instructions i.double-a{background-position:40% 100%}
+#instructions i.repair-a{background-position:60% 100%}
+.overlay:not(#menu) .stars-awarded span{display:inline-block;width:52px;height:52px;margin:0 3px;color:transparent;text-shadow:none;
+  background:url("assets/ui_star_full_v1.webp") center/contain no-repeat}
+.overlay:not(#menu) .stars-awarded span.off{background-image:url("assets/ui_star_empty_v1.webp");opacity:.85}
+#complete .complete-visual::after{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:url("assets/ui_sector_frame_v1.webp") center/100% 100% no-repeat}
+.overlay:not(#menu) .beacon-offer-art{width:132px;height:132px;background:url("assets/ui_beacon_big_v1.webp") center/contain no-repeat;filter:drop-shadow(0 0 16px color-mix(in srgb,var(--ui-cyan) 27%,transparent))}
+#over > .panel{position:relative}
+#over > .panel::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:url("assets/ui_defeat_cracks_v1.webp") center/100% 100% no-repeat;opacity:.8}
+#over > .panel > *{position:relative;z-index:1}
+/* Controles de ajustes pintados (encargo art-ui-ajustes-piezas-v2). La fila
+   pinta el carril y la parte recorrida (--fill, de paintRanges); el input
+   queda encima, transparente salvo el tirador. */
+#settingsPanel .setting-row{position:relative;padding-bottom:30px}
+#settingsPanel .setting-row::before,#settingsPanel .setting-row::after{content:"";position:absolute;left:0;bottom:2px;height:24px;pointer-events:none}
+#settingsPanel .setting-row::before{right:0;background:url("assets/ui_slider_track_v1.webp") center/100% 100% no-repeat}
+#settingsPanel .setting-row::after{width:calc(var(--fill,.5) * 100%);background:url("assets/ui_slider_fill_v1.webp") left center/calc(100% / var(--fill,.5)) 100% no-repeat}
+#settingsPanel .setting-row input[type=range]{position:absolute;z-index:1;left:0;right:0;bottom:0;width:100%;height:28px;margin:0;background:none;-webkit-appearance:none;appearance:none}
+#settingsPanel .setting-row input[type=range]::-webkit-slider-runnable-track{height:28px;background:none}
+#settingsPanel .setting-row input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;margin-top:-2px;border:0;background:url("assets/ui_slider_thumb_v1.webp") center/contain no-repeat}
+#settingsPanel .setting-row input[type=range]::-moz-range-track{height:28px;background:none}
+#settingsPanel .setting-row input[type=range]::-moz-range-thumb{width:32px;height:32px;border:0;background:url("assets/ui_slider_thumb_v1.webp") center/contain no-repeat}
+#settingsPanel .setting-row input[type=range]:focus-visible{outline:2px solid var(--ui-cyan);outline-offset:4px}
+#settingsPanel :is(.toggle-row,.quality-row){border-top:0;background:url("assets/ui_separator_v1.webp") top center/100% 8px no-repeat}
+#settingsPanel .toggle-row i{flex:0 0 68px;width:68px;height:20px;border:0;border-radius:0;background:url("assets/ui_toggle_off_v1.webp") center/contain no-repeat}
+#settingsPanel .toggle-row i::after{content:none}
+#settingsPanel .toggle-row input:checked + i{background:url("assets/ui_toggle_on_v1.webp") center/contain no-repeat;border:0}
+#settingsPanel .quality-row select{flex:0 0 auto;min-width:150px;min-height:44px;padding:0 40px 0 16px;border:0;border-radius:0;-webkit-appearance:none;appearance:none;color-scheme:dark;
+  background:url("assets/ui_select_v1.webp") center/100% 100% no-repeat;color:var(--ui-paper);font:800 12px/1 var(--font-display);letter-spacing:.06em}
+/* Mano izquierda (ajuste, propietario 25/10): disparo, misil y C9 pasan a la
+   izquierda; el aviso de pilotaje, a la derecha. */
+body.flight-mode.left-handed .fire-control{right:auto;left:var(--ui-safe-left);border-radius:10px 10px 10px 3px}
+body.flight-mode.left-handed .classic-missile{right:auto;left:calc(var(--ui-safe-left) + 118px);border-radius:10px 10px 10px 3px}
+body.flight-mode.left-handed #classicC9{right:auto;left:var(--ui-safe-left)}
+body.flight-mode.left-handed .flight-pilot-hint{left:auto;right:max(14px,env(safe-area-inset-right))}
+/* Auditoría 25/10 (A7, A8): textos de botón en una sola línea. */
+.overlay:not(#menu) .panel :is(.primary,.secondary,.reward){letter-spacing:.04em}
+#over #retry{font-size:12px;letter-spacing:0;padding-left:30px;padding-right:16px}
+@media(max-width:340px){#menu.menu-gpt :is(.hero-cta,.menu-hangar-button) small{font-size:10px;letter-spacing:.06em;white-space:nowrap}}
+/* Forja C9 con los marcos pintados de GPT (auditoría del 25/10, A3 y A4):
+   sustituye esquinas, placas y pestañas hechas con código. El marco queda
+   fijo y el contenido se desplaza por dentro (.c9-scroll). */
+#menu.menu-gpt #openFlightDock{min-height:54px;margin-top:0;padding:10px 22px;border:0;border-radius:0;box-shadow:none;background:none;clip-path:none;
+  color:var(--ui-paper);font:800 12px/1.2 var(--font-display);letter-spacing:.08em;
+  border-image:url("assets/ui_button_secondary_v1.webp") 24 84 fill / 16px 56px stretch}
+#menu.menu-gpt #openFlightDock::before{content:none}
+#menu.menu-gpt #openFlightDock:active:not(:disabled){border-image:url("assets/ui_button_secondary_pressed_v1.webp") 28 84 fill / 16px 56px stretch}
+body.flight-mode #flightDock .flight-dock{display:flex;flex-direction:column;overflow:hidden;padding:34px 24px 30px;border:0;box-shadow:none;background:none;
+  border-image:url("assets/ui_window_v1.webp") 170 fill / 48px stretch}
+body.flight-mode #flightDock .c9-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--ui-line) transparent;scroll-padding-top:64px}
+body.flight-mode #flightDock .c9-scroll .c9-navigation{top:0}
+body.flight-mode #flightDock :is(.c9-header,.cockpit-ledger){clip-path:none;border:0;box-shadow:none;background:none;
+  border-image:url("assets/ui_stat_card_v1.webp") 44 60 fill / 16px 22px stretch}
+body.flight-mode #flightDock .c9-preview{position:relative;border:0}
+body.flight-mode #flightDock .c9-preview::after{content:"";position:absolute;inset:0;pointer-events:none;background:url("assets/ui_sector_frame_v1.webp") center/100% 100% no-repeat}
+body.flight-mode #flightDock .c9-navigation{border:0;background:color-mix(in srgb,var(--ui-ink) 95%,transparent)}
+body.flight-mode #flightDock .c9-navigation button[aria-current="true"]{clip-path:none;background:none;color:var(--ui-paper);
+  border-image:url("assets/ui_button_main_v1.webp") 30 84 fill / 14px 34px stretch}
+body.flight-mode #flightDock :is(.c9-upgrades,.flight-loadout-choices) button{clip-path:none;border:0;box-shadow:none;background:none;
+  border-image:url("assets/ui_stat_card_v1.webp") 44 60 fill / 16px 22px stretch}
+body.flight-mode #flightDock :is(.c9-upgrades button[data-node-state="installed"],.flight-loadout-choices button[aria-pressed="true"]){background:none;box-shadow:none;filter:brightness(1.25) saturate(1.3)}
+/* Lo instalado no se apaga como lo bloqueado, y el «+» no tapa el texto (02/11/2026). */
+body.flight-mode #flightDock .c9-upgrades button[data-node-state="installed"]:disabled{opacity:1;filter:brightness(1.25) saturate(1.3);color:var(--ui-paper)}
+body.flight-mode #flightDock .c9-upgrades button[data-node-state="installed"]:disabled .c9-upgrade-art{opacity:1}
+body.flight-mode #flightDock .c9-upgrades button[data-node-state="available"] .c9-upgrade-copy{padding-right:34px}
+body.flight-mode #flightDock .c9-actions{position:static;margin:10px 0 0;padding:12px 0 0;border:0;box-shadow:none;background:url("assets/ui_separator_v1.webp") top center/100% 8px no-repeat}
+body.flight-mode #flightDock :is(#flightDockContinue,#flightDockHome){clip-path:none;box-shadow:none;background:none;color:var(--ui-paper);font-size:12px;letter-spacing:.06em}
+body.flight-mode #flightDock #flightDockContinue{border-image:url("assets/ui_button_main_v1.webp") 30 84 fill / 20px 56px stretch}
+body.flight-mode #flightDock #flightDockHome{border-image:url("assets/ui_button_secondary_v1.webp") 24 84 fill / 16px 56px stretch}
+body.flight-mode #flightDock #flightDockHome:active:not(:disabled){border-image:url("assets/ui_button_secondary_pressed_v1.webp") 28 84 fill / 16px 56px stretch}
+body.flight-mode #flightDock :is(#flightDockContinue,#flightDockHome)::before{content:none}
+body.flight-mode #flightDock #flightDockContinue:active:not(:disabled){border-image-source:url("assets/ui_button_main_pressed_v1.webp")}
+body.flight-mode #flightDock .c9-preview{padding:20px 22px 30px}
+body.flight-mode #flightDock :is(.c9-upgrades,.flight-loadout-choices) button{padding:14px 14px 14px 16px;letter-spacing:0}
+body.flight-mode #flightDock .c9-upgrade-copy b{letter-spacing:.02em}
+body.flight-mode #flightDock :is(#flightDockContinue,#flightDockHome){border-width:0;border-style:none}
+/* En el móvil vertical las tarjetas no caben a dos columnas sin partir palabras. */
+@media(max-width:440px){
+  body.flight-mode #flightDock :is(.c9-upgrades,.c9-skill-tree,.flight-loadout-choices){grid-template-columns:minmax(0,1fr)}
+  body.flight-mode #flightDock .c9-branch button{flex-direction:row;min-height:0}
+  body.flight-mode #flightDock .c9-branch h4{min-height:auto}
+}
+@media(max-width:340px){body.flight-mode #flightDock #flightDockHome{font-size:10px;letter-spacing:.02em;white-space:nowrap}
+  body.flight-mode #flightDock .c9-header h2{font-size:20px;letter-spacing:.08em;white-space:nowrap}
+  body.flight-mode #flightDock .c9-header small{font-size:10px;letter-spacing:.08em}
+  body.flight-mode #flightDock .c9-navigation button{font-size:10px;letter-spacing:.06em}}
+/* Sistema de diseño en las pantallas ya rehechas (ds-tokens, 29/10/2026):
+   textos solo con los colores --ui-* y los seis tamaños 10/12/14/16/20/28.
+   Pisa los colores sueltos de las capas antiguas en menú, ventanas, ajustes
+   y Forja C9. Cada pantalla nueva se limpia igual al rehacerla. */
+#menu.menu-gpt :is(.menu-topline small,#campaignPercent){color:var(--ui-muted)}
+#menu.menu-gpt .menu-topline strong{font-size:20px}
+#menu.menu-gpt .menu-panel > p{color:var(--ui-muted);font-size:14px}
+#menu.menu-gpt .campaign-progress-head span{color:var(--ui-muted)}
+#menu .menu-legal :is(a,button){color:var(--ui-muted)}
+.overlay:not(#menu) > .panel h2,#instructionsTitle{font-size:28px}
+.overlay:not(#menu) .panel :is(p,small,.summary-grid span,.final span,.complete-label){color:var(--ui-muted)}
+.overlay:not(#menu) .panel :is(b,strong,h3){color:var(--ui-paper)}
+.overlay:not(#menu) .panel p{font-size:14px}
+.overlay:not(#menu) .panel small{font-size:12px}
+.overlay:not(#menu) #finalScore{font-size:28px}
+.overlay:not(#menu) .summary-grid strong,.overlay:not(#menu) .stars-awarded{font-size:20px}
+#completeLabel{color:var(--ui-cyan)}
+/* La regla antigua de .unlock-message lleva !important: solo así se pisa. */
+.overlay:not(#menu) #unlockMessage{color:var(--ui-cyan)!important;font-size:14px}
+.overlay:not(#menu) .summary-grid b,.overlay:not(#menu) #starsAwarded,body.flight-mode #complete .summary-grid b{font-size:20px}
+#menu.menu-gpt .menu-panel h2{font-size:28px}
+#settingsPanel .setting-row label b{font-size:14px}
+#settingsPanel :is(.setting-row span,.toggle-row b,.quality-row b,output){color:var(--ui-paper);font-size:14px}
+#settingsPanel :is(.toggle-row small,.quality-row small){color:var(--ui-muted);font-size:12px}
+#instructions :is(.rules,.ability-list) span{color:var(--ui-muted);font-size:14px}
+#instructions :is(.rules,.ability-list) b{color:var(--ui-paper);font-size:14px}
+body.flight-mode #flightDock :is(.c9-upgrade-copy small,.c9-section-help,.c9-branch h4,.c9-navigation button){color:var(--ui-muted)}
+body.flight-mode #flightDock .c9-upgrade-copy b{color:var(--ui-paper)}
+body.flight-mode #flightDock .c9-upgrade-copy :is(small,em),body.flight-mode #flightDock .c9-navigation button,#replayFlightTutorial{font-size:12px}
+body.flight-mode #flightDock .c9-upgrade-copy em{color:var(--ui-cyan)}
+body.flight-mode #flightDock .c9-section h3{font-size:14px}
+body.flight-mode #flightDock .c9-preview #flightDockStatus{color:var(--ui-muted);font-size:14px}
+body.flight-mode #flightDock .flight-loadout-choices small{font-size:12px}
+body.flight-mode #flightDock .flight-loadout-choices em{color:var(--ui-cyan);font-size:10px}
+body.flight-mode #flightDock .flight-loadout-choices button:not([aria-pressed="true"]) em{color:var(--ui-muted)}
+body.flight-mode #flightDock .cockpit-loadout-card[aria-pressed="true"] .cockpit-loadout-copy em{color:var(--ui-cyan)}
+body.flight-mode #flightDock #replayFlightTutorial{font-size:12px}
+body.flight-mode #flightDock #c9Title{font-size:28px}
+body.flight-mode #flightDock #c9Balance{color:var(--ui-amber)}
+@media(max-width:340px){#menu.menu-gpt :is(.hero-cta > span,.menu-button-text){font-size:14px}
+  body.flight-mode #flightDock .c9-navigation button{font-size:10px;letter-spacing:.02em}}
+/* HARDCORE (propietario 24/10 y 30/10): aviso al elegirlo y distintivo en el
+   menú y en el HUD, con los colores del sistema. */
+#settingsPanel .hardcore-confirm{display:grid;gap:8px;padding:12px 0 4px}
+#settingsPanel .hardcore-confirm p{margin:0;color:var(--ui-muted);font-size:14px}
+#settingsPanel .settings-panel .hardcore-confirm b{color:var(--ui-red)}
+body.hardcore-mode #menu .menu-topline small::after{content:" · HARDCORE";color:var(--ui-red)}
+body.hardcore-mode .metric-sector small::after{content:" · HC";color:var(--ui-red)}
+/* Hangar con el arte de GPT (paso del hangar, 30/10; maqueta art-ui-hangar-v2;
+   scripts/build-hangar-assets.py). Colores y tamaños del sistema. */
+#shipHangar .hangar-v2{width:min(100%,460px);max-height:100%;overflow:auto;overscroll-behavior:contain;text-align:left}
+#shipHangar .hangar-head small{color:var(--ui-cyan);font:800 12px/1.2 var(--font-display);letter-spacing:.14em}
+#shipHangar .hangar-head h2{margin:4px 0 10px;font-size:28px}
+#shipHangar .hangar-stage{position:relative;display:grid;place-items:center;height:200px;margin:0 0 10px;overflow:hidden;
+  background:url("assets/menu_hangar_bg_v1.webp") 50% 52%/cover no-repeat}
+#shipHangar .hangar-ship-art{width:170px;height:170px;background:url("assets/hangar_ships_v1.webp") 0 0/500% 200% no-repeat;filter:drop-shadow(0 12px 14px #000)}
+#shipHangar .hangar-stage figcaption{position:absolute;left:10px;bottom:8px;display:grid;gap:2px}
+#shipHangar .hangar-stage figcaption b{color:var(--ui-paper);font:800 20px/1.1 var(--font-display);letter-spacing:.06em;text-shadow:0 2px 6px #000}
+#shipHangar .hangar-stage figcaption span{color:var(--ui-cyan);font:800 10px/1.2 var(--font-display);letter-spacing:.14em;text-shadow:0 2px 6px #000}
+#shipHangar .hangar-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:0 0 10px}
+#shipHangar .hangar-slot{position:relative;aspect-ratio:1;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;clip-path:none;
+  background:url("assets/hangar_slot_normal_v1.webp") center/100% 100% no-repeat}
+#shipHangar .hangar-slot::before{content:none}
+#shipHangar .hangar-slot.is-chosen{background-image:url("assets/hangar_slot_chosen_v1.webp")}
+#shipHangar .hangar-slot.is-locked{background-image:url("assets/hangar_slot_locked_v1.webp")}
+#shipHangar .hangar-slot.is-paid{background-image:url("assets/hangar_slot_paid_v1.webp")}
+#shipHangar .hangar-slot[aria-pressed="true"]{outline:2px solid var(--ui-cyan);outline-offset:1px}
+#shipHangar .hangar-thumb{position:absolute;inset:16%;background:url("assets/hangar_ships_v1.webp") 0 0/500% 200% no-repeat}
+#shipHangar .hangar-slot:is(.is-locked,.is-paid) .hangar-thumb{filter:grayscale(1) brightness(.45)}
+#shipHangar .hangar-slot small{position:absolute;top:6%;left:10%;color:var(--ui-muted);font:800 10px/1 var(--font-display)}
+#shipHangar .hangar-slot em{position:absolute;left:0;right:0;bottom:7%;color:var(--ui-amber);font:800 10px/1 var(--font-display);font-style:normal;text-align:center}
+#shipHangar .hangar-plate{position:relative;aspect-ratio:1000/360;background:url("assets/hangar_ability_plate_v1.webp") center/100% 100% no-repeat}
+#shipHangar .hangar-ability{position:absolute;left:0;right:0;height:40%;display:flex;align-items:center}
+#shipHangar .hangar-ability:first-child{top:12%}
+#shipHangar .hangar-ability:last-child{top:48%}
+#shipHangar .hangar-icon{position:absolute;left:7.6%;width:11.6%;aspect-ratio:1;background:url("assets/ship_ability_icons_v1.webp") 0 0/500% 400% no-repeat}
+#shipHangar .hangar-ability p{position:absolute;left:23%;right:8%;margin:0;display:grid;gap:2px}
+#shipHangar .hangar-ability small{color:var(--ui-cyan);font:800 10px/1.1 var(--font-display);letter-spacing:.1em}
+#shipHangar .hangar-ability:last-child small{color:var(--ui-amber)}
+#shipHangar .hangar-ability b{color:var(--ui-paper);font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#shipHangar .hangar-ability-text{display:grid;gap:4px;margin:8px 0 0;padding:0 0 0 16px;color:var(--ui-muted);font-size:12px;line-height:1.4}
+#shipHangar .hangar-status{min-height:0;margin:8px 0 0;color:var(--ui-paper);font-size:12px}
+#shipHangar .ship-hangar-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:8px;margin-top:6px}
+#shipHangar .ship-hangar-actions button{margin:0;font-size:12px}
+@media(max-width:360px){#shipHangar .ship-hangar-actions{grid-template-columns:1fr}#shipHangar .hangar-ability small{display:none}}
+/* Hangar · ARMA (armas por niveles, 01/11/2026): Pulso y Gemelo con su nivel,
+   elegir y subir de nivel. Disparos pintados de GPT (weapon_levels_v1). */
+#shipHangar .hangar-weapons{margin:10px 0 4px;padding:10px 0 0;border-top:1px solid var(--ui-line)}
+#shipHangar .hangar-weapons h3{margin:0 0 8px;color:var(--ui-cyan);font:800 12px/1.2 var(--font-display);letter-spacing:.14em}
+#shipHangar .hangar-weapon-cards{display:grid;gap:8px}
+#shipHangar .hangar-weapon{display:grid;grid-template-columns:48px minmax(0,1fr);gap:6px 8px;align-items:center;padding:8px;
+  background:var(--ui-surface);border:1px solid var(--ui-line)}
+#shipHangar .hangar-weapon.is-locked .hangar-weapon-art{filter:grayscale(1) brightness(.5)}
+#shipHangar .hangar-weapon-art{width:48px;height:48px;background:url("assets/weapon_levels_v1.webp") 0 0/400% 200% no-repeat}
+#shipHangar .hangar-weapon p{margin:0;display:grid;gap:2px;min-width:0}
+#shipHangar .hangar-weapon-actions{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#shipHangar .hangar-weapon b{color:var(--ui-paper);font:800 14px/1.1 var(--font-display);letter-spacing:.06em}
+#shipHangar .hangar-weapon small{color:var(--ui-muted);font:800 10px/1.2 var(--font-display);letter-spacing:.04em}
+/* Los botones no ensanchan la columna: el texto baja de línea (auditoría 03/11, A08). */
+#shipHangar .hangar-weapon button{margin:0;min-width:0;min-height:36px;padding-inline:4px;font-size:12px;line-height:1.15;letter-spacing:0;white-space:normal;overflow-wrap:normal}
+@media(max-width:360px){#shipHangar .hangar-weapon-actions{grid-template-columns:1fr}}
+/* Baliza de reaparición dentro de la Forja (02/11/2026): su dibujo pintado. */
+#flightDock .c9-upgrade-art[data-upgrade="beacon"]{background:url("assets/sector_beacon_atlas_v1.webp") 0 0/400% 100% no-repeat}

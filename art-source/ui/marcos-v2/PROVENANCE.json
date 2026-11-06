@@ -1,0 +1,57 @@
+{
+  "fecha": "2026-10-24",
+  "origen": "GPT, a petición del propietario (encargos art-ui-paneles-v2 y art-ui-marco-principal-v2 del tablero), descargado del baúl (encargos/). Sustituyen a las entregas v1, que llegaron planas.",
+  "archivos": [
+    {
+      "archivo": "encargo-art-ui-marco-principal-v2-v1-1.webp",
+      "encargo": "art-ui-marco-principal-v2",
+      "nota": "Botón principal, normal (1328×200 con alfa)."
+    },
+    {
+      "archivo": "encargo-art-ui-marco-principal-v2-v1-2.webp",
+      "encargo": "art-ui-marco-principal-v2",
+      "nota": "Botón principal, pulsado (1328×200 con alfa)."
+    },
+    {
+      "archivo": "encargo-art-ui-paneles-v2-v1-1.webp",
+      "encargo": "art-ui-paneles-v2",
+      "nota": "Marco de ventana (1080×1500 con alfa)."
+    },
+    {
+      "archivo": "encargo-art-ui-paneles-v2-v1-2.webp",
+      "encargo": "art-ui-paneles-v2",
+      "nota": "Botón secundario (1328×160 con alfa)."
+    },
+    {
+      "archivo": "encargo-art-ui-paneles-v2-v1-3.webp",
+      "encargo": "art-ui-paneles-v2",
+      "nota": "Botón secundario pulsado (1328×160 con alfa)."
+    },
+    {
+      "archivo": "encargo-art-ui-paneles-v2-v1-4.webp",
+      "encargo": "art-ui-paneles-v2",
+      "nota": "Botón de peligro, rojo (1328×160 con alfa)."
+    },
+    {
+      "archivo": "encargo-art-ui-paneles-v2-v1-5.webp",
+      "encargo": "art-ui-paneles-v2",
+      "nota": "Botón de anuncio, ámbar (1328×160 con alfa)."
+    },
+    {
+      "archivo": "encargo-art-ui-paneles-v2-v1-6.webp",
+      "encargo": "art-ui-paneles-v2",
+      "nota": "Ficha de dato (400×220 con alfa)."
+    }
+  ],
+  "estado": "INTEGRADO en las ventanas del juego (scripts/build-ui-frames.py); aceptación artística pendiente del propietario",
+  "sha256": {
+    "encargo-art-ui-marco-principal-v2-v1-1.webp": "fcd27bcd7ecced0905524841273ce2e49c9669ecedc65e16f5ebf03371b31490",
+    "encargo-art-ui-marco-principal-v2-v1-2.webp": "49cb1a46796ee617f11483fbc6b56e94b88bc2b1591584ec60ceb2beb3080f3d",
+    "encargo-art-ui-paneles-v2-v1-1.webp": "da9746a683a346570b6193e4011723b5264e4cbd141ca3a13a5845ce3d2a70ef",
+    "encargo-art-ui-paneles-v2-v1-2.webp": "d5d900658fd68984ae0644c8b5fab3ecfc3a193e0dbeff9f243322465e22f151",
+    "encargo-art-ui-paneles-v2-v1-3.webp": "9edae5c3d4a4f0a6da234709935d0a33894d762f64ff81712db18911352b7876",
+    "encargo-art-ui-paneles-v2-v1-4.webp": "fe7e0e08f8265514446341f36854ac4fb1ce1883ecb64f3745f5bbcbdd14d393",
+    "encargo-art-ui-paneles-v2-v1-5.webp": "fc8eadd1e4b071becb0d7a15e0ae7a881fc0e00ce96d449bb10a9a85f1268500",
+    "encargo-art-ui-paneles-v2-v1-6.webp": "19cdc7dea1697129aede9e0cab637447d15120d3de4d76b2360e027c0e15dcd8"
+  }
+}

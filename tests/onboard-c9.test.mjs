@@ -169,7 +169,8 @@ test('fresh classic launch plays the Chronos opening as a skippable film, then g
   assert.equal(h.loaded.has(INTRO_PATH), false, 'retained historical opening art is not requested');
   assert.equal(h.node('classicC9').classList.contains('hidden'), true, 'C9 waits for its recovered module');
   assert.equal(h.node('flightWeapon').classList.contains('hidden'), true, 'one owned weapon needs no selector');
-  assert.equal(h.node('fireWeapon').textContent, 'PHASER');
+  // Un solo nombre para el arma inicial (propietario, 03/11/2026): PULSO.
+  assert.equal(h.node('fireWeapon').textContent, 'PULSO');
   assert.equal(h.node('flightPilotHint').textContent.includes('DESLIZA'), true);
   assert.equal(h.api.fireManualShot(), true, 'manual combat works as soon as the film is skipped');
   h.api.render(0);
@@ -246,6 +247,32 @@ test('the C9 dialog establishes focus, wraps enabled controls and Escape returns
   assert.equal(h.pending.size, 1);
 });
 
+// Detalle pendiente de C9 (rv7 C8, R1): alternar la pausa y la Forja no deja
+// estados cruzados ni toca el combate.
+test('switching between pause and C9 never stacks screens or changes the flight', t => {
+  const h = harness(t); h.api.prepare();
+  const before = gameplay(h.snapshot());
+  h.node('classicC9').click();
+  assert.equal(h.snapshot().state, 'paused'); assert.equal(h.node('flightDock').classList.contains('show'), true);
+  h.api.resumeGame();
+  assert.equal(h.snapshot().state, 'playing', 'resuming from C9 closes the Forja');
+  assert.equal(h.node('flightDock').classList.contains('show'), false);
+  assert.equal(h.node('paused').classList.contains('show'), false);
+  h.api.pauseGame();
+  assert.equal(h.node('paused').classList.contains('show'), true);
+  h.node('classicC9').click();
+  assert.equal(h.node('flightDock').classList.contains('show'), false, 'C9 cannot open on top of the pause');
+  h.api.resumeGame();
+  assert.equal(h.snapshot().state, 'playing');
+  assert.equal(h.node('paused').classList.contains('show'), false);
+  h.node('classicC9').click(); h.api.pauseGame();
+  assert.equal(h.node('paused').classList.contains('show'), false, 'pausing is ignored while C9 is open');
+  assert.equal(h.node('flightDock').classList.contains('show'), true);
+  h.node('flightDockContinue').click();
+  assert.equal(h.snapshot().state, 'playing');
+  assert.deepEqual(gameplay(h.snapshot()), before);
+});
+
 test('the actual onboard purchase commits price, entitlement and receipt once while the route stays paused', t => {
   const h = harness(t); h.api.prepare(); h.api.seedCombatResources(); h.node('classicC9').click();
   const before = h.snapshot();
@@ -304,9 +331,9 @@ test('stage 1.6 resolves emergency service in flight once without a forced orbit
   assert.equal(serviced.events.filter(event => event.type === 'service-complete').length, 1);
   assert.equal(h.node('flightDock').classList.contains('show'), false);
   h.api.render(183300);
-  assert.equal(h.loaded.has('assets/c9_station_v1.webp'), false,
+  assert.equal(h.loaded.has('assets/c9_ship_v1.webp'), false,
     'retained historic relay art is not loaded into the new onboard route');
-  assert.equal(h.drawCalls.includes('assets/c9_station_v1.webp'), false);
+  assert.equal(h.drawCalls.includes('assets/c9_ship_v1.webp'), false);
   assert.equal(serviced.workshopOpened, false, 'crossing the checkpoint must not imply opening C9');
   assert.deepEqual(serviced.salvage.upgrades, []); assert.equal(serviced.salvage.balance, 100);
   h.api.damageHullForFixture(62); h.api.beginClassicVoyageService();
@@ -360,30 +387,75 @@ test('Atlas blocks the onboard workshop instead of permitting combat avoidance b
   assert.equal(h.pending.size, 1);
 });
 
-test('Forja connects paid weapon ranks to real loadouts and preserves them after interruption', t => {
+// dec-armas-plan (01/11/2026): la Forja ya no vende armas (Abanico y Aguja
+// salieron) ni cambia el arma; sus ramas de casco y refrigeración siguen.
+test('Forja keeps hull and cooling ranks, no longer sells weapons and preserves them after interruption', t => {
   const equipment={version:1,recoveredTwin:true,unlocked:['pulse'],selected:'pulse'};
   const h=harness(t,{salvage:fundedRecord(1000),equipment});h.api.prepare();h.node('classicC9').click();
   const sku=id=>h.document.querySelector(`[data-c9-sku="${id}"]`);
   assert.equal(h.node('c9Title').textContent,'FORJA C9');
-  assert.equal(sku('weapon-scatter').disabled,true,'recovered emitter must be prepared explicitly');
-  h.node('flightInstallTwin').click();
-  assert.equal(sku('weapon-scatter').disabled,false);
-  assert.equal(sku('scatter-focus').disabled,true,'rank II cannot skip its weapon');
-  sku('weapon-scatter').click();sku('scatter-focus').click();
-  h.document.querySelector('[data-flight-loadout="scatter"]').click();
-  assert.equal(h.snapshot().weapons.selected,'scatter');
-  assert.equal(h.snapshot().weapons.weaponRanks.scatter,2);
-  assert.match(h.node('flightDockStatus').textContent,/Abanico II equipado/);
-  assert.match(h.document.querySelector('[data-flight-loadout="scatter"] small').textContent,/alcance ampliado/);
+  for(const retired of ['weapon-scatter','scatter-focus','weapon-needle','needle-resonance'])assert.equal(sku(retired),null,retired);
+  assert.deepEqual([...h.document.querySelectorAll('[data-flight-loadout]')].map(button=>button.dataset.flightLoadout),['pulse','twin']);
   assert.equal(h.document.querySelector('[data-flight-loadout="twin"]').disabled,true,'Gemelo still belongs to Atlas');
+  h.node('flightInstallTwin').click();
   h.node('c9BuyShield').click();sku('hull-plating-ii').click();
   h.node('c9BuyCoolant').click();sku('coolant-feed-ii').click();
   const q=h.snapshot();assert.equal(q.reserveCapacity,65);assert.equal(q.weapons.rechargeSeconds,1);
-  const raw=h.stored(SALVAGE_KEY);sku('scatter-focus').click();assert.equal(h.stored(SALVAGE_KEY),raw);
+  const raw=h.stored(SALVAGE_KEY);sku('coolant-feed-ii').click();assert.equal(h.stored(SALVAGE_KEY),raw);
   const resumed=harness(t,{salvage:JSON.parse(raw),equipment:JSON.parse(h.stored('neonCronium.flightEquipment.v1'))});
-  resumed.api.prepare();assert.equal(resumed.snapshot().weapons.selected,'scatter');
-  assert.equal(resumed.snapshot().weapons.weaponRanks.scatter,2);
+  resumed.api.prepare();assert.equal(resumed.snapshot().weapons.selected,'pulse');
   assert.equal(resumed.snapshot().reserveCapacity,65);assert.equal(resumed.snapshot().weapons.rechargeSeconds,1);
   assert.equal(resumed.snapshot().salvage.balance,q.salvage.balance);
-  assert.equal(resumed.pending.size,1);
+});
+
+// dec-arbol-ampliado (02/11/2026): rama MUNICIÓN de cuatro rangos en la Forja.
+test('Forja ammo branch: Munición I gives a 40-round magazine now and after a reload; later ranks wait for the one before', t => {
+  const equipment={version:1,recoveredTwin:false,unlocked:['pulse'],selected:'pulse'};
+  const h=harness(t,{salvage:fundedRecord(250),equipment});h.api.prepare();h.node('classicC9').click();
+  const sku=id=>h.document.querySelector(`[data-c9-sku="${id}"]`);
+  assert.deepEqual([...sku('ammo-1').closest('.c9-branch').querySelectorAll('[data-c9-sku]')].map(node=>node.dataset.c9Sku),
+    ['ammo-1','ammo-2','ammo-3','ammo-4']);
+  assert.equal(sku('ammo-2').disabled,true,'Munición II needs Munición I');
+  assert.equal(h.snapshot().weapons.maxCharges,20);
+  sku('ammo-1').click();
+  const bought=h.snapshot();
+  assert.equal(bought.weapons.maxCharges,40);assert.equal(bought.weapons.charges,40,'the new rounds arrive loaded');
+  assert.equal(bought.salvage.balance,190);assert.equal(sku('ammo-1').dataset.nodeState,'installed');
+  assert.equal(sku('ammo-2').disabled,false);
+  const resumed=harness(t,{salvage:JSON.parse(h.stored(SALVAGE_KEY)),equipment});
+  resumed.api.prepare();assert.equal(resumed.snapshot().weapons.maxCharges,40);
+});
+
+// dec-nodos-clave (02/11/2026): parejas «elige 1 de 2» en la Forja.
+test('Forja key nodes: one choice per pair, the other one changes it for 100, and the choice survives a reload', t => {
+  const equipment={version:1,recoveredTwin:false,unlocked:['pulse'],selected:'pulse'};
+  const h=harness(t,{salvage:fundedRecord(700),equipment});h.api.prepare();h.node('classicC9').click();
+  const key=id=>h.document.querySelector(`[data-c9-key="${id}"]`),sku=id=>h.document.querySelector(`[data-c9-sku="${id}"]`);
+  assert.deepEqual([...key('hot-reload').closest('.c9-branch').querySelectorAll('[data-c9-key]')].map(node=>node.dataset.c9Key),['hot-reload','magnet']);
+  assert.equal(key('hot-reload').disabled,true,'the pair needs Munición II');
+  sku('ammo-1').click();sku('ammo-2').click();
+  assert.equal(key('magnet').querySelector('[data-c9-state]').textContent,'300 CHATARRA · ELIGE 1 DE 2');
+  key('hot-reload').click();
+  assert.equal(h.snapshot().weapons.hotReload,true);assert.equal(h.snapshot().salvage.balance,200);
+  assert.equal(key('hot-reload').dataset.nodeState,'installed');
+  assert.equal(key('magnet').querySelector('[data-c9-state]').textContent,'CAMBIAR · 100 CHATARRA');
+  key('magnet').click();
+  const changed=h.snapshot();
+  assert.equal(changed.weapons.hotReload,false);assert.equal(changed.salvage.balance,100);
+  assert.deepEqual(changed.salvage.keyChoices,{'key-1':'magnet'});
+  const resumed=harness(t,{salvage:JSON.parse(h.stored(SALVAGE_KEY)),equipment});resumed.api.prepare();
+  assert.deepEqual(resumed.snapshot().salvage.keyChoices,{'key-1':'magnet'});
+  assert.equal(resumed.snapshot().salvage.balance,100);
+});
+
+// Auditoría 03/11 (A11): la pareja de nodos clave se lee como una elección.
+test('each key-node pair says «choose one» and has an «O» between its two options', t => {
+  const h=harness(t,{salvage:fundedRecord(10)});h.api.prepare();h.node('classicC9').click();
+  for(const first of ['hot-reload','reactive-armor']) {
+    const branch=h.document.querySelector(`[data-c9-key="${first}"]`).closest('.c9-branch');
+    assert.match(branch.querySelector('h4').textContent,/ELIGE UNO/);
+    const kids=[...branch.children].map(node=>node.dataset?.c9Key||node.className);
+    assert.equal(kids.indexOf('c9-or'),kids.indexOf(first)+1,'the «O» sits between the two options');
+    assert.equal(branch.querySelector('.c9-or').textContent,'O');
+  }
 });

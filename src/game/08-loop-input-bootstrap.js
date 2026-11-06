@@ -26,8 +26,9 @@
     if (typeof drawMeteorWarnings === "function") drawMeteorWarnings();
     if (typeof drawAtlasBeam === "function") drawAtlasBeam();
     drawGuardianAtlas();
-    if (typeof drawCh03Satellite === "function") drawCh03Satellite();
+    if (typeof drawSubguardian === "function") drawSubguardian();
     drawPlayer(t);
+    if (typeof drawC9Docking === "function") drawC9Docking();
     drawShots();
     drawClassicProjectiles();
     drawExplosions();
@@ -365,9 +366,9 @@
   $("pauseSettings").onclick = () => openSettings("paused");
   $("restart").onclick = () => startLevel(currentLevel);
   $("quit").onclick = goHome;
-  $("home").onclick = goHome;
+  $("home").onclick = () => hardcoreWiped ? reloadGame() : goHome();
   $("completeHome").onclick = goHome;
-  $("retry").onclick = () => startLevel(currentLevel);
+  $("retry").onclick = () => hardcoreWiped ? reloadGame() : startLevel(currentLevel);
   $("replayLevel").onclick = () => startLevel(currentLevel);
   // Tras cualquier viaje: el siguiente viaje del mapa o, si no queda
   // ninguno, el mapa. Nunca un nivel clásico (ya no forman parte del juego).
@@ -380,21 +381,34 @@
     goHome();sectorMapShown=sector;buildLevelGrid();overlay(ui.levelSelect);
   };
 
+  // Botones e interruptores de menús y ventanas suenan (Kenney CC0). Los mandos
+  // de vuelo no están en un .overlay y tienen su propio sonido de combate.
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest?.("button");
+    if (button && !button.disabled && button.closest(".overlay")) uiSound("ui-press");
+  });
+  document.addEventListener("change", (event) => {
+    if (event.target.matches?.('.overlay input[type="checkbox"]')) uiSound("ui-toggle");
+  });
+
   ui.musicVolume.oninput = (event) => {
     settings.music = +event.target.value;
     ui.musicValue.textContent = `${settings.music}%`;
+    paintRanges();
     startMusic();
     updateAudioVolumes();
   };
   ui.fxVolume.oninput = (event) => {
     settings.fx = +event.target.value;
     ui.fxValue.textContent = `${settings.fx}%`;
+    paintRanges();
     updateAudioVolumes();
-    tone(620, 0.05, "triangle", 0.04);
+    uiSound("ui-tick");
   };
   ui.sensitivity.oninput = (event) => {
     settings.sensitivity = +event.target.value;
     ui.sensitivityValue.textContent = `${settings.sensitivity}%`;
+    paintRanges();
   };
   ui.autoFire.onchange = (event) => {
     const previous = settings.autoFire;
@@ -408,9 +422,31 @@
     settings.vibration = event.target.checked;
     if (settings.vibration) vibrate(20);
   };
-  if (ui.difficulty) ui.difficulty.onchange = (event) => {
-    settings.difficulty = ["facil", "normal", "hardcore"].includes(event.target.value) ? event.target.value : "normal";
+  // HARDCORE se elige con aviso y juega su propia partida: entrar o salir de él
+  // guarda los ajustes y recarga el juego con la otra partida.
+  const hardcoreConfirm = $("hardcoreConfirm");
+  const switchDifficulty = value => {
+    settings.difficulty = value; saveSettings();
+    // Recuerda que HARDCORE se confirmó con el aviso (auditoría 03/11, A04).
+    if (value === "hardcore") try { (window.NeonDev?.storage ?? window.localStorage).setItem(HARDCORE_CONFIRMED_KEY, "1"); } catch {}
+    reloadGame();
   };
+  if (ui.difficulty) ui.difficulty.onchange = (event) => {
+    const value = ["facil", "normal", "dificil", "hardcore"].includes(event.target.value) ? event.target.value : "normal";
+    if (value === "hardcore" && !HARDCORE) {
+      event.target.value = settings.difficulty;
+      hardcoreConfirm?.classList.remove("hidden");
+      return;
+    }
+    hardcoreConfirm?.classList.add("hidden");
+    if (HARDCORE && value !== "hardcore") { switchDifficulty(value); return; }
+    settings.difficulty = value;
+  };
+  if (hardcoreConfirm) {
+    $("hardcoreYes").onclick = () => switchDifficulty("hardcore");
+    $("hardcoreNo").onclick = () => hardcoreConfirm.classList.add("hidden");
+  }
+  document.body.classList.toggle("hardcore-mode", Boolean(HARDCORE));
   ui.effectsQuality.onchange = (event) => {
     settings.effectsQuality = ["low", "normal", "high"].includes(event.target.value) ? event.target.value : "normal";
     settings.effects = settings.effectsQuality !== "low";
@@ -418,6 +454,10 @@
   ui.reduceEffects.onchange = (event) => {
     settings.reduceEffects = event.target.checked;
     document.body.classList.toggle("reduced-effects", settings.reduceEffects);
+  };
+  ui.leftHanded.onchange = (event) => {
+    settings.leftHanded = event.target.checked;
+    document.body.classList.toggle("left-handed", settings.leftHanded);
   };
 
   ui.reward.onclick = async () => {
@@ -491,6 +531,10 @@
   setupClassicMissileInput();
   resizeCanvas();
   syncSettingsUI();
+  // Música del menú (02/11/2026): el navegador solo deja sonar tras el primer toque.
+  // En el iPhone el gesto que vale para el audio es soltar el dedo o un clic, no
+  // pointerdown (auditoría 03/11, A18); el primero que llegue arranca la música.
+  for (const type of ["touchend", "click", "keydown"]) addEventListener(type, () => startMusic(), { once: true, capture: true });
   window.AnalyticsManager?.track("app_open", { build: BUILD_VERSION });
   addEventListener("pagehide", () => {
     window.AnalyticsManager?.track("session_duration", {
