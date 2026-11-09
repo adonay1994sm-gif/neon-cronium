@@ -37,4 +37,6 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
+        # Solo sube la build: las pruebas internas no pasan revisión de Apple.
+        # «true» la mandaría a la revisión de pruebas externas (09/11/2026).
+        submit_to_testflight: false
