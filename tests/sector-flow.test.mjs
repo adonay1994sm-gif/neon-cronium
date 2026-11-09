@@ -1158,3 +1158,12 @@ test('if the new salvage run cannot be saved, the revive still pays scrap', () =
   assert.equal(T.resumeReward(), true);
   assert.ok(T.ev('classicSalvageRunId'), 'kills after the revive are still paid');
 });
+
+// Revisión del PR #57 (P57-01, propietario 09/11): unos ajustes en HARDCORE sin
+// la confirmación nueva no dejan un modo a medias: se juega y se muestra Normal.
+test('HARDCORE settings without the new confirmation play and show Normal', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings}});
+  assert.equal(w.document.body.classList.contains('hardcore-mode'), false);
+  assert.equal(T.ev('settings.difficulty'), 'normal', 'no HARDCORE numbers without its save wipe');
+  assert.equal(w.document.getElementById('difficulty').value, 'normal');
+});

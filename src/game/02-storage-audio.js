@@ -21,7 +21,10 @@
         : Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
       leftHanded: source.leftHanded === true,
       effectsQuality: savedQuality,
-      difficulty: ["facil", "normal", "dificil", "hardcore"].includes(source.difficulty) ? source.difficulty : DEFAULT_SETTINGS.difficulty,
+      // HARDCORE sin su confirmación pasa a Normal: nada de jugar con sus cifras
+      // sin el borrado al morir (P57-01, propietario 09/11).
+      difficulty: ["facil", "normal", "dificil"].includes(source.difficulty) || (source.difficulty === "hardcore" && HARDCORE)
+        ? source.difficulty : DEFAULT_SETTINGS.difficulty,
       flightTutorial: source.flightTutorial&&typeof source.flightTutorial==='object' ? source.flightTutorial : null,
       effects: savedQuality !== "low"
     };
