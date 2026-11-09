@@ -79,8 +79,10 @@
     legacyFrameId = null;
     // An input handler can reset last after this rendering opportunity began.
     // A queued RAF timestamp must never rewind the simulation or stop its loop.
-    const dt = Math.max(0, Math.min(0.034, (now - last) / 1000));
+    const frameMs = now - last;
+    const dt = Math.max(0, Math.min(0.034, frameMs / 1000));
     last = now;
+    trackFramePace(frameMs);
     // Holding the action thumb uses the existing simulation owner. Weapon
     // cooldown and the rechargeable battery still decide whether a shot fires.
     if (state !== "playing") resetGameInput();
@@ -94,6 +96,16 @@
       || state === "gameover" || state === "destroying");
     render(now);
     if (legacyRunning) legacyFrameId = requestAnimationFrame(frame);
+  }
+  // Caja negra del enlace de prueba (09/11/2026): fluidez cada 15 s de juego.
+  let paceFrames = 0, paceMs = 0, paceWorst = 0;
+  function trackFramePace(ms) {
+    if (state !== "playing" || !(ms > 0) || ms > 1000) return;
+    paceFrames++; paceMs += ms; paceWorst = Math.max(paceWorst, ms);
+    if (paceMs < 15000) return;
+    window.AnalyticsManager?.track("perf", { fps: Math.round(paceFrames * 1000 / paceMs), worstMs: Math.round(paceWorst),
+      stage: typeof classicFlightView !== "undefined" ? classicFlightView?.stageNumber || 0 : 0 });
+    paceFrames = 0; paceMs = 0; paceWorst = 0;
   }
 
   function pointerX(event, point = event.touches?.[0] || event) {

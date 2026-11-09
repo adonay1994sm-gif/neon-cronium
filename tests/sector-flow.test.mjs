@@ -1167,3 +1167,34 @@ test('HARDCORE settings without the new confirmation play and show Normal', () =
   assert.equal(T.ev('settings.difficulty'), 'normal', 'no HARDCORE numbers without its save wipe');
   assert.equal(w.document.getElementById('difficulty').value, 'normal');
 });
+
+// Caja negra del enlace de prueba (propietario, 09/11): el juego cuenta el tramo
+// en el que entras y cada golpe que recibes, por el canal de analítica de siempre.
+test('the game reports each stage it enters and each hit it takes', () => {
+  const {w, T} = harness();
+  const events = [];
+  w.AnalyticsManager = {track: (name, properties) => { events.push([name, properties]); return true; }};
+  startAt(T, 3); T.adv(.1);
+  assert.ok(events.some(([name, p]) => name === 'stage_start' && p.stage === 3), 'entering stage 3 is reported');
+  T.ev('hull=100'); T.hit(10);
+  const hit = events.find(([name]) => name === 'hit_taken');
+  assert.ok(hit, 'the hit is reported');
+  assert.equal(hit[1].stage, 3);
+  assert.equal(typeof hit[1].kind, 'string');
+  assert.ok(hit[1].hull < 100 || hit[1].absorbed);
+  T.toStage(4);
+  assert.ok(events.some(([name, p]) => name === 'stage_start' && p.stage === 4), 'the next stage is reported too');
+});
+
+test('the game reports its frame rate every 15 s of play, and not while paused', () => {
+  const {w, T} = harness();
+  const perf = [];
+  w.AnalyticsManager = {track: (name, properties) => { if (name === 'perf') perf.push(properties); return true; }};
+  startAt(T, 2); T.adv(.1);
+  T.ev('for(let i=0;i<760;i++)trackFramePace(i===5?120:20)');
+  assert.equal(perf.length, 1);
+  assert.deepEqual([perf[0].fps, perf[0].worstMs, perf[0].stage], [50, 120, 2]);
+  T.ev('pauseGame()');
+  T.ev('for(let i=0;i<2000;i++)trackFramePace(20)');
+  assert.equal(perf.length, 1, 'paused time is not counted');
+});

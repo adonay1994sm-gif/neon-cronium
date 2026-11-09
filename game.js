@@ -1904,6 +1904,7 @@
       classicSalvageEnemySequence=0;resetClassicCometShower();applyClassicSalvageShield();
       resetSectorAttackTokens();
       saveClassicVoyageCheckpoint(event.checkpoint);
+      trackStageStart();
     }
     if(event.type==="stage-start") {
       classicFlightView=classicFlight.snapshot();
@@ -3565,6 +3566,13 @@
     if(isSectorRun()&&classicChapterView?.opening.canSkip&&loadMenuUnlocks().seen.intro)skipChapterIntro();
     window.AnalyticsManager?.track("game_start", { level: currentLevel + 1 });
     window.AnalyticsManager?.track("level_start", { level: currentLevel + 1, continued: false });
+    trackStageStart();
+  }
+  // Caja negra del enlace de prueba (09/11/2026): en qué tramo entras y cómo llegas.
+  function trackStageStart() {
+    if(!classicFlightView?.stageNumber)return;
+    window.AnalyticsManager?.track("stage_start", { route: classicFlightView.routeId || "", stage: classicFlightView.stageNumber,
+      hull: Math.round(hull), difficulty: settings.difficulty });
   }
 
   function pauseGame() {
@@ -4379,6 +4387,10 @@
       kind:context.kind||"collision",largeAsteroid:context.largeAsteroid===true,
       largeAsteroidScale:context.largeAsteroidScale||1});
     classicHullReserve=damageResult.reserve;
+    // Caja negra del enlace de prueba (09/11/2026): qué te golpea y cuánto.
+    window.AnalyticsManager?.track("hit_taken", { kind: context.kind || "collision", damage: Math.round(amount * 10) / 10,
+      hull: Math.round(damageResult.hull ?? hull), absorbed: Boolean(damageResult.absorbed),
+      stage: typeof classicFlightView !== "undefined" ? classicFlightView?.stageNumber || 0 : 0 });
     // Nodo clave Blindaje reactivo (02/11/2026): 1 s más sin daño tras el golpe.
     if (typeof hullGrace !== "undefined") hullGrace = typeof classicKeyNodes !== "undefined" && classicKeyNodes.reactiveArmor ? 1.3 : 0.3;
     if (damageResult.absorbed) {
@@ -7311,8 +7323,10 @@
     legacyFrameId = null;
     // An input handler can reset last after this rendering opportunity began.
     // A queued RAF timestamp must never rewind the simulation or stop its loop.
-    const dt = Math.max(0, Math.min(0.034, (now - last) / 1000));
+    const frameMs = now - last;
+    const dt = Math.max(0, Math.min(0.034, frameMs / 1000));
     last = now;
+    trackFramePace(frameMs);
     // Holding the action thumb uses the existing simulation owner. Weapon
     // cooldown and the rechargeable battery still decide whether a shot fires.
     if (state !== "playing") resetGameInput();
@@ -7326,6 +7340,16 @@
       || state === "gameover" || state === "destroying");
     render(now);
     if (legacyRunning) legacyFrameId = requestAnimationFrame(frame);
+  }
+  // Caja negra del enlace de prueba (09/11/2026): fluidez cada 15 s de juego.
+  let paceFrames = 0, paceMs = 0, paceWorst = 0;
+  function trackFramePace(ms) {
+    if (state !== "playing" || !(ms > 0) || ms > 1000) return;
+    paceFrames++; paceMs += ms; paceWorst = Math.max(paceWorst, ms);
+    if (paceMs < 15000) return;
+    window.AnalyticsManager?.track("perf", { fps: Math.round(paceFrames * 1000 / paceMs), worstMs: Math.round(paceWorst),
+      stage: typeof classicFlightView !== "undefined" ? classicFlightView?.stageNumber || 0 : 0 });
+    paceFrames = 0; paceMs = 0; paceWorst = 0;
   }
 
   function pointerX(event, point = event.touches?.[0] || event) {

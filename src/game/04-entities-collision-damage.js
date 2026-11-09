@@ -525,6 +525,10 @@
       kind:context.kind||"collision",largeAsteroid:context.largeAsteroid===true,
       largeAsteroidScale:context.largeAsteroidScale||1});
     classicHullReserve=damageResult.reserve;
+    // Caja negra del enlace de prueba (09/11/2026): qué te golpea y cuánto.
+    window.AnalyticsManager?.track("hit_taken", { kind: context.kind || "collision", damage: Math.round(amount * 10) / 10,
+      hull: Math.round(damageResult.hull ?? hull), absorbed: Boolean(damageResult.absorbed),
+      stage: typeof classicFlightView !== "undefined" ? classicFlightView?.stageNumber || 0 : 0 });
     // Nodo clave Blindaje reactivo (02/11/2026): 1 s más sin daño tras el golpe.
     if (typeof hullGrace !== "undefined") hullGrace = typeof classicKeyNodes !== "undefined" && classicKeyNodes.reactiveArmor ? 1.3 : 0.3;
     if (damageResult.absorbed) {

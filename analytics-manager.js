@@ -4,7 +4,9 @@
   const ALLOWED_EVENTS = new Set([
     "app_open", "game_start", "level_start", "level_complete", "death", "death_reason",
     "continue_used", "rewarded_ad", "abandon", "session_duration", "progression",
-    "ability_used", "boss_started", "boss_completed"
+    "ability_used", "boss_started", "boss_completed",
+    // Caja negra del enlace de prueba (09/11/2026): tramo, golpes y fluidez.
+    "stage_start", "hit_taken", "perf"
   ]);
   const sessionStartedAt = performance.now();
   const sessionId = globalThis.crypto?.randomUUID?.() || `session-${Date.now().toString(36)}`;
