@@ -40,9 +40,9 @@ export const CLASSIC_WEAPON_RULES = Object.freeze({
 // chatarra en el hangar y valen para siempre. Daño por ráfaga ×1, ×1,3, ×1,6
 // y ×2 (en Gemelo, si impactan todos los proyectiles); el nivel 1 es el arma de siempre.
 // Pulso 3 y 4 (propietario, 03/11/2026, dec-pulso-niveles-dano): el pulso central
-// hace el daño entero del nivel; los laterales del abanico se abren y a distancia
-// fallan, así que solo suman un poco de cerca (cifras: decisión técnica).
-const fan = side => [{offset: -6, spread: -.1, damage: side}, {offset: 0, spread: 0}, {offset: 6, spread: .1, damage: side}];
+// hace el daño entero del nivel. Los laterales solo se ven: no dañan ni chocan
+// (propietario, 09/11/2026, P57-04), así el daño es el que dice el hangar.
+const fan = () => [{offset: -6, spread: -.1, damage: 0}, {offset: 0, spread: 0}, {offset: 6, spread: .1, damage: 0}];
 const QUAD = Object.freeze([{offset: -18, spread: 0}, {offset: -6, spread: 0}, {offset: 6, spread: 0}, {offset: 18, spread: 0}]);
 // El nivel 1 conserva la descripción de siempre del arma.
 const level = (damageMultiplier, damage, radius, barrels, description) =>
@@ -52,8 +52,8 @@ export const CLASSIC_WEAPON_LEVELS = Object.freeze({
   pulse: Object.freeze([null,
     level(1, 1, 9, [{offset: 0, spread: 0}]),
     level(1.3, 1.3, 11, [{offset: 0, spread: 0}], 'Nivel 2 · daño ×1,3: un pulso más grande.'),
-    level(1.6, 1.6, 9, fan(.3), 'Nivel 3 · daño ×1,6 en el pulso central, con dos pulsos de apoyo en abanico.'),
-    level(2, 2, 10, fan(.4), 'Nivel 4 · daño ×2 en el pulso central, con dos pulsos de apoyo con anillo.')]),
+    level(1.6, 1.6, 9, fan(), 'Nivel 3 · daño ×1,6 en el pulso central; los dos laterales son solo efecto.'),
+    level(2, 2, 10, fan(), 'Nivel 4 · daño ×2 en el pulso central, con anillo; los dos laterales son solo efecto.')]),
   twin: Object.freeze([null,
     level(2, 1, 7, [{offset: -10, spread: 0}, {offset: 10, spread: 0}]),
     level(2.6, 1.3, 8, [{offset: -10, spread: 0}, {offset: 10, spread: 0}], 'Nivel 2 · daño ×2,6: dos balas más largas.'),
@@ -353,6 +353,8 @@ export function hitClassicProjectile(state, projectileId, targetId) {
   const index = state.projectiles.findIndex(projectile => projectile.id === projectileId);
   if (index < 0) return {accepted: false, reason: 'inactive', damage: 0, events: []};
   const projectile = state.projectiles[index];
+  // Un pulso sin daño (laterales de Pulso 3 y 4) atraviesa sin chocar (P57-04).
+  if (!(projectile.damage > 0)) return {accepted: false, reason: 'visual', damage: 0, events: []};
   const key = `${typeof targetId}:${targetId}`;
   if (projectile.hitTargets.includes(key)) {
     return {accepted: false, reason: 'duplicate', damage: 0, events: []};

@@ -763,7 +763,9 @@ test('an interrupted S1-V5 equipment write keeps the voyage pending and a later 
 test('S1-V5 Atlas health still scales with the difficulty mode', t => {
   const expected={facil:Math.round(96*.67),normal:96,hardcore:Math.round(96*1.3)};
   for(const [difficulty,maxHp] of Object.entries(expected)) {
-    const h=harness(t,'',{savedSettings:JSON.stringify({difficulty})});
+    // HARDCORE solo cuenta confirmado; sin confirmar se juega en Normal (P57-01).
+    const h=harness(t,'',{savedSettings:JSON.stringify({difficulty}),
+      storageEntries:difficulty==='hardcore'?[['neon-hardcore-confirmed-v1','1']]:[]});
     h.api.prepareAtlasVoyage();const boss=h.collectGoal().boss;
     assert.equal(boss.maxHp,maxHp,`${difficulty} scales Atlas`);assert.equal(boss.hp,maxHp);
   }

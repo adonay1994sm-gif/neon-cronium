@@ -719,13 +719,30 @@ test('hot reload: after running dry the magazine recovers twice as fast until it
   assert.throws(() => setClassicHotReload(hot, 'yes'));
 });
 
-test('Pulse 3 and 4: the centre pulse alone beats level 2 at range, the side pulses only add a little up close', () => {
-  const sides = {3: .3, 4: .4};
+test('Pulse 3 and 4: the centre pulse alone beats level 2 at range', () => {
   for (const value of [3, 4]) {
     const state = createClassicWeapons();
     setClassicWeaponLevels(state, {pulse: value});
-    const [left, centre, right] = triggerClassicWeapon(state, origin).projectiles;
+    const [, centre] = triggerClassicWeapon(state, origin).projectiles;
     assert.ok(centre.damage > 1.3, `level ${value} centre ${centre.damage} beats level 2`);
-    assert.equal(left.damage, sides[value]); assert.equal(right.damage, sides[value]);
+  }
+});
+
+// Revisión del PR #57 (P57-04, propietario 09/11): en Pulso 3 y 4 los pulsos
+// laterales solo se ven; el daño es exactamente el que dice el hangar.
+test('Pulse 3 and 4 side pulses are only visual: they pass through targets without damage', () => {
+  for (const value of [3, 4]) {
+    const state = createClassicWeapons({type: 'pulse', unlocked: ['pulse']});
+    setClassicWeaponLevels(state, {pulse: value});
+    const shot = triggerClassicWeapon(state, origin);
+    const sides = shot.projectiles.filter(projectile => projectile.barrel !== 1);
+    assert.equal(sides.length, 2);
+    for (const side of sides) {
+      assert.equal(side.damage, 0, `level ${value}`);
+      assert.equal(hitClassicProjectile(state, side.id, 'boss').accepted, false, 'a side pulse never hits');
+      assert.ok(state.projectiles.some(projectile => projectile.id === side.id), 'it keeps flying');
+    }
+    const total = shot.projectiles.reduce((sum, projectile) => sum + projectile.damage, 0);
+    assert.equal(total, value === 3 ? 1.6 : 2, 'a volley that lands whole does what the hangar says');
   }
 });

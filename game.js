@@ -639,7 +639,10 @@
         : Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches),
       leftHanded: source.leftHanded === true,
       effectsQuality: savedQuality,
-      difficulty: ["facil", "normal", "dificil", "hardcore"].includes(source.difficulty) ? source.difficulty : DEFAULT_SETTINGS.difficulty,
+      // HARDCORE sin su confirmación pasa a Normal: nada de jugar con sus cifras
+      // sin el borrado al morir (P57-01, propietario 09/11).
+      difficulty: ["facil", "normal", "dificil"].includes(source.difficulty) || (source.difficulty === "hardcore" && HARDCORE)
+        ? source.difficulty : DEFAULT_SETTINGS.difficulty,
       flightTutorial: source.flightTutorial&&typeof source.flightTutorial==='object' ? source.flightTutorial : null,
       effects: savedQuality !== "low"
     };
@@ -2451,8 +2454,8 @@
     sectorDeathRecorded=true;
     // Morir abre ya una partida de chatarra nueva: al volver al tramo 6 con
     // baliza, sus enemigos vuelven a soltarla, como al empezar de cero
-    // (auditoría A14, propietario 06/11). El revive sigue cobrando en ella.
-    classicSalvageRunId=null;
+    // (auditoría A14, propietario 06/11). El revive sigue cobrando en ella;
+    // si no se puede guardar, sigue en la que había (P57-06).
     if(classicSalvageLedger&&loadClassicSalvage()){
       const result=classicSalvageLedger.beginRun({scope:`voyage:${classicSideVoyage.ficha.id}`,fresh:true});
       if(result.ok){classicSalvageState=result.state;classicSalvageRunId=result.runId;}

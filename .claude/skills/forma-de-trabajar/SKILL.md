@@ -107,9 +107,11 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
   visual. Hoy es https://claude.ai/artifact/7HCk4RiGujkUSph4qd57Fg, que se
   actualiza al publicar el mismo archivo.
 - Si no se pudo comprobar algo (iPhone real, sonido), dilo.
-- **Solo usa el iPhone** (no tiene ordenador a mano). No le pidas que
-  comparta carpetas ni ejecute nada. Los archivos grandes (grabaciones de
-  pantalla) los manda con un enlace público de iCloud Drive: se descargan
+- **Juega en el iPhone y desde el 06/11 tiene un PC con Windows** con Claude
+  Code local (clon en `Documentos/Ne-n-catcher`, rama de trabajo). La sesión
+  de la nube no puede conectarse a carpetas de Windows. Pídele lo mínimo y
+  paso a paso; no le pidas pegar claves. Los archivos grandes (grabaciones
+  de pantalla) los manda con un enlace público de iCloud Drive: se descargan
   con la API de CloudKit (`records/resolve` con el código del enlace →
   `fileContent.downloadURL`). Una grabación suya dice más que una captura:
   mide en ella sonido y fotogramas.
@@ -145,7 +147,13 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
   - sin force push;
   - el repositorio, limpio: lo que no se usa, fuera (preguntando si dudas).
 - **Sin firma de IA** en archivos, commits ni PRs. El juego tiene que parecer
-  hecho por una persona. Nada de nombres antiguos («NEON Catcher»).
+  hecho por una persona. Nada de nombres antiguos («NEON Catcher»). Los
+  commits van **a su nombre** (`adonay1994sm`, su email), también desde la
+  nube (06/11); el autor «Claude» ya no se usa.
+- **Dos sesiones, una rama (06/11):** la nube programa y la del PC prueba y
+  escucha, aunque la del PC también ha subido arreglos y PRs. Antes de
+  trabajar y antes de subir, `git fetch` y une lo nuevo con merge; mira el
+  tablero, porque la otra sesión también escribe en él.
 - **Tras cada PR fusionado,** una revisión de `auditor-codigo`, y sus
   hallazgos al tablero. Una sola revisión por cambio.
 - **Autonomía:**
@@ -187,15 +195,18 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
 - Arma inicial: se llama PULSO; en los niveles 3 y 4 el pulso central hace el
   daño entero (03/11). Los niveles se compran con chatarra en el hangar.
 - Subguardián (03/11): 30 de vida.
+- Auditoría A13–A16 (06/11, las recomendadas): en el sector el tramo no corre
+  al triple al cumplir la cuota; al morir con baliza los enemigos vuelven a
+  soltar chatarra; solo el abanico de 5 dispara abierto (1,2), el resto a
+  ~33° (0,65); DIFÍCIL y HARDCORE nunca tienen menos patrullas que Normal.
 - Naves de chatarra (03/11): sus habilidades se rotulan «Próximamente» hasta
   programarlas y la compra pide dos toques.
 - Audio (02/11): música synthwave, una pista por momento (menú Midnight Drive,
   vuelo Bio-Hazard, subguardián Technological Messup, Atlas Confrontation),
   todas CC0; efectos potentes elegidos en la sala de escucha. El sonido de jefe
   destruido aún «hay que darle más vueltas».
-- Pendientes de su decisión:
-  - el color de la Égida;
-  - la pose del Fulminante de Atlas.
+- Para su paso del sector 1 quedan el color de la Égida y la pose del
+  Fulminante de Atlas.
 
 ## 8. Antes de dar algo por terminado
 
@@ -213,6 +224,12 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 06/11/2026: conectó su PC con Windows para que trabaje mejor. Preguntó
+  «en qué me ayudará»: le sirve para probar y oír el juego en el PC y, más
+  adelante, para Android; iOS sigue necesitando un Mac. Regla 5 cambiada (ya
+  no es solo iPhone) y regla 6 nueva sobre las dos sesiones.
+- 06/11/2026: eligió que los commits vayan a su nombre, también los de la
+  nube. Regla 6 ampliada.
 - 04/11/2026: subí un commit con `test:sistema` en rojo (letra de 11 px fuera
   del sistema) y hubo que deshacerlo. Regla 8.4 ampliada: todas las suites en
   verde antes de subir.
