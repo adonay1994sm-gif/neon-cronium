@@ -79,7 +79,9 @@ export const S1_GAIA = immutable({
     return {
       station: immutable({x: .48 - .72 * departure, y: .43 + .94 * departure, scale: 1.12 * Math.pow(.032, departure),
         rotation: -.10 * departure, visible: p < .25, alpha: 1, state: 'ruptured'}),
-      planet: immutable({x: .79 - .40 * smooth(p, .2, 1), y: .08 + .08 * gate, scale: .02 + .9 * smooth(p, .2, 1) ** 2,
+      // Gaia crece en cada tramo desde el 2 para que se note el viaje (propietario,
+      // 09/11/2026); antes era un punto hasta el tramo 4. La llegada no cambia (.92).
+      planet: immutable({x: .79 - .40 * smooth(p, .2, 1), y: .08 + .08 * gate, scale: .02 + .9 * Math.max(0, (p - .08) / .92) ** 1.15,
         rotation: .06 * p, visible: true, alpha: .5 + .5 * smooth(p, .1, .4)}),
       beacon: immutable({x: .54, y: .14 + .10 * gate, scale: .03 + .20 * gate, visible: p >= .75, alpha: 1, active: stageIndex >= 9}),
       relay: immutable({visible: false, x: 0, y: 0, scale: 0, alpha: 0, active: false, state: 'approach'}),

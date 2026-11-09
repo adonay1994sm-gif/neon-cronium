@@ -90,3 +90,20 @@ test('hordes cross stages 3, 7 and 9', () => {
 test('stages 4 and 8 bring aimed meteor rain instead of the marked corridor', () => {
   assert.deepEqual(S1_GAIA.encounters.map(rules => rules.comets), [false, false, false, 'aimed', false, false, false, 'aimed', false, false]);
 });
+
+// El viaje se nota (propietario, 09/11/2026): Gaia era un punto (2 % de su
+// tamaño final) hasta el tramo 4. Ahora crece en cada tramo desde el 2.
+test('Gaia grows visibly in every stage from stage 2 and still ends at its full size', () => {
+  const total = S1_GAIA.stages.reduce((sum, stage) => sum + stage[1], 0);
+  const scaleAt = (p, stageIndex) => S1_GAIA.scenery({p, stageIndex,
+    stage: {nebulaOpacity: .1, starDensity: .6}, arrived: false}).planet.scale;
+  let elapsed = 0, previous = scaleAt(0, 0);
+  assert.ok(previous <= .03, 'at the start Gaia is still far away');
+  const ends = S1_GAIA.stages.map((stage, index) => { elapsed += stage[1]; return scaleAt(elapsed / total, index); });
+  for (let index = 1; index < ends.length; index++) {
+    assert.ok(ends[index] - ends[index - 1] >= .05, `stage ${index + 1} brings Gaia closer: ${ends[index - 1].toFixed(3)} -> ${ends[index].toFixed(3)}`);
+  }
+  assert.ok(ends[1] >= .08, `by the end of stage 2 Gaia is no longer a dot: ${ends[1].toFixed(3)}`);
+  assert.ok(Math.abs(ends[9] - .92) < 1e-9, 'the arrival is unchanged');
+  for (let p = 0; p <= 1; p += .01) { const now = scaleAt(p, 0); assert.ok(now >= previous - 1e-9, `never shrinks at p=${p.toFixed(2)}`); previous = now; }
+});

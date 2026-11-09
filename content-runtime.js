@@ -3643,10 +3643,12 @@ var NeonCampaign = (() => {
           alpha: 1,
           state: "ruptured"
         }),
+        // Gaia crece en cada tramo desde el 2 para que se note el viaje (propietario,
+        // 09/11/2026); antes era un punto hasta el tramo 4. La llegada no cambia (.92).
         planet: immutable12({
           x: 0.79 - 0.4 * smooth(p, 0.2, 1),
           y: 0.08 + 0.08 * gate,
-          scale: 0.02 + 0.9 * smooth(p, 0.2, 1) ** 2,
+          scale: 0.02 + 0.9 * Math.max(0, (p - 0.08) / 0.92) ** 1.15,
           rotation: 0.06 * p,
           visible: true,
           alpha: 0.5 + 0.5 * smooth(p, 0.1, 0.4)
