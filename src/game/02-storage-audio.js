@@ -99,8 +99,11 @@
     // The same visible panel owns focus and pointer input. No extra frame loop.
     const available = node => node && !node.disabled && !node.closest('[hidden],.hidden') &&
       node.ownerDocument.defaultView.getComputedStyle(node).display !== "none";
+    // El botón principal va primero aunque haya otros antes en la página (las
+    // pestañas de la pausa, revisión del PR #61): Enter tras pausar reanuda.
     const target = restore && el.contains(restore) && available(restore) ? restore
-      : [...el.querySelectorAll('.primary:not(:disabled),button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')].find(available);
+      : [...el.querySelectorAll('.primary:not(:disabled)')].find(available)
+        || [...el.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')].find(available);
     target?.focus({preventScroll:true});
   }
 
@@ -111,6 +114,9 @@
       const close = {settingsPanel:"settingsBack",briefing:"briefingBack",levelSelect:"levelBack",instructions:"back",paused:"resume",complete:"completeHome",over:"home",beaconOffer:"beaconSkip"}[modal.id];
       if (!close) return;
       event.preventDefault();event.stopPropagation();
+      // En una pestaña de la pausa que no es PAUSA, Escape vuelve a PAUSA.
+      const pauseTab=modal.id==="paused"&&modal.querySelector('[data-pause-tab][aria-selected="true"]')?.dataset.pauseTab;
+      if(pauseTab&&pauseTab!=="pausa"){showPauseTab("pausa");$("resume")?.focus({preventScroll:true});return;}
       $(close)?.click();
     } else if (event.key === "Tab") {
       const controls = [...modal.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')].filter(node => node.getClientRects().length && !node.closest('[hidden],.hidden'));

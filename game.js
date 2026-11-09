@@ -717,8 +717,11 @@
     // The same visible panel owns focus and pointer input. No extra frame loop.
     const available = node => node && !node.disabled && !node.closest('[hidden],.hidden') &&
       node.ownerDocument.defaultView.getComputedStyle(node).display !== "none";
+    // El botón principal va primero aunque haya otros antes en la página (las
+    // pestañas de la pausa, revisión del PR #61): Enter tras pausar reanuda.
     const target = restore && el.contains(restore) && available(restore) ? restore
-      : [...el.querySelectorAll('.primary:not(:disabled),button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')].find(available);
+      : [...el.querySelectorAll('.primary:not(:disabled)')].find(available)
+        || [...el.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')].find(available);
     target?.focus({preventScroll:true});
   }
 
@@ -729,6 +732,9 @@
       const close = {settingsPanel:"settingsBack",briefing:"briefingBack",levelSelect:"levelBack",instructions:"back",paused:"resume",complete:"completeHome",over:"home",beaconOffer:"beaconSkip"}[modal.id];
       if (!close) return;
       event.preventDefault();event.stopPropagation();
+      // En una pestaña de la pausa que no es PAUSA, Escape vuelve a PAUSA.
+      const pauseTab=modal.id==="paused"&&modal.querySelector('[data-pause-tab][aria-selected="true"]')?.dataset.pauseTab;
+      if(pauseTab&&pauseTab!=="pausa"){showPauseTab("pausa");$("resume")?.focus({preventScroll:true});return;}
       $(close)?.click();
     } else if (event.key === "Tab") {
       const controls = [...modal.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')].filter(node => node.getClientRects().length && !node.closest('[hidden],.hidden'));
@@ -3607,11 +3613,15 @@
   function renderPauseShip() {
     const list=document.getElementById("pauseShip");if(!list)return;
     const weapon=NeonCampaign.CLASSIC_WEAPON_RULES.types[classicEquipment.selected];
-    const level=classicSalvageState?NeonCampaign.classicWorkshopState(classicSalvageState).weaponLevels[classicEquipment.selected]||1:1;
+    // Pulso y Gemelo tienen niveles; Abanico y Aguja, su mejora II como el HUD.
+    const levels=classicSalvageState?NeonCampaign.classicWorkshopState(classicSalvageState).weaponLevels:{};
+    const tuned=(classicEquipment.selected==='scatter'&&classicSalvageState?.upgrades.includes('scatter-focus'))||
+      (classicEquipment.selected==='needle'&&classicSalvageState?.upgrades.includes('needle-resonance'));
+    const level=["pulse","twin"].includes(classicEquipment.selected)?` · nivel ${levels[classicEquipment.selected]||1}`:tuned?" II":"";
     const labels={hotReload:"Recarga en caliente",magnet:"Imán de chatarra",reactiveArmor:"Blindaje reactivo",wideMagazine:"Cargador ancho"};
     const nodes=Object.entries(classicKeyNodes).filter(([,on])=>on).map(([key])=>labels[key]).filter(Boolean);
     const rows=[pauseRow("Casco",`${Math.round(hull)} %${classicHullReserve>0?` · reserva +${Math.round(classicHullReserve)}`:""}`),
-      pauseRow(`${(weapon?.label||"Arma").toUpperCase()} · nivel ${level}`,classicWeapons?`${classicWeapons.charges} / ${classicWeapons.maxCharges}`:"—"),
+      pauseRow(`${(weapon?.label||"Arma").toUpperCase()}${level}`,classicWeapons?`${classicWeapons.charges} / ${classicWeapons.maxCharges}`:"—"),
       pauseRow("Misiles",String(classicSalvageState?.missileAmmo??0),"amber"),
       pauseRow("Nodos clave",nodes.length?nodes.join(" · "):"Ninguno")];
     list.replaceChildren(...rows);
@@ -3628,7 +3638,8 @@
       const item=document.createElement("li");
       item.className=number<current?"done":number===current?"now":"";
       if(number===current)item.setAttribute("aria-current","step");
-      const name=document.createElement("span");name.textContent=`${number} · ${stage[0]}`;item.append(name);
+      // El tramo actual con el nombre del HUD (tras C9, el 6 pasa a «Corredor de Gaia»).
+      const name=document.createElement("span");name.textContent=`${number} · ${number===current?classicFlightView.stageName||stage[0]:stage[0]}`;item.append(name);
       if(mark){const tag=document.createElement("em");tag.textContent=mark;item.append(tag);}
       return item;
     }));
