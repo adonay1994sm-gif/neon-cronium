@@ -3566,11 +3566,12 @@
     if(isSectorRun()&&classicChapterView?.opening.canSkip&&loadMenuUnlocks().seen.intro)skipChapterIntro();
     window.AnalyticsManager?.track("game_start", { level: currentLevel + 1 });
     window.AnalyticsManager?.track("level_start", { level: currentLevel + 1, continued: false });
-    trackStageStart();
   }
   // Caja negra del enlace de prueba (09/11/2026): en qué tramo entras y cómo llegas.
+  // Sale con el evento «checkpoint» de la ruta, que también llega al empezar.
   function trackStageStart() {
     if(!classicFlightView?.stageNumber)return;
+    resetFramePace();
     window.AnalyticsManager?.track("stage_start", { route: classicFlightView.routeId || "", stage: classicFlightView.stageNumber,
       hull: Math.round(hull), difficulty: settings.difficulty });
   }
@@ -4388,8 +4389,9 @@
       largeAsteroidScale:context.largeAsteroidScale||1});
     classicHullReserve=damageResult.reserve;
     // Caja negra del enlace de prueba (09/11/2026): qué te golpea y cuánto.
-    window.AnalyticsManager?.track("hit_taken", { kind: context.kind || "collision", damage: Math.round(amount * 10) / 10,
-      hull: Math.round(damageResult.hull ?? hull), absorbed: Boolean(damageResult.absorbed),
+    window.AnalyticsManager?.track("hit_taken", { kind: context.kind || "collision",
+      damage: Math.round(damageResult.hullDamage * 10) / 10, reserveDamage: Math.round(damageResult.reserveDamage * 10) / 10,
+      hull: Math.round(damageResult.hull), absorbed: Boolean(damageResult.absorbed),
       stage: typeof classicFlightView !== "undefined" ? classicFlightView?.stageNumber || 0 : 0 });
     // Nodo clave Blindaje reactivo (02/11/2026): 1 s más sin daño tras el golpe.
     if (typeof hullGrace !== "undefined") hullGrace = typeof classicKeyNodes !== "undefined" && classicKeyNodes.reactiveArmor ? 1.3 : 0.3;
@@ -7349,8 +7351,10 @@
     if (paceMs < 15000) return;
     window.AnalyticsManager?.track("perf", { fps: Math.round(paceFrames * 1000 / paceMs), worstMs: Math.round(paceWorst),
       stage: typeof classicFlightView !== "undefined" ? classicFlightView?.stageNumber || 0 : 0 });
-    paceFrames = 0; paceMs = 0; paceWorst = 0;
+    resetFramePace();
   }
+  // Cada tramo empieza su propia medida (revisión del PR #60).
+  function resetFramePace() { paceFrames = 0; paceMs = 0; paceWorst = 0; }
 
   function pointerX(event, point = event.touches?.[0] || event) {
     const rect = canvas.getBoundingClientRect();

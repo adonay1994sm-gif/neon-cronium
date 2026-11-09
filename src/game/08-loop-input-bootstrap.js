@@ -105,8 +105,10 @@
     if (paceMs < 15000) return;
     window.AnalyticsManager?.track("perf", { fps: Math.round(paceFrames * 1000 / paceMs), worstMs: Math.round(paceWorst),
       stage: typeof classicFlightView !== "undefined" ? classicFlightView?.stageNumber || 0 : 0 });
-    paceFrames = 0; paceMs = 0; paceWorst = 0;
+    resetFramePace();
   }
+  // Cada tramo empieza su propia medida (revisión del PR #60).
+  function resetFramePace() { paceFrames = 0; paceMs = 0; paceWorst = 0; }
 
   function pointerX(event, point = event.touches?.[0] || event) {
     const rect = canvas.getBoundingClientRect();

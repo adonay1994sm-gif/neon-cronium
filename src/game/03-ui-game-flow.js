@@ -2452,11 +2452,12 @@
     if(isSectorRun()&&classicChapterView?.opening.canSkip&&loadMenuUnlocks().seen.intro)skipChapterIntro();
     window.AnalyticsManager?.track("game_start", { level: currentLevel + 1 });
     window.AnalyticsManager?.track("level_start", { level: currentLevel + 1, continued: false });
-    trackStageStart();
   }
   // Caja negra del enlace de prueba (09/11/2026): en qué tramo entras y cómo llegas.
+  // Sale con el evento «checkpoint» de la ruta, que también llega al empezar.
   function trackStageStart() {
     if(!classicFlightView?.stageNumber)return;
+    resetFramePace();
     window.AnalyticsManager?.track("stage_start", { route: classicFlightView.routeId || "", stage: classicFlightView.stageNumber,
       hull: Math.round(hull), difficulty: settings.difficulty });
   }
