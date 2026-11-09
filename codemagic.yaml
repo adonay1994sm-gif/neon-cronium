@@ -1,8 +1,10 @@
 # Compila la app de iPhone en la nube (Codemagic) y la sube a TestFlight,
 # sin Mac (propietario, 09/11/2026). Se lanza a mano desde codemagic.io.
 # Necesita en Codemagic la integración de App Store Connect «neon-asc»
-# (Ajustes del equipo → Integraciones → Developer Portal) y la app creada en
-# App Store Connect con el identificador com.neoncronium.
+# (Ajustes del equipo → Integraciones → Developer Portal), un certificado de
+# distribución de Apple en Ajustes del equipo → Code signing identities (se
+# puede generar allí mismo con la integración) y la app creada en App Store
+# Connect con el identificador com.neoncronium.
 workflows:
   ios-testflight:
     name: iPhone · TestFlight
@@ -35,4 +37,6 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
+        # Solo sube la build: las pruebas internas no pasan revisión de Apple.
+        # «true» la mandaría a la revisión de pruebas externas (09/11/2026).
+        submit_to_testflight: false
