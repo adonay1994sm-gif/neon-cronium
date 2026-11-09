@@ -717,11 +717,13 @@
     // The same visible panel owns focus and pointer input. No extra frame loop.
     const available = node => node && !node.disabled && !node.closest('[hidden],.hidden') &&
       node.ownerDocument.defaultView.getComputedStyle(node).display !== "none";
-    // El botón principal va primero aunque haya otros antes en la página (las
-    // pestañas de la pausa, revisión del PR #61): Enter tras pausar reanuda.
+    // En la pausa, CONTINUAR va primero aunque las pestañas estén antes (revisión
+    // del PR #61). Las demás ventanas siguen como antes: Ajustes empieza arriba y la
+    // derrota en el anuncio de reparar (revisión del PR #62).
+    const primary = el === ui.paused ? $("resume") : null;
     const target = restore && el.contains(restore) && available(restore) ? restore
-      : [...el.querySelectorAll('.primary:not(:disabled)')].find(available)
-        || [...el.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')].find(available);
+      : primary && available(primary) ? primary
+      : [...el.querySelectorAll('.primary:not(:disabled),button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href]')].find(available);
     target?.focus({preventScroll:true});
   }
 
