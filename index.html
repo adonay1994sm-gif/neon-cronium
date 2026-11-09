@@ -210,12 +210,33 @@
 
     <div id="paused" class="overlay" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
       <div class="panel pause-panel">
-        <small>EXPEDICIÓN EN PAUSA</small>
-        <h2 id="pauseTitle">Un respiro<br>en el viaje.</h2>
-        <button id="resume" class="primary" type="button">CONTINUAR</button>
-        <button id="pauseSettings" class="secondary" type="button">CONFIGURACIÓN</button>
-        <button id="restart" class="secondary" type="button">REINICIAR TRAMO</button>
-        <button id="quit" class="secondary danger" type="button">SALIR AL MENÚ</button>
+        <!-- Pausa con pestañas (propietario, 09/11/2026, opción A): solo para mirar;
+             el arma se cambia en el hangar y las mejoras en la Forja de C9. -->
+        <div class="pause-tabs" role="tablist" aria-label="Pausa">
+          <button type="button" role="tab" data-pause-tab="pausa" aria-selected="true">PAUSA</button>
+          <button type="button" role="tab" data-pause-tab="nave" aria-selected="false">NAVE</button>
+          <button type="button" role="tab" data-pause-tab="mapa" aria-selected="false">MAPA</button>
+          <button type="button" role="tab" data-pause-tab="ajustes" aria-selected="false">AJUSTES</button>
+        </div>
+        <div class="pause-section" data-pause-section="pausa" role="tabpanel">
+          <small>EXPEDICIÓN EN PAUSA</small>
+          <h2 id="pauseTitle">Un respiro<br>en el viaje.</h2>
+          <button id="resume" class="primary" type="button">CONTINUAR</button>
+          <button id="pauseSettings" class="secondary" type="button">CONFIGURACIÓN</button>
+          <button id="restart" class="secondary" type="button">REINICIAR TRAMO</button>
+          <button id="quit" class="secondary danger" type="button">SALIR AL MENÚ</button>
+        </div>
+        <div class="pause-section" data-pause-section="nave" role="tabpanel" hidden>
+          <small>EXPEDICIÓN EN PAUSA</small>
+          <h3>Tu nave</h3>
+          <div id="pauseShip" class="pause-list"></div>
+          <p class="pause-note">Solo para mirar. El arma se cambia en el hangar y las mejoras se instalan en la Forja de C9.</p>
+        </div>
+        <div class="pause-section" data-pause-section="mapa" role="tabpanel" hidden>
+          <small id="pauseMapSector">SECTOR</small>
+          <h3 id="pauseMapTitle">Tramo</h3>
+          <ol id="pauseMap" class="pause-map"></ol>
+        </div>
       </div>
     </div>
 

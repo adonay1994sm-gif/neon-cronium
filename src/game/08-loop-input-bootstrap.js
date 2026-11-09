@@ -378,6 +378,10 @@
   };
   $("resume").onclick = resumeGame;
   $("pauseSettings").onclick = () => openSettings("paused");
+  // Pestañas de la pausa: AJUSTES abre la pantalla de ajustes de siempre.
+  for (const tab of document.querySelectorAll("[data-pause-tab]")) {
+    tab.onclick = () => tab.dataset.pauseTab === "ajustes" ? openSettings("paused") : showPauseTab(tab.dataset.pauseTab);
+  }
   $("restart").onclick = () => startLevel(currentLevel);
   $("quit").onclick = goHome;
   $("home").onclick = () => hardcoreWiped ? reloadGame() : goHome();

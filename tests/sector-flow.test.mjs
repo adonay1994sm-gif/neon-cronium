@@ -1209,3 +1209,29 @@ test('the game reports its frame rate every 15 s of play, and not while paused',
   T.ev('for(let i=0;i<500;i++)trackFramePace(20)');
   assert.equal(perf.length, 1, 'the 10 s before the new stage are not mixed into it');
 });
+
+// Pausa con pestañas (propietario, 09/11, opción A): PAUSA · NAVE · MAPA · AJUSTES, solo para mirar.
+test('the pause has tabs to look at the ship and the sector map', () => {
+  const {w, T} = harness();
+  startAt(T, 3); T.adv(1);
+  T.ev('pauseGame()');
+  const $ = s => w.document.querySelector(s), shown = name => !$(`[data-pause-section="${name}"]`).hidden;
+  assert.equal(shown('pausa'), true); assert.equal(shown('nave'), false);
+  assert.equal($('[data-pause-tab="pausa"]').getAttribute('aria-selected'), 'true');
+  $('[data-pause-tab="nave"]').click();
+  assert.equal(shown('nave'), true); assert.equal(shown('pausa'), false);
+  const ship = $('#pauseShip').textContent;
+  assert.match(ship, new RegExp(`Casco${Math.round(T.hull())} %`));
+  assert.match(ship, /PULSO · nivel 1/); assert.match(ship, /Misiles/);
+  $('[data-pause-tab="mapa"]').click();
+  const stops = [...w.document.querySelectorAll('#pauseMap li')];
+  assert.equal(stops.length, 10);
+  assert.equal(stops[2].className, 'now'); assert.match(stops[2].textContent, /La red exterior/);
+  assert.deepEqual([stops[4], stops[5], stops[9]].map(stop => stop.querySelector('em')?.textContent), ['SUBJEFE', 'FORJA', 'JEFE']);
+  assert.equal($('#pauseMapTitle').textContent, 'Tramo 3 de 10');
+  $('[data-pause-tab="ajustes"]').click();
+  assert.equal(w.document.getElementById('settingsOverlay')?.classList.contains('show') ?? $('.settings-panel').closest('.overlay').classList.contains('show'), true, 'AJUSTES opens the usual settings');
+  T.ev('resumeGame()'); T.adv(.1); T.ev('pauseGame()');
+  assert.equal(shown('pausa'), true, 'every pause opens on PAUSA');
+  assert.equal(T.st().state, 'paused');
+});
