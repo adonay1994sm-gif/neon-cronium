@@ -8138,7 +8138,7 @@ var NeonCampaign = (() => {
       })
     })
   });
-  var fan = (side) => [{ offset: -6, spread: -0.1, damage: side }, { offset: 0, spread: 0 }, { offset: 6, spread: 0.1, damage: side }];
+  var fan = () => [{ offset: -6, spread: -0.1, damage: 0 }, { offset: 0, spread: 0 }, { offset: 6, spread: 0.1, damage: 0 }];
   var QUAD = Object.freeze([{ offset: -18, spread: 0 }, { offset: -6, spread: 0 }, { offset: 6, spread: 0 }, { offset: 18, spread: 0 }]);
   var level = (damageMultiplier, damage, radius, barrels, description) => Object.freeze({
     damageMultiplier,
@@ -8152,8 +8152,8 @@ var NeonCampaign = (() => {
       null,
       level(1, 1, 9, [{ offset: 0, spread: 0 }]),
       level(1.3, 1.3, 11, [{ offset: 0, spread: 0 }], "Nivel 2 \xB7 da\xF1o \xD71,3: un pulso m\xE1s grande."),
-      level(1.6, 1.6, 9, fan(0.3), "Nivel 3 \xB7 da\xF1o \xD71,6 en el pulso central, con dos pulsos de apoyo en abanico."),
-      level(2, 2, 10, fan(0.4), "Nivel 4 \xB7 da\xF1o \xD72 en el pulso central, con dos pulsos de apoyo con anillo.")
+      level(1.6, 1.6, 9, fan(), "Nivel 3 \xB7 da\xF1o \xD71,6 en el pulso central; los dos laterales son solo efecto."),
+      level(2, 2, 10, fan(), "Nivel 4 \xB7 da\xF1o \xD72 en el pulso central, con anillo; los dos laterales son solo efecto.")
     ]),
     twin: Object.freeze([
       null,
@@ -8444,6 +8444,7 @@ var NeonCampaign = (() => {
     const index = state.projectiles.findIndex((projectile3) => projectile3.id === projectileId);
     if (index < 0) return { accepted: false, reason: "inactive", damage: 0, events: [] };
     const projectile2 = state.projectiles[index];
+    if (!(projectile2.damage > 0)) return { accepted: false, reason: "visual", damage: 0, events: [] };
     const key = `${typeof targetId}:${targetId}`;
     if (projectile2.hitTargets.includes(key)) {
       return { accepted: false, reason: "duplicate", damage: 0, events: [] };
