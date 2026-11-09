@@ -1174,16 +1174,22 @@ test('the game reports each stage it enters and each hit it takes', () => {
   const {w, T} = harness();
   const events = [];
   w.AnalyticsManager = {track: (name, properties) => { events.push([name, properties]); return true; }};
-  startAt(T, 3); T.adv(.1);
-  assert.ok(events.some(([name, p]) => name === 'stage_start' && p.stage === 3), 'entering stage 3 is reported');
-  T.ev('hull=100'); T.hit(10);
+  click(w, 'play'); T.adv(3);
+  assert.equal(events.filter(([name, p]) => name === 'stage_start' && p.stage === 1).length, 1, 'a new run reports stage 1 once');
+  events.length = 0;
+  startAt(T, 3); T.adv(1);
+  // Revisión del PR #60: una sola vez por tramo, también al empezar la partida.
+  assert.equal(events.filter(([name, p]) => name === 'stage_start' && p.stage === 3).length, 1, 'entering stage 3 is reported once');
+  T.ev('hull=100;classicHullReserve=0;hullGrace=0');
+  T.ev('damageShip(22,player.x,player.y,{kind:"phaser"})');
   const hit = events.find(([name]) => name === 'hit_taken');
   assert.ok(hit, 'the hit is reported');
   assert.equal(hit[1].stage, 3);
-  assert.equal(typeof hit[1].kind, 'string');
-  assert.ok(hit[1].hull < 100 || hit[1].absorbed);
+  assert.equal(hit[1].kind, 'phaser');
+  assert.equal(hit[1].damage, 100 - T.hull(), 'the damage the hull really took');
+  assert.equal(hit[1].hull, T.hull());
   T.toStage(4);
-  assert.ok(events.some(([name, p]) => name === 'stage_start' && p.stage === 4), 'the next stage is reported too');
+  assert.equal(events.filter(([name, p]) => name === 'stage_start' && p.stage === 4).length, 1, 'the next stage is reported once too');
 });
 
 test('the game reports its frame rate every 15 s of play, and not while paused', () => {
@@ -1197,4 +1203,35 @@ test('the game reports its frame rate every 15 s of play, and not while paused',
   T.ev('pauseGame()');
   T.ev('for(let i=0;i<2000;i++)trackFramePace(20)');
   assert.equal(perf.length, 1, 'paused time is not counted');
+  // Revisión del PR #60: un tramo nuevo empieza su propia medida.
+  T.ev('resumeGame();for(let i=0;i<500;i++)trackFramePace(20)');
+  T.toStage(3);
+  T.ev('for(let i=0;i<500;i++)trackFramePace(20)');
+  assert.equal(perf.length, 1, 'the 10 s before the new stage are not mixed into it');
+});
+
+// Pausa con pestañas (propietario, 09/11, opción A): PAUSA · NAVE · MAPA · AJUSTES, solo para mirar.
+test('the pause has tabs to look at the ship and the sector map', () => {
+  const {w, T} = harness();
+  startAt(T, 3); T.adv(1);
+  T.ev('pauseGame()');
+  const $ = s => w.document.querySelector(s), shown = name => !$(`[data-pause-section="${name}"]`).hidden;
+  assert.equal(shown('pausa'), true); assert.equal(shown('nave'), false);
+  assert.equal($('[data-pause-tab="pausa"]').getAttribute('aria-selected'), 'true');
+  $('[data-pause-tab="nave"]').click();
+  assert.equal(shown('nave'), true); assert.equal(shown('pausa'), false);
+  const ship = $('#pauseShip').textContent;
+  assert.match(ship, new RegExp(`Casco${Math.round(T.hull())} %`));
+  assert.match(ship, /PULSO · nivel 1/); assert.match(ship, /Misiles/);
+  $('[data-pause-tab="mapa"]').click();
+  const stops = [...w.document.querySelectorAll('#pauseMap li')];
+  assert.equal(stops.length, 10);
+  assert.equal(stops[2].className, 'now'); assert.match(stops[2].textContent, /La red exterior/);
+  assert.deepEqual([stops[4], stops[5], stops[9]].map(stop => stop.querySelector('em')?.textContent), ['SUBJEFE', 'FORJA', 'JEFE']);
+  assert.equal($('#pauseMapTitle').textContent, 'Tramo 3 de 10');
+  $('[data-pause-tab="ajustes"]').click();
+  assert.equal(w.document.getElementById('settingsOverlay')?.classList.contains('show') ?? $('.settings-panel').closest('.overlay').classList.contains('show'), true, 'AJUSTES opens the usual settings');
+  T.ev('resumeGame()'); T.adv(.1); T.ev('pauseGame()');
+  assert.equal(shown('pausa'), true, 'every pause opens on PAUSA');
+  assert.equal(T.st().state, 'paused');
 });

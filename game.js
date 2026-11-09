@@ -3566,11 +3566,12 @@
     if(isSectorRun()&&classicChapterView?.opening.canSkip&&loadMenuUnlocks().seen.intro)skipChapterIntro();
     window.AnalyticsManager?.track("game_start", { level: currentLevel + 1 });
     window.AnalyticsManager?.track("level_start", { level: currentLevel + 1, continued: false });
-    trackStageStart();
   }
   // Caja negra del enlace de prueba (09/11/2026): en qué tramo entras y cómo llegas.
+  // Sale con el evento «checkpoint» de la ruta, que también llega al empezar.
   function trackStageStart() {
     if(!classicFlightView?.stageNumber)return;
+    resetFramePace();
     window.AnalyticsManager?.track("stage_start", { route: classicFlightView.routeId || "", stage: classicFlightView.stageNumber,
       hull: Math.round(hull), difficulty: settings.difficulty });
   }
@@ -3582,7 +3583,55 @@
     setState("paused");
     pauseStartedAt = performance.now();
     hideWarning();
+    showPauseTab("pausa");
     overlay(ui.paused);
+  }
+
+  // Pausa con pestañas (propietario, 09/11/2026, opción A): PAUSA · NAVE · MAPA ·
+  // AJUSTES. Solo para mirar: el arma se cambia en el hangar y las mejoras en C9.
+  function showPauseTab(tab) {
+    const stages=classicSideVoyage?.ficha?.stages;
+    const mapTab=document.querySelector('[data-pause-tab="mapa"]');
+    if(mapTab)mapTab.hidden=!(stages?.length&&classicFlightView?.stageNumber);
+    if(tab==="nave")renderPauseShip();
+    if(tab==="mapa"&&mapTab&&!mapTab.hidden)renderPauseMap();else if(tab==="mapa")tab="pausa";
+    for(const button of document.querySelectorAll("[data-pause-tab]"))button.setAttribute("aria-selected",String(button.dataset.pauseTab===tab));
+    for(const section of document.querySelectorAll("[data-pause-section]"))section.hidden=section.dataset.pauseSection!==tab;
+  }
+  function pauseRow(label,value,tone="") {
+    const row=document.createElement("div");row.className=`pause-row ${tone}`.trim();
+    const name=document.createElement("b");name.textContent=label;
+    const data=document.createElement("span");data.textContent=value;
+    row.append(name,data);return row;
+  }
+  function renderPauseShip() {
+    const list=document.getElementById("pauseShip");if(!list)return;
+    const weapon=NeonCampaign.CLASSIC_WEAPON_RULES.types[classicEquipment.selected];
+    const level=classicSalvageState?NeonCampaign.classicWorkshopState(classicSalvageState).weaponLevels[classicEquipment.selected]||1:1;
+    const labels={hotReload:"Recarga en caliente",magnet:"Imán de chatarra",reactiveArmor:"Blindaje reactivo",wideMagazine:"Cargador ancho"};
+    const nodes=Object.entries(classicKeyNodes).filter(([,on])=>on).map(([key])=>labels[key]).filter(Boolean);
+    const rows=[pauseRow("Casco",`${Math.round(hull)} %${classicHullReserve>0?` · reserva +${Math.round(classicHullReserve)}`:""}`),
+      pauseRow(`${(weapon?.label||"Arma").toUpperCase()} · nivel ${level}`,classicWeapons?`${classicWeapons.charges} / ${classicWeapons.maxCharges}`:"—"),
+      pauseRow("Misiles",String(classicSalvageState?.missileAmmo??0),"amber"),
+      pauseRow("Nodos clave",nodes.length?nodes.join(" · "):"Ninguno")];
+    list.replaceChildren(...rows);
+  }
+  function renderPauseMap() {
+    const ficha=classicSideVoyage.ficha,map=document.getElementById("pauseMap"),current=classicFlightView.stageNumber;
+    if(!map)return;
+    const sectorLabel=document.getElementById("pauseMapSector"),title=document.getElementById("pauseMapTitle");
+    if(sectorLabel)sectorLabel.textContent=(isSectorRun()?`SECTOR ${ficha.sector} · ${ficha.title}`:ficha.title).toUpperCase();
+    if(title)title.textContent=`Tramo ${current} de ${ficha.stages.length}`;
+    map.replaceChildren(...ficha.stages.map((stage,index)=>{
+      const number=index+1,role=ficha.encounters?.[index]?.boss?.role;
+      const mark=ficha.service?.stage===number?"FORJA":role==="jefe"?"JEFE":role==="subjefe"?"SUBJEFE":"";
+      const item=document.createElement("li");
+      item.className=number<current?"done":number===current?"now":"";
+      if(number===current)item.setAttribute("aria-current","step");
+      const name=document.createElement("span");name.textContent=`${number} · ${stage[0]}`;item.append(name);
+      if(mark){const tag=document.createElement("em");tag.textContent=mark;item.append(tag);}
+      return item;
+    }));
   }
 
   function resumeGame() {
@@ -4388,8 +4437,9 @@
       largeAsteroidScale:context.largeAsteroidScale||1});
     classicHullReserve=damageResult.reserve;
     // Caja negra del enlace de prueba (09/11/2026): qué te golpea y cuánto.
-    window.AnalyticsManager?.track("hit_taken", { kind: context.kind || "collision", damage: Math.round(amount * 10) / 10,
-      hull: Math.round(damageResult.hull ?? hull), absorbed: Boolean(damageResult.absorbed),
+    window.AnalyticsManager?.track("hit_taken", { kind: context.kind || "collision",
+      damage: Math.round(damageResult.hullDamage * 10) / 10, reserveDamage: Math.round(damageResult.reserveDamage * 10) / 10,
+      hull: Math.round(damageResult.hull), absorbed: Boolean(damageResult.absorbed),
       stage: typeof classicFlightView !== "undefined" ? classicFlightView?.stageNumber || 0 : 0 });
     // Nodo clave Blindaje reactivo (02/11/2026): 1 s más sin daño tras el golpe.
     if (typeof hullGrace !== "undefined") hullGrace = typeof classicKeyNodes !== "undefined" && classicKeyNodes.reactiveArmor ? 1.3 : 0.3;
@@ -7349,8 +7399,10 @@
     if (paceMs < 15000) return;
     window.AnalyticsManager?.track("perf", { fps: Math.round(paceFrames * 1000 / paceMs), worstMs: Math.round(paceWorst),
       stage: typeof classicFlightView !== "undefined" ? classicFlightView?.stageNumber || 0 : 0 });
-    paceFrames = 0; paceMs = 0; paceWorst = 0;
+    resetFramePace();
   }
+  // Cada tramo empieza su propia medida (revisión del PR #60).
+  function resetFramePace() { paceFrames = 0; paceMs = 0; paceWorst = 0; }
 
   function pointerX(event, point = event.touches?.[0] || event) {
     const rect = canvas.getBoundingClientRect();
@@ -7620,6 +7672,10 @@
   };
   $("resume").onclick = resumeGame;
   $("pauseSettings").onclick = () => openSettings("paused");
+  // Pestañas de la pausa: AJUSTES abre la pantalla de ajustes de siempre.
+  for (const tab of document.querySelectorAll("[data-pause-tab]")) {
+    tab.onclick = () => tab.dataset.pauseTab === "ajustes" ? openSettings("paused") : showPauseTab(tab.dataset.pauseTab);
+  }
   $("restart").onclick = () => startLevel(currentLevel);
   $("quit").onclick = goHome;
   $("home").onclick = () => hardcoreWiped ? reloadGame() : goHome();

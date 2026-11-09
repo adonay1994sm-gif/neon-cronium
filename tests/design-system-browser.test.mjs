@@ -20,7 +20,7 @@ const SIZES = [10, 12, 14, 16, 20, 28];
 // [nombre, overlay, ¿en vuelo?]
 const SCREENS = [['menú', 'menu', false], ['pausa', 'paused', true], ['ajustes', 'settingsPanel', false], ['derrota', 'over', true],
   ['fin de sector', 'complete', true], ['baliza', 'beaconOffer', true], ['cómo jugar', 'instructions', false], ['Forja C9', 'flightDock', true],
-  ['hangar', 'shipHangar', false]];
+  ['hangar', 'shipHangar', false], ['pausa · nave', 'paused', true, 'nave'], ['pausa · mapa', 'paused', true, 'mapa']];
 
 test('las pantallas rehechas solo usan colores y tamaños del sistema', {timeout: 180000}, async t => {
   if (!chromium) return t.skip('Playwright no está disponible: esta prueba no se ha ejecutado');
@@ -29,7 +29,7 @@ test('las pantallas rehechas solo usan colores y tamaños del sistema', {timeout
   const browser = await chromium.launch();
   const found = [];
   try {
-    for (const width of [390, 320]) for (const [name, id, flight] of SCREENS) {
+    for (const width of [390, 320]) for (const [name, id, flight, tab] of SCREENS) {
       const page = await browser.newPage({viewport: {width, height: 844}});
       await page.goto(server.url + 'index.html', {waitUntil: 'load'});
       // Con el emisor recuperado sale el botón FORJA C9 del menú; con el hangar
@@ -40,7 +40,7 @@ test('las pantallas rehechas solo usan colores y tamaños del sistema', {timeout
       });
       await page.reload({waitUntil: 'load'});
       await page.evaluate(() => document.fonts.ready);
-      const bad = await page.evaluate(([id, flight, tokens, sizes]) => {
+      const bad = await page.evaluate(([id, flight, tokens, sizes, tab]) => {
         if (id === 'flightDock') document.getElementById('openFlightDock').click();
         else if (id === 'shipHangar') document.getElementById('openHangar').click();
         else if (id !== 'menu') {
@@ -48,6 +48,14 @@ test('las pantallas rehechas solo usan colores y tamaños del sistema', {timeout
           document.getElementById(id).classList.add('show');
         }
         if (flight) document.body.classList.add('flight-mode');
+        // Pestañas de la pausa (09/11/2026). El mapa necesita un viaje en curso:
+        // aquí se pinta con tramos de ejemplo y las mismas clases que el juego.
+        if (tab) {
+          document.querySelectorAll('[data-pause-section]').forEach(s => { s.hidden = s.dataset.pauseSection !== tab; });
+          if (tab === 'nave') document.querySelector('[data-pause-tab="nave"]').click();
+          if (tab === 'mapa') document.getElementById('pauseMap').innerHTML = '<li class="done"><span>1 · Emergencia en Chronos</span></li>'
+            + '<li class="now"><span>2 · Campo de restos</span><em>SUBJEFE</em></li><li><span>8 · Lluvia en el acceso</span><em>FORJA</em></li>';
+        }
         const css = getComputedStyle(document.documentElement);
         const allowed = new Set(tokens.map(token => css.getPropertyValue('--' + token).trim().toLowerCase()));
         const hex = color => '#' + color.match(/\d+/g).slice(0, 3).map(v => Number(v).toString(16).padStart(2, '0')).join('');
@@ -63,7 +71,7 @@ test('las pantallas rehechas solo usan colores y tamaños del sistema', {timeout
           if (problems.length) out.push(`«${el.textContent.trim().slice(0, 30)}» ${problems.join(', ')}`);
         }
         return out;
-      }, [id, flight, TOKENS, SIZES]);
+      }, [id, flight, TOKENS, SIZES, tab]);
       for (const line of bad) found.push(`${name} a ${width} px: ${line}`);
       await page.close();
     }
