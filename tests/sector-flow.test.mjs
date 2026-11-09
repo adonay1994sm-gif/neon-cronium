@@ -1234,4 +1234,19 @@ test('the pause has tabs to look at the ship and the sector map', () => {
   T.ev('resumeGame()'); T.adv(.1); T.ev('pauseGame()');
   assert.equal(shown('pausa'), true, 'every pause opens on PAUSA');
   assert.equal(T.st().state, 'paused');
+  assert.equal(w.document.activeElement?.id, 'resume', 'Enter after pausing resumes');
+  // Revisión del PR #61: Escape en NAVE vuelve a PAUSA; en PAUSA, reanuda.
+  $('[data-pause-tab="nave"]').click();
+  w.dispatchEvent(new w.KeyboardEvent('keydown', {key: 'Escape'}));
+  assert.equal(shown('pausa'), true); assert.equal(T.st().state, 'paused');
+  w.dispatchEvent(new w.KeyboardEvent('keydown', {key: 'Escape'}));
+  assert.equal(T.st().state, 'playing');
+});
+
+test('the pause map uses the HUD name of the current stage', () => {
+  const {w, T} = harness();
+  startAt(T, 6); T.adv(.5);
+  T.ev('classicFlightView={...classicFlightView,stageName:"Corredor de Gaia"};state="playing";pauseGame()');
+  w.document.querySelector('[data-pause-tab="mapa"]').click();
+  assert.match(w.document.querySelectorAll('#pauseMap li')[5].textContent, /6 · Corredor de Gaia/);
 });
