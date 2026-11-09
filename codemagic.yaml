@@ -1,0 +1,38 @@
+# Compila la app de iPhone en la nube (Codemagic) y la sube a TestFlight,
+# sin Mac (propietario, 09/11/2026). Se lanza a mano desde codemagic.io.
+# Necesita en Codemagic la integración de App Store Connect «neon-asc»
+# (Ajustes del equipo → Integraciones → Developer Portal) y la app creada en
+# App Store Connect con el identificador com.neoncronium.
+workflows:
+  ios-testflight:
+    name: iPhone · TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: neon-asc
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.neoncronium
+      node: 22
+      xcode: latest
+    scripts:
+      - name: Instalar dependencias
+        script: npm ci
+      - name: Construir el juego
+        script: npm run build
+      - name: Copiar el juego al proyecto de iPhone
+        script: npx cap sync ios
+      - name: Preparar las firmas
+        script: xcode-project use-profiles
+      - name: Número de build nuevo
+        # El proyecto va por la build 4; cada compilación sube uno.
+        script: cd ios/App && agvtool new-version -all $((BUILD_NUMBER + 4))
+      - name: Compilar la app
+        script: xcode-project build-ipa --project "ios/App/App.xcodeproj" --scheme "App"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
