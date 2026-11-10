@@ -2461,8 +2461,12 @@
     sectorRevive=NeonCampaign.useRevive(save);
     // Morir en el tramo del subguardián devuelve a él una vez por intento (propietario, 09/11/2026).
     const subBossStage=classicSideVoyage.ficha.encounters.findIndex(encounter=>encounter.boss?.role==="subjefe")+1;
-    saveSector(NeonCampaign.dieInSector(save,{subBossStage:subBossStage||null}));
+    const afterDeath=NeonCampaign.dieInSector(save,{subBossStage:subBossStage||null});
+    saveSector(afterDeath);
     sectorDeathRecorded=true;
+    // El reintento del subguardián es el mismo intento: sigue en la misma partida
+    // de chatarra y nada paga dos veces (revisión del PR #64).
+    if(afterDeath.run?.subRetryUsed)return;
     // Morir abre ya una partida de chatarra nueva: al volver al tramo 6 con
     // baliza, sus enemigos vuelven a soltarla, como al empezar de cero
     // (auditoría A14, propietario 06/11). El revive sigue cobrando en ella;
@@ -3832,7 +3836,7 @@
       if(after.sectors[classicSideVoyage.ficha.sector]?.beacon)ui.supplyStatus.textContent="Con baliza: vuelves al tramo 6.";
       if(after.run?.subRetryUsed) {
         $("retry").textContent="REINTENTAR EL SUBGUARDIÁN";
-        ui.supplyStatus.textContent="Último reintento contra el subguardián: si caes otra vez, vuelves al tramo 1.";
+        ui.supplyStatus.textContent="Tienes un reintento contra el subguardián en este intento.";
       }
       if(HARDCORE) {
         ui.reward.classList.add("hidden");

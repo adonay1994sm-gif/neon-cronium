@@ -1264,7 +1264,7 @@ test('dying at the sub-boss retries the sub-boss once; the second death restarts
   T.adv(2);
   assert.equal(T.st().state, 'gameover');
   assert.equal(w.document.getElementById('retry').textContent, 'REINTENTAR EL SUBGUARDIÁN');
-  assert.match(w.document.getElementById('supplyStatus').textContent, /Último reintento/);
+  assert.match(w.document.getElementById('supplyStatus').textContent, /un reintento contra el subguardián/);
   click(w, 'retry'); T.adv(.5);
   assert.deepEqual([T.stage(), T.hull()], [5, 100]);
   assert.equal(T.ev('subBossBeaten'), false, 'the sub-boss fights again');
@@ -1279,4 +1279,20 @@ test('other stages still restart the sector at stage 1', () => {
   startAt(T, 4); T.adv(.5);
   T.ev('hull=1'); T.hitNow(60);
   assert.equal(sectorSave(w).run.stageNumber, 1);
+});
+
+// Revisión del PR #64: el reintento del subguardián es el mismo intento, así que
+// no abre otra partida de chatarra (el subguardián no paga dos veces).
+test('the sub-boss retry does not pay the same scrap twice', () => {
+  const salvageRun = T => T.ev('classicSalvageState?.activeRun?.id||null');
+  const {w, T} = harness();
+  startAt(T, 5); T.adv(.5);
+  const first = salvageRun(T);
+  T.ev('hull=1'); T.hitNow(60); T.adv(2);
+  assert.equal(salvageRun(T), first, 'the retry keeps the salvage run');
+  assert.equal(w.document.getElementById('supplyStatus').textContent, 'Tienes un reintento contra el subguardián en este intento.');
+  click(w, 'retry'); T.adv(.5);
+  assert.equal(salvageRun(T), first);
+  T.ev('hull=1;hullGrace=0'); T.hitNow(60); T.adv(2);
+  assert.notEqual(salvageRun(T), first, 'restarting the sector opens a new salvage run, as before');
 });
