@@ -3643,10 +3643,12 @@ var NeonCampaign = (() => {
           alpha: 1,
           state: "ruptured"
         }),
+        // Gaia crece en cada tramo desde el 2 para que se note el viaje (propietario,
+        // 09/11/2026); antes era un punto hasta el tramo 4. La llegada no cambia (.92).
         planet: immutable12({
           x: 0.79 - 0.4 * smooth(p, 0.2, 1),
           y: 0.08 + 0.08 * gate,
-          scale: 0.02 + 0.9 * smooth(p, 0.2, 1) ** 2,
+          scale: 0.02 + 0.9 * Math.max(0, (p - 0.08) / 0.92) ** 1.15,
           rotation: 0.06 * p,
           visible: true,
           alpha: 0.5 + 0.5 * smooth(p, 0.1, 0.4)
@@ -8921,8 +8923,14 @@ var NeonCampaign = (() => {
     let run = null;
     if (raw.run !== null) {
       const r = raw.run;
-      if (!r || typeof r !== "object" || !isInt(r.sector, 1, raw.unlocked) || !isInt(r.stageNumber, 1, STAGE_COUNT2) || !Number.isFinite(r.stageHull) || r.stageHull <= 0 || r.stageHull > 100 || typeof r.reviveUsed !== "boolean") return null;
-      run = { sector: r.sector, stageNumber: r.stageNumber, stageHull: r.stageHull, reviveUsed: r.reviveUsed };
+      if (!r || typeof r !== "object" || !isInt(r.sector, 1, raw.unlocked) || !isInt(r.stageNumber, 1, STAGE_COUNT2) || !Number.isFinite(r.stageHull) || r.stageHull <= 0 || r.stageHull > 100 || typeof r.reviveUsed !== "boolean" || r.subRetryUsed !== void 0 && typeof r.subRetryUsed !== "boolean") return null;
+      run = {
+        sector: r.sector,
+        stageNumber: r.stageNumber,
+        stageHull: r.stageHull,
+        reviveUsed: r.reviveUsed,
+        ...r.subRetryUsed ? { subRetryUsed: true } : {}
+      };
     }
     return { version: 1, unlocked: raw.unlocked, sectors, run };
   }
@@ -8952,9 +8960,13 @@ var NeonCampaign = (() => {
     next.run.reviveUsed = true;
     return { save: next, hull: REVIVE_HULL };
   }
-  function dieInSector(save) {
+  function dieInSector(save, { subBossStage = null } = {}) {
     if (!save.run) return copy2(save);
     const next = copy2(save);
+    if (subBossStage !== null && save.run.stageNumber === subBossStage && !save.run.subRetryUsed) {
+      next.run = { sector: save.run.sector, stageNumber: subBossStage, stageHull: 100, reviveUsed: save.run.reviveUsed, subRetryUsed: true };
+      return next;
+    }
     next.run = {
       sector: save.run.sector,
       stageNumber: sectorRecord(save, save.run.sector).beacon ? BEACON_STAGE : 1,
