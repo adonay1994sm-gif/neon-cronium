@@ -2,8 +2,10 @@
  * Guardado de sectores (diseño de campaña 6.1–6.2): estrellas y marca por
  * sector, sector desbloqueado y la partida en curso. Reglas: revivir con
  * anuncio al 25 % una vez por intento; al morir se vuelve al tramo 1, o al 6
- * con la baliza, que dura hasta completar el sector; «Continuar» vuelve al
- * inicio del tramo en curso. Funciones puras: nunca modifican lo que reciben.
+ * con la baliza, que dura hasta completar el sector; morir en el tramo del
+ * subguardián devuelve a ese tramo una vez por intento (propietario,
+ * 09/11/2026); «Continuar» vuelve al inicio del tramo en curso. Funciones
+ * puras: nunca modifican lo que reciben.
  */
 export const SECTOR_SAVE_KEY = 'neonCronium.sectors.v1';
 const SECTOR_COUNT = 10, STAGE_COUNT = 10, BEACON_STAGE = 6, REVIVE_HULL = 25;
@@ -29,8 +31,11 @@ export function normalizeSectorSave(raw) {
   if (raw.run !== null) {
     const r = raw.run;
     if (!r || typeof r !== 'object' || !isInt(r.sector, 1, raw.unlocked) || !isInt(r.stageNumber, 1, STAGE_COUNT) ||
-      !Number.isFinite(r.stageHull) || r.stageHull <= 0 || r.stageHull > 100 || typeof r.reviveUsed !== 'boolean') return null;
-    run = {sector: r.sector, stageNumber: r.stageNumber, stageHull: r.stageHull, reviveUsed: r.reviveUsed};
+      !Number.isFinite(r.stageHull) || r.stageHull <= 0 || r.stageHull > 100 || typeof r.reviveUsed !== 'boolean' ||
+      (r.subRetryUsed !== undefined && typeof r.subRetryUsed !== 'boolean')) return null;
+    // subRetryUsed solo se guarda cuando ya se gastó el reintento del subguardián.
+    run = {sector: r.sector, stageNumber: r.stageNumber, stageHull: r.stageHull, reviveUsed: r.reviveUsed,
+      ...(r.subRetryUsed ? {subRetryUsed: true} : {})};
   }
   return {version: 1, unlocked: raw.unlocked, sectors, run};
 }
@@ -65,9 +70,14 @@ export function useRevive(save) {
   return {save: next, hull: REVIVE_HULL};
 }
 
-export function dieInSector(save) {
+export function dieInSector(save, {subBossStage = null} = {}) {
   if (!save.run) return copy(save);
   const next = copy(save);
+  // El reintento del subguardián es parte del mismo intento: no devuelve el revivir.
+  if (subBossStage !== null && save.run.stageNumber === subBossStage && !save.run.subRetryUsed) {
+    next.run = {sector: save.run.sector, stageNumber: subBossStage, stageHull: 100, reviveUsed: save.run.reviveUsed, subRetryUsed: true};
+    return next;
+  }
   next.run = {sector: save.run.sector, stageNumber: sectorRecord(save, save.run.sector).beacon ? BEACON_STAGE : 1,
     stageHull: 100, reviveUsed: false};
   return next;

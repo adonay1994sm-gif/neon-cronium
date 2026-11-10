@@ -77,3 +77,26 @@ test('every valid write survives JSON and normalize', () => {
     assert.deepEqual(normalizeSectorSave(JSON.parse(JSON.stringify(save))), save);
   }
 });
+
+// Reintento en el subguardián (propietario, 09/11/2026): morir en su tramo te
+// devuelve a él una vez por intento; la segunda vez, al tramo 1.
+test('dying at the sub-boss stage returns to it once per attempt', () => {
+  const atSubBoss = enterStage(running(), 5, 40);
+  const retry = dieInSector(atSubBoss, {subBossStage: 5});
+  assert.deepEqual(retry.run, {sector: 1, stageNumber: 5, stageHull: 100, reviveUsed: false, subRetryUsed: true});
+  const second = dieInSector(retry, {subBossStage: 5});
+  assert.deepEqual(second.run, {sector: 1, stageNumber: 1, stageHull: 100, reviveUsed: false}, 'the second death restarts the sector');
+  assert.equal(dieInSector(enterStage(second, 5, 80), {subBossStage: 5}).run.stageNumber, 5, 'a new attempt has its retry again');
+  assert.equal(dieInSector(enterStage(running(), 4, 40), {subBossStage: 5}).run.stageNumber, 1, 'other stages still restart the sector');
+  assert.equal(dieInSector(atSubBoss).run.stageNumber, 1, 'without a sub-boss stage nothing changes');
+});
+
+test('the sub-boss retry keeps the spent revive and survives a reload', () => {
+  const revived = useRevive(enterStage(running(), 5, 40)).save;
+  const retry = dieInSector(revived, {subBossStage: 5});
+  assert.equal(retry.run.reviveUsed, true, 'the ad revive is not given back inside the same attempt');
+  assert.deepEqual(normalizeSectorSave(JSON.parse(JSON.stringify(retry))), retry);
+  assert.equal(normalizeSectorSave({...retry, run: {...retry.run, subRetryUsed: 'yes'}}), null);
+  assert.equal('subRetryUsed' in normalizeSectorSave(JSON.parse(JSON.stringify(atStage5()))).run, false);
+});
+const atStage5 = () => enterStage(running(), 5, 40);

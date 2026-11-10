@@ -340,8 +340,9 @@ test('replaying a completed sector starts at stage 1 and keeps its stars', () =>
 
 // Revisión final del plan F3a (auditor-codigo).
 test('the death rule is saved as soon as the ship explodes', () => {
+  // En el tramo 4: el 5 tiene su reintento del subguardián (09/11/2026).
   const {w, T} = harness();
-  startAt(T, 5);
+  startAt(T, 4);
   T.ev('hull=1');
   T.hitNow(60);
   assert.equal(T.st().state, 'destroying');
@@ -350,8 +351,8 @@ test('the death rule is saved as soon as the ship explodes', () => {
   assert.equal(T.st().state, 'gameover');
   assert.equal(rewardShown(w), true);
   assert.equal(T.resumeReward(), true);
-  assert.equal(T.stage(), 5);
-  assert.equal(sectorSave(w).run.stageNumber, 5);
+  assert.equal(T.stage(), 4);
+  assert.equal(sectorSave(w).run.stageNumber, 4);
 });
 
 test('a new attempt opens a new salvage run; continuing keeps it', () => {
@@ -586,7 +587,7 @@ test('its laser hurts the ship and shows its splash on it', () => {
   assert.equal(T.ev('Boolean(subBossBurn)'), true);
 });
 
-test('dying during the subguardian and reviving keeps its damage; retrying restarts at stage 1', () => {
+test('dying during the subguardian and reviving keeps its damage; the retry brings it back whole, then stage 1', () => {
   const {T} = harness();
   startAt(T, 5); T.adv(9);
   T.ev('NeonCampaign.hitSubguardian(subBoss, 15)');
@@ -594,6 +595,9 @@ test('dying during the subguardian and reviving keeps its damage; retrying resta
   assert.ok(hp < 60, 'the hit counted');
   T.ev('hull=0'); T.finishGame('hull'); T.resumeReward();
   assert.equal(T.ev('subBoss.hp'), hp);
+  // Reintento del subguardián (09/11/2026): vuelve entero, una vez por intento.
+  T.finishGame('hull'); T.startLevel(0); T.adv(9);
+  assert.deepEqual([T.stage(), T.ev('subBoss.hp')], [5, T.ev('NeonCampaign.SUBGUARDIAN_RULES.hp')]);
   T.finishGame('hull'); T.startLevel(0);
   assert.deepEqual([T.stage(), T.ev('subBoss')], [1, null]);
 });
@@ -1249,4 +1253,30 @@ test('the pause map uses the HUD name of the current stage', () => {
   T.ev('classicFlightView={...classicFlightView,stageName:"Corredor de Gaia"};state="playing";pauseGame()');
   w.document.querySelector('[data-pause-tab="mapa"]').click();
   assert.match(w.document.querySelectorAll('#pauseMap li')[5].textContent, /6 · Corredor de Gaia/);
+});
+
+// Reintento en el subguardián (propietario, 09/11/2026).
+test('dying at the sub-boss retries the sub-boss once; the second death restarts the sector', () => {
+  const {w, T} = harness();
+  startAt(T, 5); T.adv(.5);
+  T.ev('hull=1'); T.hitNow(60);
+  assert.deepEqual(sectorSave(w).run, {sector: 1, stageNumber: 5, stageHull: 100, reviveUsed: false, subRetryUsed: true});
+  T.adv(2);
+  assert.equal(T.st().state, 'gameover');
+  assert.equal(w.document.getElementById('retry').textContent, 'REINTENTAR EL SUBGUARDIÁN');
+  assert.match(w.document.getElementById('supplyStatus').textContent, /Último reintento/);
+  click(w, 'retry'); T.adv(.5);
+  assert.deepEqual([T.stage(), T.hull()], [5, 100]);
+  assert.equal(T.ev('subBossBeaten'), false, 'the sub-boss fights again');
+  T.ev('hull=1;hullGrace=0'); T.hitNow(60);
+  assert.equal(sectorSave(w).run.stageNumber, 1);
+  T.adv(2);
+  assert.equal(w.document.getElementById('retry').textContent, 'REINTENTAR SECTOR · TRAMO 1');
+});
+
+test('other stages still restart the sector at stage 1', () => {
+  const {w, T} = harness();
+  startAt(T, 4); T.adv(.5);
+  T.ev('hull=1'); T.hitNow(60);
+  assert.equal(sectorSave(w).run.stageNumber, 1);
 });

@@ -2459,7 +2459,9 @@
     if(HARDCORE){sectorDeathRecorded=true;sectorRevive=false;wipeHardcoreRun();return;}
     const save=loadSectorSave();
     sectorRevive=NeonCampaign.useRevive(save);
-    saveSector(NeonCampaign.dieInSector(save));
+    // Morir en el tramo del subguardián devuelve a él una vez por intento (propietario, 09/11/2026).
+    const subBossStage=classicSideVoyage.ficha.encounters.findIndex(encounter=>encounter.boss?.role==="subjefe")+1;
+    saveSector(NeonCampaign.dieInSector(save,{subBossStage:subBossStage||null}));
     sectorDeathRecorded=true;
     // Morir abre ya una partida de chatarra nueva: al volver al tramo 6 con
     // baliza, sus enemigos vuelven a soltarla, como al empezar de cero
@@ -3828,6 +3830,10 @@
       const after=loadSectorSave();
       $("retry").textContent=`REINTENTAR SECTOR · TRAMO ${NeonCampaign.continuePoint(after)?.stageNumber||1}`;
       if(after.sectors[classicSideVoyage.ficha.sector]?.beacon)ui.supplyStatus.textContent="Con baliza: vuelves al tramo 6.";
+      if(after.run?.subRetryUsed) {
+        $("retry").textContent="REINTENTAR EL SUBGUARDIÁN";
+        ui.supplyStatus.textContent="Último reintento contra el subguardián: si caes otra vez, vuelves al tramo 1.";
+      }
       if(HARDCORE) {
         ui.reward.classList.add("hidden");
         $("retry").textContent="EMPEZAR DE CERO";

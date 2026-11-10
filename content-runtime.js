@@ -8923,8 +8923,14 @@ var NeonCampaign = (() => {
     let run = null;
     if (raw.run !== null) {
       const r = raw.run;
-      if (!r || typeof r !== "object" || !isInt(r.sector, 1, raw.unlocked) || !isInt(r.stageNumber, 1, STAGE_COUNT2) || !Number.isFinite(r.stageHull) || r.stageHull <= 0 || r.stageHull > 100 || typeof r.reviveUsed !== "boolean") return null;
-      run = { sector: r.sector, stageNumber: r.stageNumber, stageHull: r.stageHull, reviveUsed: r.reviveUsed };
+      if (!r || typeof r !== "object" || !isInt(r.sector, 1, raw.unlocked) || !isInt(r.stageNumber, 1, STAGE_COUNT2) || !Number.isFinite(r.stageHull) || r.stageHull <= 0 || r.stageHull > 100 || typeof r.reviveUsed !== "boolean" || r.subRetryUsed !== void 0 && typeof r.subRetryUsed !== "boolean") return null;
+      run = {
+        sector: r.sector,
+        stageNumber: r.stageNumber,
+        stageHull: r.stageHull,
+        reviveUsed: r.reviveUsed,
+        ...r.subRetryUsed ? { subRetryUsed: true } : {}
+      };
     }
     return { version: 1, unlocked: raw.unlocked, sectors, run };
   }
@@ -8954,9 +8960,13 @@ var NeonCampaign = (() => {
     next.run.reviveUsed = true;
     return { save: next, hull: REVIVE_HULL };
   }
-  function dieInSector(save) {
+  function dieInSector(save, { subBossStage = null } = {}) {
     if (!save.run) return copy2(save);
     const next = copy2(save);
+    if (subBossStage !== null && save.run.stageNumber === subBossStage && !save.run.subRetryUsed) {
+      next.run = { sector: save.run.sector, stageNumber: subBossStage, stageHull: 100, reviveUsed: save.run.reviveUsed, subRetryUsed: true };
+      return next;
+    }
     next.run = {
       sector: save.run.sector,
       stageNumber: sectorRecord(save, save.run.sector).beacon ? BEACON_STAGE : 1,
