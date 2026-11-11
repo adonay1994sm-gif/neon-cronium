@@ -1296,3 +1296,18 @@ test('the sub-boss retry does not pay the same scrap twice', () => {
   T.ev('hull=1;hullGrace=0'); T.hitNow(60); T.adv(2);
   assert.notEqual(salvageRun(T), first, 'restarting the sector opens a new salvage run, as before');
 });
+
+// Tarea audio-volver-segundo-plano (11/11): al volver de otra app el audio queda
+// suspendido; CONTINUAR tiene que desbloquear la música dentro del propio toque.
+test('CONTINUE after a pause restarts the music inside the tap', () => {
+  const {w, T} = harness();
+  startAt(T, 2); T.adv(.1);
+  T.ev('globalThis.__music=0;{const original=startMusic;startMusic=function(){globalThis.__music++;return original();};}');
+  // El primer toque de la sesión ya arranca la música una vez; se gasta antes de medir.
+  T.ev('pauseGame()'); click(w, 'resume'); T.adv(.1);
+  T.ev('pauseGame()');
+  const before = T.ev('globalThis.__music');
+  click(w, 'resume');
+  assert.equal(T.ev('state'), 'playing');
+  assert.equal(T.ev('globalThis.__music') - before, 1);
+});

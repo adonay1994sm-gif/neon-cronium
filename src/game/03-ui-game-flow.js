@@ -383,6 +383,8 @@
     scroll.addEventListener('scroll',()=>{
       const top=nav.getBoundingClientRect().bottom,line=top+(scroll.getBoundingClientRect().bottom-top)*.35;let current=nav.querySelector('button');
       for(const link of nav.querySelectorAll('button')){const target=document.getElementById(link.getAttribute('aria-controls'));if(target&&target.getBoundingClientRect().top<=line)current=link;}
+      // Al fondo manda la última: si su sección es corta nunca llegaba a la línea (P57-05).
+      if(scroll.scrollTop+scroll.clientHeight>=scroll.scrollHeight-2)current=[...nav.querySelectorAll('button')].at(-1);
       for(const link of nav.querySelectorAll('button'))link===current?link.setAttribute('aria-current','true'):link.removeAttribute('aria-current');
     },{passive:true});
   }
@@ -2540,7 +2542,9 @@
     overlay();
     last = performance.now();
     grantResumeGrace();
-    resumeAudio();
+    // Dentro del toque de CONTINUAR: al volver de otra app o de una llamada el
+    // iPhone solo deja sonar la música si se arranca aquí (11/11).
+    startMusic();
   }
 
   // Gracia de 0,8 s al volver a jugar tras una pausa real (≥ 0,5 s) y como

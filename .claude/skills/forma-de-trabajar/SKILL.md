@@ -105,12 +105,21 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
 - Explica qué ha cambiado **para el jugador**, no solo en el código.
 - Dale siempre un **enlace para probarlo** cuando cambia algo jugable o
   visual. Hoy es https://claude.ai/artifact/7HCk4RiGujkUSph4qd57Fg, que se
-  actualiza al publicar el mismo archivo.
+  actualiza al publicar el mismo archivo. Ese enlace lleva una «caja negra»
+  (solo allí): guarda tramos, golpes y fluidez en su base de datos
+  (colección `partidas`); léela cuando diga «mira mi partida».
+- **Desde el 09/11 tiene la app de verdad en su iPhone por TestFlight**
+  (prueba privada, no publica nada). Para darle una versión nueva: en
+  Codemagic, «Start new build», rama de trabajo, flujo «iPhone · TestFlight»
+  (`codemagic.yaml`; la app es solo para iPhone). Lo hace él desde el móvil.
 - Si no se pudo comprobar algo (iPhone real, sonido), dilo.
 - **Juega en el iPhone y desde el 06/11 tiene un PC con Windows** con Claude
   Code local (clon en `Documentos/Ne-n-catcher`, rama de trabajo). La sesión
   de la nube no puede conectarse a carpetas de Windows. Pídele lo mínimo y
-  paso a paso; no le pidas pegar claves. Los archivos grandes (grabaciones
+  paso a paso; no le pidas pegar claves. Si te manda una clave o una
+  contraseña (09/11 mandó la `.p8` de Apple), no la guardes en el repositorio
+  ni en el tablero: dile que la guarde en la app Contraseñas o en Archivos.
+  Los archivos grandes (grabaciones
   de pantalla) los manda con un enlace público de iCloud Drive: se descargan
   con la API de CloudKit (`records/resolve` con el código del enlace →
   `fileContent.downloadURL`). Una grabación suya dice más que una captura:
@@ -127,11 +136,9 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
   - Las decisiones se añaden con su recomendación, **siempre con `opciones`**
     (id, texto, detalle, `recomendada`) y `estado: "decision"`: sin opciones
     no salen en «Decide tú» y él no las encuentra.
-  - Se revisa sola tres veces al día (tarea programada «Revisión del
-    tablero», 8:39, 13:39 y 19:39 de Madrid): decisiones nuevas, entregas
-    del baúl y días que lleva quieta cada tarea. Lo atascado (3 días o más)
-    se anota en el campo `quieta` sin tocar `actualizado`, y se le avisa solo
-    si hay algo.
+  - Ya no se revisa sola: el 11/11 pidió eliminar la revisión programada (los
+    avisos de «sin novedades» le sobraban). Mira el tablero y el baúl al
+    empezar cada trabajo y cuando él escriba, no con avisos automáticos.
 - **Arte con GPT:** él no copia prompts a mano. Cada necesidad visual va al
   tablero con su prompt (DESIGN.md §13). Después se regenera
   `docs/art/ENCARGOS_GPT.md`, que GPT revisa solo cada 10 minutos.
@@ -195,6 +202,16 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
 - Arma inicial: se llama PULSO; en los niveles 3 y 4 el pulso central hace el
   daño entero (03/11). Los niveles se compran con chatarra en el hangar.
 - Subguardián (03/11): 30 de vida.
+- Pausa (09/11): pestañas PAUSA · NAVE · MAPA · AJUSTES, solo para mirar; el
+  arma se cambia en el hangar y las mejoras en C9.
+- Sector 1 (09/11): Gaia crece en cada tramo desde el 2 para que se note el
+  viaje; morir en el tramo del subguardián te devuelve a él una vez por
+  intento (sin chatarra doble).
+- Revisión del PR #57 (09/11, las recomendadas): ajustes HARDCORE sin la
+  confirmación nueva pasan a Normal; en Pulso 3 y 4 los laterales no dañan;
+  la chatarra al revivir, cerrar y continuar se deja como está.
+- Apple (09/11): cuenta de Apple Developer propia, app «NEON CRONIUM»
+  `com.neoncronium` creada, Codemagic + TestFlight funcionando.
 - Auditoría A13–A16 (06/11, las recomendadas): en el sector el tramo no corre
   al triple al cumplir la cuota; al morir con baliza los enemigos vuelven a
   soltar chatarra; solo el abanico de 5 dispara abierto (1,2), el resto a
@@ -224,6 +241,30 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 11/11/2026: el mismo encargo se hizo dos veces (la sesión del PC y la de la
+  nube arreglaron la misma música y revisaron el mismo PR). Antes de empezar
+  un encargo: `git fetch`, mira los PR abiertos y las tareas del tablero con
+  `actualizado` de hoy. En el tablero se filtra por `actualizado` o
+  `elegido`; `updatedAt` no es un campo de las tareas y devuelve vacío.
+- 11/11/2026: «elimina la revisión del tablero». Tres avisos al día diciendo
+  «sin novedades» eran ruido. No le escribas para decir que no hay nada; si
+  no hay nada que mover, calla.
+- 09/11/2026: «Dame algo mejor» sin decir de qué. Le pregunté y eligió «lo
+  que más se nota al jugar». Le gustó que jugara el sector entero, midiera y
+  le trajera tres frenos con capturas y cifras para elegir (página
+  5PMm75DMgYtdhmdoBApAfp). Ante un pedido vago: pregunta en qué, y propón con
+  pruebas reales, no con opiniones.
+- 09/11/2026: «el juego no está terminado, no entiendo» cuando le propuse
+  TestFlight. Antes de los pasos, explícale qué es y para qué le sirve a él
+  (aquí: prueba privada, sonido real), y que no publica nada.
+- 09/11/2026: tres arreglos míos rompieron algo que la revisión cazó (el foco
+  de todas las ventanas al cambiar el de la pausa; la chatarra doble del
+  reintento). Al tocar una función compartida, mira todos sus usos antes de
+  subir, y comprueba el cambio en Chromium real además de en JSDOM.
+- 09/11/2026: se paró a montar herramientas (Codemagic, TestFlight, Figma)
+  para «trabajar mejor y en paralelo» y lo hizo todo en una mañana desde el
+  iPhone, con capturas paso a paso. Cuando algo le da poder (probar la app
+  real), lo quiere ya.
 - 06/11/2026: conectó su PC con Windows para que trabaje mejor. Preguntó
   «en qué me ayudará»: le sirve para probar y oír el juego en el PC y, más
   adelante, para Android; iOS sigue necesitando un Mac. Regla 5 cambiada (ya
