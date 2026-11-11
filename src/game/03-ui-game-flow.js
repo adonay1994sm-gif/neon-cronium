@@ -2542,10 +2542,9 @@
     overlay();
     last = performance.now();
     grantResumeGrace();
-    // Dentro del toque de CONTINUAR: si el iPhone bloqueó la música al volver de
-    // segundo plano o tras una llamada, aquí se desbloquea (encargo del 11/11).
+    // Dentro del toque de CONTINUAR: al volver de otra app o de una llamada el
+    // iPhone solo deja sonar la música si se arranca aquí (11/11).
     startMusic();
-    resumeAudio();
   }
 
   // Gracia de 0,8 s al volver a jugar tras una pausa real (≥ 0,5 s) y como

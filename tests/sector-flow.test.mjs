@@ -1297,19 +1297,17 @@ test('the sub-boss retry does not pay the same scrap twice', () => {
   assert.notEqual(salvageRun(T), first, 'restarting the sector opens a new salvage run, as before');
 });
 
-// Encargo del 11/11 (sospecha del PR #58): al volver de segundo plano o tras una
-// llamada, el iPhone puede rechazar play(); la música quedaba bloqueada todo el
-// vuelo porque CONTINUAR no volvía a desbloquearla dentro del toque.
-test('resuming from pause unlocks the music again inside the tap', () => {
+// Tarea audio-volver-segundo-plano (11/11): al volver de otra app el audio queda
+// suspendido; CONTINUAR tiene que desbloquear la música dentro del propio toque.
+test('CONTINUE after a pause restarts the music inside the tap', () => {
   const {w, T} = harness();
-  startAt(T, 3); T.adv(.5);
-  // El primer toque de la sesión ya arranca la música (escucha de un solo uso):
-  // se gasta antes para medir solo lo que hace CONTINUAR.
-  w.document.body.click();
-  T.ev('const realStartMusic=startMusic;startMusic=()=>{window.__music=(window.__music||0)+1;return realStartMusic();}');
+  startAt(T, 2); T.adv(.1);
+  T.ev('globalThis.__music=0;{const original=startMusic;startMusic=function(){globalThis.__music++;return original();};}');
+  // El primer toque de la sesión ya arranca la música una vez; se gasta antes de medir.
+  T.ev('pauseGame()'); click(w, 'resume'); T.adv(.1);
   T.ev('pauseGame()');
-  assert.equal(w.__music || 0, 0);
+  const before = T.ev('globalThis.__music');
   click(w, 'resume');
-  assert.equal(T.st().state, 'playing');
-  assert.equal(w.__music, 1, 'CONTINUAR restarts the music from the player gesture');
+  assert.equal(T.ev('state'), 'playing');
+  assert.equal(T.ev('globalThis.__music') - before, 1);
 });
