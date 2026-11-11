@@ -136,11 +136,9 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
   - Las decisiones se añaden con su recomendación, **siempre con `opciones`**
     (id, texto, detalle, `recomendada`) y `estado: "decision"`: sin opciones
     no salen en «Decide tú» y él no las encuentra.
-  - Se revisa sola tres veces al día (tarea programada «Revisión del
-    tablero», 8:39, 13:39 y 19:39 de Madrid): decisiones nuevas, entregas
-    del baúl y días que lleva quieta cada tarea. Lo atascado (3 días o más)
-    se anota en el campo `quieta` sin tocar `actualizado`, y se le avisa solo
-    si hay algo.
+  - Ya no se revisa sola: el 11/11 pidió eliminar la revisión programada (los
+    avisos de «sin novedades» le sobraban). Mira el tablero y el baúl al
+    empezar cada trabajo y cuando él escriba, no con avisos automáticos.
 - **Arte con GPT:** él no copia prompts a mano. Cada necesidad visual va al
   tablero con su prompt (DESIGN.md §13). Después se regenera
   `docs/art/ENCARGOS_GPT.md`, que GPT revisa solo cada 10 minutos.
@@ -243,6 +241,9 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 11/11/2026: «elimina la revisión del tablero». Tres avisos al día diciendo
+  «sin novedades» eran ruido. No le escribas para decir que no hay nada; si
+  no hay nada que mover, calla.
 - 09/11/2026: «Dame algo mejor» sin decir de qué. Le pregunté y eligió «lo
   que más se nota al jugar». Le gustó que jugara el sector entero, midiera y
   le trajera tres frenos con capturas y cifras para elegir (página
