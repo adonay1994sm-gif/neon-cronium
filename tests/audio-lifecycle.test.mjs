@@ -148,3 +148,17 @@ test('music at the top of its slider plays at 0.15, lower than before (0.26)', (
   assert.equal(targets.length, 1);
   assert.ok(Math.abs(targets[0] - 0.15) < 1e-9, `music gain ${targets[0]}`);
 });
+
+// Tarea audio-volver-segundo-plano (11/11): tras una llamada Safari deja el
+// contexto en «interrupted», no en «suspended»; también hay que reanudarlo.
+test('a context left "interrupted" by a phone call is resumed like a suspended one', async () => {
+  const h = audioHarness(60, 70);
+  await h.suspendAudio();
+  h.audioCtx.state = 'interrupted';
+  await h.resumeAudio();
+  assert.equal(h.audioCtx.state, 'running');
+  h.audioCtx.state = 'interrupted';
+  h.NeonCampaign = {}; h.state = 'paused';
+  h.startMusic();
+  assert.equal(h.audioCtx.state, 'running', 'the tap that starts the music resumes it too');
+});

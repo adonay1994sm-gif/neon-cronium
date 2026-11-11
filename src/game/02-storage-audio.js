@@ -285,7 +285,8 @@
   function startMusic() {
     const ac = ensureAudio();
     if (!ac) return;
-    if (ac.state === "suspended") ac.resume().catch(() => {});
+    // «interrupted»: así deja Safari el contexto tras una llamada (11/11).
+    if (ac.state !== "running") ac.resume().catch(() => {});
     if(!moodMusic&&ac.createMediaElementSource&&typeof NeonCampaign?.createMoodMusic==="function") {
       try {moodMusic=NeonCampaign.createMoodMusic({context:ac,output:musicGain});} catch {moodMusic=null;}
     }
@@ -343,7 +344,7 @@
   }
 
   async function resumeAudio() {
-    if (audioCtx?.state === "suspended" && (settings.music > 0 || settings.fx > 0)) {
+    if (audioCtx && audioCtx.state !== "running" && (settings.music > 0 || settings.fx > 0)) {
       await audioCtx.resume().catch(() => {});
     }
     scoreSuspended = audioCtx?.state !== "running";
@@ -406,7 +407,7 @@
     if(cue==="rupture")duckMusic(1.5);
     const ac=ensureAudio();
     if(!ac)return;
-    if(ac.state==="suspended")ac.resume().catch(()=>{});
+    if(ac.state!=="running")ac.resume().catch(()=>{});
     if(!uiSfx&&typeof NeonCampaign.createUiSfx==="function") {
       uiSfx=NeonCampaign.createUiSfx({context:ac,output:masterBus||ac.destination});
       uiSfx?.setVolume(settings.fx/100);uiSfx?.load();
