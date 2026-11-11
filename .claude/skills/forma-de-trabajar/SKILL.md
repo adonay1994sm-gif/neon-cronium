@@ -241,6 +241,11 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 11/11/2026: el mismo encargo se hizo dos veces (la sesión del PC y la de la
+  nube arreglaron la misma música y revisaron el mismo PR). Antes de empezar
+  un encargo: `git fetch`, mira los PR abiertos y las tareas del tablero con
+  `actualizado` de hoy. En el tablero se filtra por `actualizado` o
+  `elegido`; `updatedAt` no es un campo de las tareas y devuelve vacío.
 - 11/11/2026: «elimina la revisión del tablero». Tres avisos al día diciendo
   «sin novedades» eran ruido. No le escribas para decir que no hay nada; si
   no hay nada que mover, calla.
