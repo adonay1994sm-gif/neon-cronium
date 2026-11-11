@@ -3662,6 +3662,9 @@
     overlay();
     last = performance.now();
     grantResumeGrace();
+    // Dentro del toque de CONTINUAR: si el iPhone bloqueó la música al volver de
+    // segundo plano o tras una llamada, aquí se desbloquea (encargo del 11/11).
+    startMusic();
     resumeAudio();
   }
 
