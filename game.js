@@ -1556,11 +1556,14 @@
     return {version:2,checkpoint,entry,chapter:classicChapterStory?.checkpoint()||null,unlockedStage:Math.max(previous?.unlockedStage||1,checkpoint.stageNumber),completed};
   }
 
+  // Casco con el que entraste al tramo en curso del sector (ver pauseGame).
+  let sectorStageEntryHull=null;
   function saveClassicVoyageCheckpoint(checkpoint,completed=false) {
     if(!checkpoint)return false;
     if(isSectorRun()){
       const save=loadSectorSave();
       if(!save.run)return false;
+      sectorStageEntryHull=hull;
       const next=NeonCampaign.enterStage(save,checkpoint.stageNumber,hull),saved=saveSector(next);
       // El hangar queda abierto al pasar por el tramo 6, aunque luego mueras.
       if(saved)rememberMenuUnlocks(NeonCampaign.menuView(next,loadMenuUnlocks()).unlocks);
@@ -3603,6 +3606,13 @@
     setState("paused");
     pauseStartedAt = performance.now();
     hideWarning();
+    // Volver con tu casco (propietario, 12/11/2026): salir al menú o cerrar la app
+    // y continuar ya no cura. La pausa guarda el casco que tienes, sin pasar del
+    // de entrada al tramo; cerrar la app también pasa por aquí.
+    if(isSectorRun()&&!sectorDeathRecorded){
+      const save=loadSectorSave();
+      if(save.run)saveSector(NeonCampaign.enterStage(save,save.run.stageNumber,Math.min(sectorStageEntryHull??hull,hull)));
+    }
     showPauseTab("pausa");
     overlay(ui.paused);
   }
@@ -3626,6 +3636,11 @@
     if(!isSectorRun()){startLevel(currentLevel);return;}
     if(!surrenderArmed){surrenderArmed=true;syncPauseRestart();return;}
     surrenderArmed=false;
+    // Cuenta como una partida y como una muerte, igual que caer (propietario,
+    // 12/11/2026). Antes de aplicar la regla: en HARDCORE esta borra la partida.
+    registerRun();
+    window.AnalyticsManager?.track("death", { level: currentLevel + 1, score, elapsed: Math.round(elapsed) });
+    window.AnalyticsManager?.track("death_reason", { level: currentLevel + 1, reason: "surrender" });
     recordSectorDeath();sectorRevive=null;
     if(hardcoreWiped)reloadGame();else startLevel(currentLevel);
   }
@@ -7723,10 +7738,11 @@
     fireManualShot();
   };
   $("resume").onclick = resumeGame;
-  $("pauseSettings").onclick = () => openSettings("paused");
+  // Abrir ajustes desarma RENDIRSE: al volver no basta un toque (revisión del PR #67).
+  $("pauseSettings").onclick = () => { showPauseTab("pausa"); openSettings("paused"); };
   // Pestañas de la pausa: AJUSTES abre la pantalla de ajustes de siempre.
   for (const tab of document.querySelectorAll("[data-pause-tab]")) {
-    tab.onclick = () => tab.dataset.pauseTab === "ajustes" ? openSettings("paused") : showPauseTab(tab.dataset.pauseTab);
+    tab.onclick = () => { showPauseTab(tab.dataset.pauseTab === "ajustes" ? "pausa" : tab.dataset.pauseTab); if (tab.dataset.pauseTab === "ajustes") openSettings("paused"); };
   }
   $("restart").onclick = restartFromPause;
   $("quit").onclick = goHome;
