@@ -2405,6 +2405,7 @@
     manualShotCooldown = 0;
     elapsed = 0;
     continued = false;
+    sectorStageEntryHull=null;
     spawnTimer = 0.35;
     classicScoutTimer = currentLevel === 1 ? 3.8 : 0;
     classicScoutAnnounced = false;
@@ -2515,7 +2516,8 @@
     surrenderArmed=false;
     // Cuenta como una partida y como una muerte, igual que caer (propietario,
     // 12/11/2026). Antes de aplicar la regla: en HARDCORE esta borra la partida.
-    registerRun();
+    // Tras revivir con anuncio, ese intento ya se contó al caer.
+    if(!continued)registerRun();
     window.AnalyticsManager?.track("death", { level: currentLevel + 1, score, elapsed: Math.round(elapsed) });
     window.AnalyticsManager?.track("death_reason", { level: currentLevel + 1, reason: "surrender" });
     recordSectorDeath();sectorRevive=null;

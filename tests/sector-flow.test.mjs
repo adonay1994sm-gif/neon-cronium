@@ -1419,3 +1419,25 @@ test('opening settings from the pause disarms RENDIRSE', () => {
   w.document.querySelector('[data-pause-tab="ajustes"]').click(); click(w, 'settingsBack');
   assert.equal(w.document.getElementById('restart').textContent.trim(), 'RENDIRSE');
 });
+
+// Revisión del PR #68 (12/11/2026): pausar antes del primer fotograma de un
+// reintento guardaba el casco de entrada del intento anterior.
+test('pausing right after a retry does not bank the previous attempt entry hull', () => {
+  const {w, T} = harness();
+  putRun(w, {sector: 1, stageNumber: 4, stageHull: 30, reviveUsed: false});
+  click(w, 'play'); T.adv(.5);
+  assert.equal(T.hull(), 30);
+  T.finishGame('hull'); click(w, 'retry');
+  T.ev('pauseGame()');
+  assert.deepEqual([sectorSave(w).run.stageNumber, sectorSave(w).run.stageHull], [1, 100]);
+});
+
+test('surrendering after the rewarded revive does not count a second run', () => {
+  const {w, T} = harness();
+  startAt(T, 3); T.adv(.5);
+  const before = T.ev('storage.getNumber(KEYS.games,0)');
+  T.finishGame('hull');
+  assert.equal(T.resumeReward(), true);
+  T.adv(.5); T.ev('pauseGame()'); click(w, 'restart'); click(w, 'restart');
+  assert.equal(T.ev('storage.getNumber(KEYS.games,0)'), before + 1);
+});
