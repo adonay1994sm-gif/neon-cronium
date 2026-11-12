@@ -581,7 +581,8 @@
     saveClassicVoyageCheckpoint(classicFlight.exportCheckpoint());
     if(c9Scene)NeonCampaign.releaseC9Docking(c9Scene);
     applyClassicSalvageShield();
-    syncClassicFlightHud();hud();resumeAudio();
+    // Salir de C9 es un toque del jugador: también desbloquea la música (revisión del PR #66).
+    syncClassicFlightHud();hud();startMusic();
   }
 
   function persistClassicEquipment(next) {
@@ -617,7 +618,7 @@
   function closeClassicDock() {
     if(flightDockReturn==="hud"&&state==="paused") {
       if(typeof resetGameInput==="function")resetGameInput();
-      setState("playing");overlay();last=performance.now();resumeAudio();
+      setState("playing");overlay();last=performance.now();startMusic();
       grantResumeGrace(); // misma gracia que al salir de la pausa (B04)
       syncClassicFlightHud();ui.classicC9?.focus({preventScroll:true});return;
     }
@@ -1332,6 +1333,9 @@
   }
   // La regla de morir se guarda al estallar la nave (tramo 1, o 6 con baliza),
   // no al abrir la derrota: cerrar la app durante la explosión no la salta.
+  function sectorSubBossStage() {
+    return classicSideVoyage.ficha.encounters.findIndex(encounter=>encounter.boss?.role==="subjefe")+1||null;
+  }
   function recordSectorDeath() {
     if(!isSectorRun()||sectorDeathRecorded)return;
     // HARDCORE se borra al estallar la nave, no al abrir la derrota: cerrar la
@@ -1340,8 +1344,7 @@
     const save=loadSectorSave();
     sectorRevive=NeonCampaign.useRevive(save);
     // Morir en el tramo del subguardián devuelve a él una vez por intento (propietario, 09/11/2026).
-    const subBossStage=classicSideVoyage.ficha.encounters.findIndex(encounter=>encounter.boss?.role==="subjefe")+1;
-    const afterDeath=NeonCampaign.dieInSector(save,{subBossStage:subBossStage||null});
+    const afterDeath=NeonCampaign.dieInSector(save,{subBossStage:sectorSubBossStage()});
     saveSector(afterDeath);
     sectorDeathRecorded=true;
     // El reintento del subguardián es el mismo intento: sigue en la misma partida
@@ -2483,7 +2486,28 @@
 
   // Pausa con pestañas (propietario, 09/11/2026, opción A): PAUSA · NAVE · MAPA ·
   // AJUSTES. Solo para mirar: el arma se cambia en el hangar y las mejoras en C9.
+  // Rendirse (propietario, 12/11/2026): en el sector, reiniciar el tramo desde la
+  // pausa dejaba saltarse la regla de morir. Ahora cuenta como morir (tramo 1,
+  // tramo 6 con baliza o el reintento del subguardián) y pide dos toques.
+  let surrenderArmed=false;
+  function syncPauseRestart() {
+    const button=$("restart");
+    if(!button)return;
+    if(!isSectorRun()){button.textContent="REINICIAR TRAMO";return;}
+    if(!surrenderArmed){button.textContent="RENDIRSE";return;}
+    const run=HARDCORE?null:NeonCampaign.dieInSector(loadSectorSave(),{subBossStage:sectorSubBossStage()}).run;
+    button.textContent=HARDCORE?"¿SEGURO? SE BORRA LA PARTIDA":run?.subRetryUsed?"¿SEGURO? REPITES EL SUBGUARDIÁN"
+      :`¿SEGURO? VUELVES AL TRAMO ${run?.stageNumber||1}`;
+  }
+  function restartFromPause() {
+    if(!isSectorRun()){startLevel(currentLevel);return;}
+    if(!surrenderArmed){surrenderArmed=true;syncPauseRestart();return;}
+    surrenderArmed=false;
+    recordSectorDeath();sectorRevive=null;
+    if(hardcoreWiped)reloadGame();else startLevel(currentLevel);
+  }
   function showPauseTab(tab) {
+    surrenderArmed=false;syncPauseRestart();
     const stages=classicSideVoyage?.ficha?.stages;
     const mapTab=document.querySelector('[data-pause-tab="mapa"]');
     if(mapTab)mapTab.hidden=!(stages?.length&&classicFlightView?.stageNumber);
