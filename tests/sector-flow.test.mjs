@@ -1311,3 +1311,16 @@ test('CONTINUE after a pause restarts the music inside the tap', () => {
   assert.equal(T.ev('state'), 'playing');
   assert.equal(T.ev('globalThis.__music') - before, 1);
 });
+
+// Revisión del PR #66: salir de la Forja abierta desde el HUD también es un toque
+// de CONTINUAR y tiene que desbloquear la música.
+test('closing the Forja opened from the HUD restarts the music inside the tap', () => {
+  const {w, T} = harness();
+  startAt(T, 3); T.adv(.5);
+  w.document.body.click();
+  T.ev('globalThis.__music=0;{const original=startMusic;startMusic=function(){globalThis.__music++;return original();};}');
+  T.ev('pauseGame();flightDockReturn="hud";ui.flightDock.classList.add("show")');
+  T.ev('resumeGame()');
+  assert.equal(T.st().state, 'playing');
+  assert.equal(T.ev('globalThis.__music'), 1);
+});

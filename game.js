@@ -1704,7 +1704,8 @@
     saveClassicVoyageCheckpoint(classicFlight.exportCheckpoint());
     if(c9Scene)NeonCampaign.releaseC9Docking(c9Scene);
     applyClassicSalvageShield();
-    syncClassicFlightHud();hud();resumeAudio();
+    // Salir de C9 es un toque del jugador: también desbloquea la música (revisión del PR #66).
+    syncClassicFlightHud();hud();startMusic();
   }
 
   function persistClassicEquipment(next) {
@@ -1740,7 +1741,7 @@
   function closeClassicDock() {
     if(flightDockReturn==="hud"&&state==="paused") {
       if(typeof resetGameInput==="function")resetGameInput();
-      setState("playing");overlay();last=performance.now();resumeAudio();
+      setState("playing");overlay();last=performance.now();startMusic();
       grantResumeGrace(); // misma gracia que al salir de la pausa (B04)
       syncClassicFlightHud();ui.classicC9?.focus({preventScroll:true});return;
     }
