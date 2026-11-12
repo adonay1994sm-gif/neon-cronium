@@ -1324,3 +1324,59 @@ test('closing the Forja opened from the HUD restarts the music inside the tap', 
   assert.equal(T.st().state, 'playing');
   assert.equal(T.ev('globalThis.__music'), 1);
 });
+
+// Rendirse (propietario, 12/11/2026): en el sector, el botón de reiniciar de la
+// pausa dejaba repetir el tramo sin morir. Ahora cuenta como morir y pide dos toques.
+test('in the sector the pause offers RENDIRSE: two taps, and it follows the death rule', () => {
+  const {w, T} = harness();
+  const restart = () => w.document.getElementById('restart');
+  startAt(T, 4); T.adv(.5);
+  T.ev('pauseGame()');
+  assert.equal(restart().textContent.trim(), 'RENDIRSE');
+  restart().click();
+  assert.equal(T.st().state, 'paused', 'the first tap only asks');
+  assert.equal(restart().textContent.trim(), '¿SEGURO? VUELVES AL TRAMO 1');
+  assert.equal(sectorSave(w).run.stageNumber, 4, 'nothing is saved yet');
+  T.ev('resumeGame()'); T.adv(.1); T.ev('pauseGame()');
+  assert.equal(restart().textContent.trim(), 'RENDIRSE', 'every pause starts unarmed');
+  restart().click(); restart().click(); T.adv(.5);
+  assert.deepEqual([T.st().state, T.stage(), sectorSave(w).run.stageNumber], ['playing', 1, 1]);
+});
+
+test('surrendering at the sub-boss spends its retry; with the beacon it returns to stage 6', () => {
+  {
+    const {w, T} = harness();
+    const restart = () => w.document.getElementById('restart');
+    startAt(T, 5); T.adv(.5);
+    T.ev('pauseGame()'); restart().click();
+    assert.equal(restart().textContent.trim(), '¿SEGURO? REPITES EL SUBGUARDIÁN');
+    restart().click(); T.adv(.5);
+    assert.deepEqual(sectorSave(w).run, {sector: 1, stageNumber: 5, stageHull: 100, reviveUsed: false, subRetryUsed: true});
+    T.ev('pauseGame()'); restart().click();
+    assert.equal(restart().textContent.trim(), '¿SEGURO? VUELVES AL TRAMO 1', 'the retry is gone');
+    restart().click(); T.adv(.5);
+    assert.equal(T.stage(), 1);
+  }
+  {
+    const {w, T} = harness();
+    w.localStorage.setItem(KEY, JSON.stringify({version: 1, unlocked: 1, sectors: {1: {completed: false, stars: 0, beacon: true}},
+      run: {sector: 1, stageNumber: 7, stageHull: 80, reviveUsed: false}}));
+    click(w, 'play'); T.adv(.5);
+    T.ev('pauseGame()'); w.document.getElementById('restart').click();
+    assert.equal(w.document.getElementById('restart').textContent.trim(), '¿SEGURO? VUELVES AL TRAMO 6');
+    w.document.getElementById('restart').click(); T.adv(.5);
+    assert.equal(T.stage(), 6);
+  }
+});
+
+test('surrendering in HARDCORE erases the HARDCORE save, like dying', () => {
+  const {w, T} = harness({storage: {'neon-settings-v5': hardcoreSettings, ...HC_OK, [KEY]: runAt(7), [HC + KEY]: runAt(3)}});
+  T.ev('reloadGame=()=>{window.__reloaded=(window.__reloaded||0)+1}');
+  click(w, 'play'); T.adv(.5);
+  T.ev('pauseGame()'); w.document.getElementById('restart').click();
+  assert.equal(w.document.getElementById('restart').textContent.trim(), '¿SEGURO? SE BORRA LA PARTIDA');
+  w.document.getElementById('restart').click();
+  assert.deepEqual(Object.keys(w.localStorage).filter(key => key.startsWith(HC)), [], 'nothing of HARDCORE is left');
+  assert.equal(JSON.parse(w.localStorage.getItem(KEY)).run.stageNumber, 7, 'the normal save is intact');
+  assert.equal(w.__reloaded, 1);
+});

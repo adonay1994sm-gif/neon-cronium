@@ -382,7 +382,7 @@
   for (const tab of document.querySelectorAll("[data-pause-tab]")) {
     tab.onclick = () => tab.dataset.pauseTab === "ajustes" ? openSettings("paused") : showPauseTab(tab.dataset.pauseTab);
   }
-  $("restart").onclick = () => startLevel(currentLevel);
+  $("restart").onclick = restartFromPause;
   $("quit").onclick = goHome;
   $("home").onclick = () => hardcoreWiped ? reloadGame() : goHome();
   $("completeHome").onclick = goHome;
