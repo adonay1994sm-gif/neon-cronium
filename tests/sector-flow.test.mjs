@@ -1380,3 +1380,42 @@ test('surrendering in HARDCORE erases the HARDCORE save, like dying', () => {
   assert.equal(JSON.parse(w.localStorage.getItem(KEY)).run.stageNumber, 7, 'the normal save is intact');
   assert.equal(w.__reloaded, 1);
 });
+
+// Volver con tu casco (propietario, 12/11/2026): salir al menú o cerrar la app y
+// continuar devolvía el casco de entrada del tramo; así se esquivaba RENDIRSE.
+test('leaving and continuing keeps the hull you had, never more than the entry hull', () => {
+  const {w, T} = harness();
+  startAt(T, 4); T.adv(.5);
+  T.ev('hull=70;pauseGame()');
+  assert.equal(sectorSave(w).run.stageHull, 70, 'the pause saves the hull you have');
+  T.goHome(); click(w, 'play'); T.adv(.5);
+  assert.deepEqual([T.stage(), T.hull()], [4, 70], 'continuing does not heal');
+  T.ev('hull=95;pauseGame()');
+  assert.equal(sectorSave(w).run.stageHull, 70, 'repairs inside the stage are not banked above the entry hull');
+  T.ev('resumeGame();hull=40;pauseGame()');
+  assert.equal(sectorSave(w).run.stageHull, 40);
+});
+
+// Revisión del PR #67 (propietario, 12/11/2026): rendirse cuenta como una partida.
+test('surrendering counts as a run and is reported as a death by surrender', () => {
+  const {w, T} = harness();
+  const events = [];
+  w.AnalyticsManager = {track: (name, properties) => { events.push([name, properties]); return true; }};
+  startAt(T, 4); T.adv(.5);
+  const before = T.ev('storage.getNumber(KEYS.games,0)');
+  T.ev('pauseGame()'); click(w, 'restart'); click(w, 'restart');
+  assert.equal(T.ev('storage.getNumber(KEYS.games,0)'), before + 1);
+  assert.ok(events.some(([name, p]) => name === 'death_reason' && p.reason === 'surrender'));
+});
+
+test('opening settings from the pause disarms RENDIRSE', () => {
+  const {w, T} = harness();
+  startAt(T, 4); T.adv(.5);
+  T.ev('pauseGame()'); click(w, 'restart');
+  assert.match(w.document.getElementById('restart').textContent, /SEGURO/);
+  click(w, 'pauseSettings'); click(w, 'settingsBack');
+  assert.equal(w.document.getElementById('restart').textContent.trim(), 'RENDIRSE');
+  click(w, 'restart');
+  w.document.querySelector('[data-pause-tab="ajustes"]').click(); click(w, 'settingsBack');
+  assert.equal(w.document.getElementById('restart').textContent.trim(), 'RENDIRSE');
+});

@@ -377,10 +377,11 @@
     fireManualShot();
   };
   $("resume").onclick = resumeGame;
-  $("pauseSettings").onclick = () => openSettings("paused");
+  // Abrir ajustes desarma RENDIRSE: al volver no basta un toque (revisión del PR #67).
+  $("pauseSettings").onclick = () => { showPauseTab("pausa"); openSettings("paused"); };
   // Pestañas de la pausa: AJUSTES abre la pantalla de ajustes de siempre.
   for (const tab of document.querySelectorAll("[data-pause-tab]")) {
-    tab.onclick = () => tab.dataset.pauseTab === "ajustes" ? openSettings("paused") : showPauseTab(tab.dataset.pauseTab);
+    tab.onclick = () => { showPauseTab(tab.dataset.pauseTab === "ajustes" ? "pausa" : tab.dataset.pauseTab); if (tab.dataset.pauseTab === "ajustes") openSettings("paused"); };
   }
   $("restart").onclick = restartFromPause;
   $("quit").onclick = goHome;
