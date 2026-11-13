@@ -78,6 +78,10 @@ test('the game finds the stage rules of a sector by its route', async () => {
 
 test('every sector stage sets how many enemies may attack at once', () => {
   assert.deepEqual(S1_GAIA.encounters.map(rules => rules.attackers), [1, 1, 2, 2, 2, 3, 3, 3, 3, 2]);
+  // Formaciones (propietario, 12/11/2026): línea, cuña y pinza por tramos;
+  // el subguardián, C9 y Atlas no cambian.
+  assert.deepEqual(S1_GAIA.encounters.map(rules => rules.formation),
+    ['line', 'line', 'wedge', 'wedge', null, null, 'pincer', 'pincer', 'pincer', null]);
 });
 
 test('hordes cross stages 3, 7 and 9', () => {

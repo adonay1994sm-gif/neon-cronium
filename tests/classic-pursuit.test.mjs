@@ -415,3 +415,43 @@ test('only the open fan uses the wide cone; single and double shots stay near 33
   assert.ok(widest <= CLASSIC_PURSUIT_VOLLEY.cone + 1e-9 && CLASSIC_PURSUIT_VOLLEY.cone === .65, `aimed shots reach ${widest}`);
   assert.ok(widestFan > CLASSIC_PURSUIT_VOLLEY.cone && widestFan <= CLASSIC_PURSUIT_VOLLEY.spreadCone + 1e-9, `fans reach ${widestFan}`);
 });
+
+// Formaciones (propietario, 12/11/2026): con un puesto asignado, el perseguidor
+// vuela a él y lo mantiene en vez de buscar al jugador por su cuenta.
+test('a pursuer with a formation slot flies to it and holds it while the player moves', () => {
+  const item = enemyAt({x: 180, role: 'raider'}), player = {x: 560, y: 1080}, shots = [];
+  item.classicScout.slot = {x: 240, y: 455};
+  until(item, player, () => item.classicScout.combatStartedAt !== null, shots);
+  for (let index = 0; index < 400; index++) {
+    player.x = 360 + Math.sin(index * .05) * 200;
+    step(item, player, shots);
+    if (index > 150) {
+      assert.ok(Math.abs(item.x - 240) <= 24, `x ${item.x} stays on the slot`);
+      assert.ok(Math.abs(item.y - 455) <= 30, `y ${item.y} stays on the slot`);
+    }
+  }
+  assert.ok(shots.length >= 1, 'it still attacks from its slot');
+});
+
+test('two pursuers with different slots never stack, even after being hit', () => {
+  const a = enemyAt({x: 180, seed: 1}), b = enemyAt({x: 540, seed: 2}), player = {x: 360, y: 1080};
+  a.classicScout.slot = {x: 285, y: 370}; b.classicScout.slot = {x: 435, y: 370};
+  for (let index = 0; index < 700; index++) {
+    if (index === 300) { a.hp = 1; b.hp = 1; }
+    step(a, player, []); step(b, player, []);
+    if (index > 200) assert.ok(Math.abs(a.x - b.x) >= 100, `gap ${Math.abs(a.x - b.x)} at frame ${index}`);
+  }
+});
+
+test('a slot that moves is followed without teleporting', () => {
+  const item = enemyAt({x: 300}), player = {x: 360, y: 1080};
+  item.classicScout.slot = {x: 300, y: 370};
+  until(item, player, () => item.classicScout.combatStartedAt !== null);
+  for (let index = 0; index < 300; index++) {
+    const before = item.x;
+    item.classicScout.slot = {x: 300 + index * .9, y: 370};
+    step(item, player, []);
+    assert.ok(Math.abs(item.x - before) <= 176 * DT + 1e-6);
+  }
+  assert.ok(item.x > 480, `followed to ${item.x}`);
+});

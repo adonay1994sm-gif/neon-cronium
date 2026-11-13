@@ -105,6 +105,7 @@ var NeonCampaign = (() => {
     createCometShower: () => createCometShower,
     createCompletionJournal: () => createCompletionJournal,
     createFlightTutorial: () => createFlightTutorial,
+    createFormation: () => createFormation,
     createGaiaEnemy: () => createGaiaEnemy,
     createGuardianAtlas: () => createGuardianAtlas,
     createHordeWave: () => createHordeWave,
@@ -175,6 +176,7 @@ var NeonCampaign = (() => {
     triggerClassicMissile: () => triggerClassicMissile,
     triggerClassicWeapon: () => triggerClassicWeapon,
     unlockClassicWeapon: () => unlockClassicWeapon,
+    updateFormation: () => updateFormation,
     useRevive: () => useRevive
   });
 
@@ -3561,14 +3563,15 @@ var NeonCampaign = (() => {
     gate: immutable12(["interceptor", "tracker", "aegis", "raider"])
   });
   var HORDE = immutable12({ every: 14, size: 5 });
-  var encounter11 = (profile2, patrol, { comets = false, repairAt = null, boss = null, attackers = 2, horde = null } = {}) => immutable12({
+  var encounter11 = (profile2, patrol, { comets = false, repairAt = null, boss = null, attackers = 2, horde = null, formation = null } = {}) => immutable12({
     patrol: patrol && immutable12({ cap: patrol[0], roster: patrol[1], gap: patrol[2] }),
     hazards: VOYAGE_HAZARD_PROFILES[profile2],
     comets,
     repairAt,
     boss: boss && immutable12(boss),
     attackers,
-    horde
+    horde,
+    formation
   });
   var S1_GAIA = immutable12({
     id: "S1",
@@ -3617,15 +3620,15 @@ var NeonCampaign = (() => {
       renamedObjective: "Prueba tu nave en el corredor; C9 vuelve tras vencer a Atlas"
     }),
     encounters: immutable12([
-      encounter11(1, [2, ROSTERS11.escape, 8], { attackers: 1 }),
-      encounter11(2, [3, ROSTERS11.flank, 7], { attackers: 1 }),
-      encounter11(3, [3, ROSTERS11.mines, 7], { repairAt: 30, horde: HORDE }),
-      encounter11(7, [4, ROSTERS11.shield, 6], { comets: "aimed" }),
+      encounter11(1, [2, ROSTERS11.escape, 8], { attackers: 1, formation: "line" }),
+      encounter11(2, [3, ROSTERS11.flank, 7], { attackers: 1, formation: "line" }),
+      encounter11(3, [3, ROSTERS11.mines, 7], { repairAt: 30, horde: HORDE, formation: "wedge" }),
+      encounter11(7, [4, ROSTERS11.shield, 6], { comets: "aimed", formation: "wedge" }),
       encounter11(4, [2, ROSTERS11.flank, 9], { boss: { id: "subguardian", role: "subjefe" } }),
       encounter11(5, [2, ROSTERS11.escape, 8], { attackers: 3 }),
-      encounter11(8, [4, ROSTERS11.elite, 6], { repairAt: 32, attackers: 3, horde: HORDE }),
-      encounter11(9, [4, ROSTERS11.elite, 6], { comets: "aimed", attackers: 3 }),
-      encounter11(10, [5, ROSTERS11.gate, 5], { repairAt: 30, attackers: 3, horde: HORDE }),
+      encounter11(8, [4, ROSTERS11.elite, 6], { repairAt: 32, attackers: 3, horde: HORDE, formation: "pincer" }),
+      encounter11(9, [4, ROSTERS11.elite, 6], { comets: "aimed", attackers: 3, formation: "pincer" }),
+      encounter11(10, [5, ROSTERS11.gate, 5], { repairAt: 30, attackers: 3, horde: HORDE, formation: "pincer" }),
       encounter11(10, [2, ROSTERS11.gate, 8], { boss: { id: "guardian-atlas", role: "jefe" } })
     ]),
     phase(stageIndex) {
@@ -5171,11 +5174,8 @@ var NeonCampaign = (() => {
     const maximumHoldY = Math.max(minimumHoldY, Math.min(enemy.height * 0.52, player.y - 350));
     const flightPhase = enemy.phase + enemy.age * profile2.orbitRate * enemy.manoeuvreRate;
     const depthArc = Math.cos(flightPhase) * profile2.depthSweep * (["charge", "fire"].includes(enemy.state) ? 0.35 : 1);
-    enemy.holdY = clamp7(
-      enemy.height * profile2.depth + depthArc + Math.sin(enemy.phase) * 12,
-      minimumHoldY,
-      maximumHoldY
-    );
+    const slot = enemy.slot || null;
+    enemy.holdY = clamp7(slot ? slot.y + depthArc * 0.2 : enemy.height * profile2.depth + depthArc + Math.sin(enemy.phase) * 12, minimumHoldY, maximumHoldY);
     const canAttack = () => hp > 0 && enemy.state !== "retreat" && !enemy.holdFire && item.y >= enemy.minAttackY && item.y + 38 <= player.y - 230;
     const clearCharge = () => {
       enemy.telegraph = 0;
@@ -5183,6 +5183,7 @@ var NeonCampaign = (() => {
       enemy.lockedTarget = null;
     };
     const laneTarget = () => {
+      if (slot) return combatX(slot.x);
       const sample = enemy.observation;
       const observedX = combatX(sample.x + clamp7(sample.vx * 0.18, -64, 64));
       const span = Math.min(enemy.width * 0.24, 140);
@@ -5225,6 +5226,7 @@ var NeonCampaign = (() => {
         reposition();
       }
     }
+    if (slot && ["entry", "brake", "track", "reposition"].includes(enemy.state)) enemy.targetX = laneTarget();
     if (enemy.state === "entry" && item.y >= enemy.holdY - 110) enter4("brake");
     if (enemy.state === "brake" && Math.abs(item.y - enemy.holdY) <= 32 && Math.abs(item.s) <= 62 && item.x >= enemy.combatMinX && item.x <= enemy.combatMaxX) {
       enemy.combatStartedAt ??= enemy.age;
@@ -6541,10 +6543,10 @@ var NeonCampaign = (() => {
     boss.volleys++;
   }
   function fireFan(boss, emit) {
-    const { projectiles, spread: spread2, speed, damage } = SUBGUARDIAN_RULES.fan;
-    const shift = boss.volleys % 2 ? spread2 / (projectiles - 1) / 2 : 0;
+    const { projectiles, spread: spread3, speed, damage } = SUBGUARDIAN_RULES.fan;
+    const shift = boss.volleys % 2 ? spread3 / (projectiles - 1) / 2 : 0;
     for (let k = 0; k < projectiles; k++) {
-      const angle = -spread2 / 2 + k * spread2 / (projectiles - 1) + shift;
+      const angle = -spread3 / 2 + k * spread3 / (projectiles - 1) + shift;
       emit({ type: "projectile", x: boss.x, y: boss.y + 40, vx: Math.sin(angle) * speed, vy: Math.cos(angle) * speed, damage });
     }
     boss.volleys++;
@@ -7134,11 +7136,11 @@ var NeonCampaign = (() => {
         boss.width - 24
       );
       const aimed2 = Math.atan2(targetY - originY, targetX - boss.x), distance2 = Math.hypot(targetY - originY, targetX - boss.x);
-      const spread2 = !fan2 || distance2 * Math.tan(2 * rule.spread / (rule.projectiles - 1)) >= rule.minGap ? rule.spread : Math.atan2(boss.width * 0.2, distance2);
-      const direction = fan2 ? clamp10(aimed2, spread2 + 0.25, Math.PI - spread2 - 0.25) : aimed2;
+      const spread3 = !fan2 || distance2 * Math.tan(2 * rule.spread / (rule.projectiles - 1)) >= rule.minGap ? rule.spread : Math.atan2(boss.width * 0.2, distance2);
+      const direction = fan2 ? clamp10(aimed2, spread3 + 0.25, Math.PI - spread3 - 0.25) : aimed2;
       const speed = fan2 ? rule.speed : phaseRules(boss).projectileSpeed;
       for (let index = 0; index < rule.projectiles; index++) {
-        const angle = direction + (index / (rule.projectiles - 1) * 2 - 1) * spread2;
+        const angle = direction + (index / (rule.projectiles - 1) * 2 - 1) * spread3;
         const shot = projectile(boss, boss.x, originY, Math.cos(angle) * speed, Math.sin(angle) * speed, index, targetX);
         shot.targetY = targetY;
         boss.attackClearanceSeconds = Math.max(
@@ -8606,6 +8608,48 @@ var NeonCampaign = (() => {
     return true;
   }
 
+  // src/game/combat/formation.js
+  var clamp16 = (value, low, high) => Math.max(low, Math.min(high, value));
+  var FOLLOW_SPEED = 45;
+  var spread2 = (count, gap, width) => {
+    const step = count > 1 ? Math.min(gap, width / (count - 1)) : 0;
+    return Array.from({ length: count }, (_, k) => (k - (count - 1) / 2) * step);
+  };
+  var SHAPES = Object.freeze({
+    // Línea: un muro a la misma altura.
+    line: (count, width) => spread2(count, 150, width).map((x) => ({ x, y: 0 })),
+    // Cuña: el del centro va adelantado y las alas se retrasan en V.
+    wedge: (count, width) => spread2(count, 110, width).map((x, k) => ({
+      x,
+      y: 85 * (Math.floor((count - 1) / 2) - Math.floor(Math.abs(k - (count - 1) / 2)))
+    })),
+    // Pinza: dos grupos escalonados en los flancos y el centro libre.
+    pincer: (count, width) => Array.from({ length: count }, (_, k) => {
+      const left = k < Math.ceil(count / 2), row = left ? k : k - Math.ceil(count / 2);
+      return { x: (left ? -1 : 1) * (width / 2 - row % 2 * 80), y: 90 * row };
+    }).sort((a, b) => a.x - b.x)
+  });
+  function createFormation(kind) {
+    if (!Object.hasOwn(SHAPES, kind)) throw new RangeError(`Unknown formation: ${kind}`);
+    return { kind, centerX: null, order: [] };
+  }
+  function updateFormation(formation, members, dt, { playerX, minX, maxX, topY }) {
+    const slots = SHAPES[formation.kind](members.length, maxX - minX);
+    const same = formation.order.length === members.length && members.every((member) => formation.order.includes(member.id));
+    if (!same) {
+      const order = [...members].sort((a, b) => a.x - b.x).map((member) => member.id);
+      if (formation.kind === "wedge" && order.length) {
+        order.splice(order.indexOf(members[0].id), 1);
+        order.splice(Math.floor((members.length - 1) / 2), 0, members[0].id);
+      }
+      formation.order = order;
+    }
+    const half = slots.reduce((most, slot) => Math.max(most, Math.abs(slot.x)), 0);
+    const low = Math.min(minX + half, (minX + maxX) / 2), high = Math.max(maxX - half, (minX + maxX) / 2);
+    formation.centerX = clamp16(formation.centerX === null ? playerX : formation.centerX + clamp16(playerX - formation.centerX, -FOLLOW_SPEED * dt, FOLLOW_SPEED * dt), low, high);
+    return new Map(formation.order.map((id, k) => [id, { x: formation.centerX + slots[k].x, y: topY + slots[k].y }]));
+  }
+
   // src/game/combat/enemy-ai.js
   var ENEMY_AI_PROFILES = Object.freeze({
     hunter: Object.freeze({ attackRange: 700, chaseOffset: 170 }),
@@ -8615,7 +8659,7 @@ var NeonCampaign = (() => {
     ambusher: Object.freeze({ belowOffset: 140, entryLine: 1100 }),
     miner: Object.freeze({ laneShare: 0.78, edge: 60, arrive: 30 })
   });
-  var clamp16 = (value, low, high) => Math.max(low, Math.min(high, value));
+  var clamp17 = (value, low, high) => Math.max(low, Math.min(high, value));
   var distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   function movement(enemy, ctx, rules) {
     const { player, bounds } = ctx, d = distance(enemy, player);
@@ -8673,8 +8717,8 @@ var NeonCampaign = (() => {
     if (!rules) throw new RangeError(`Unknown enemy profile: ${enemy.profile}`);
     const { w, h } = ctx.bounds, move2 = movement(enemy, ctx, rules);
     const intent = {
-      targetX: clamp16(move2.x, 40, w - 40),
-      targetY: clamp16(move2.y, 40, h - 40),
+      targetX: clamp17(move2.x, 40, w - 40),
+      targetY: clamp17(move2.y, 40, h - 40),
       attack: false,
       ability: null,
       ...move2.heading !== void 0 ? { heading: move2.heading } : {}

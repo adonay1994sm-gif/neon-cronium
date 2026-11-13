@@ -1441,3 +1441,43 @@ test('surrendering after the rewarded revive does not count a second run', () =>
   T.adv(.5); T.ev('pauseGame()'); click(w, 'restart'); click(w, 'restart');
   assert.equal(T.ev('storage.getNumber(KEYS.games,0)'), before + 1);
 });
+
+// Formaciones (propietario, 12/11/2026): los perseguidores ya no se apilan.
+const pursuers = T => JSON.parse(T.ev('JSON.stringify(items.filter(i=>i.classicScout?.tacticsVersion).map(i=>({x:i.x,y:i.y,slot:i.classicScout.slot})))'));
+const fillPatrol = (T, seconds) => {
+  T.ev('for(const role of ["raider","scout","raider"])spawnClassicFlightPatrol(role)');
+  for (let k = 0; k < seconds * 2; k++) { T.ev('hull=100;hullGrace=5'); T.adv(.5); }
+};
+test('stage 3 patrols hold a wedge: nobody stacks and one leads', () => {
+  const {T} = harness();
+  startAt(T, 3); T.adv(.5);
+  fillPatrol(T, 9);
+  const list = pursuers(T);
+  assert.ok(list.length >= 3, `${list.length} pursuers`);
+  for (const a of list) for (const b of list) if (a !== b) {
+    assert.ok(Math.hypot(a.x - b.x, a.y - b.y) >= 90, `two pursuers ${Math.round(Math.hypot(a.x - b.x, a.y - b.y))} px apart`);
+  }
+  assert.ok(list.every(enemy => enemy.slot), 'everyone has a slot');
+  const depths = list.map(enemy => enemy.slot.y).sort((a, b) => b - a);
+  assert.ok(depths[0] - depths[1] >= 80, 'one leads the wedge');
+});
+
+test('the sub-boss stage keeps its patrols without a formation', () => {
+  const {T} = harness();
+  startAt(T, 5); T.adv(.5);
+  fillPatrol(T, 3);
+  const list = pursuers(T);
+  assert.ok(list.length >= 1);
+  assert.ok(list.every(enemy => enemy.slot === null));
+});
+
+test('survivors of a formation stage are released when the next stage has none', () => {
+  const {T} = harness();
+  startAt(T, 4); T.adv(.5);
+  fillPatrol(T, 4);
+  assert.ok(pursuers(T).some(enemy => enemy.slot));
+  T.toStage(5); T.ev('hull=100;hullGrace=5'); T.adv(.1);
+  assert.equal(T.stage(), 5);
+  assert.ok(pursuers(T).length >= 1, 'survivors cross into the next stage');
+  assert.ok(pursuers(T).every(enemy => enemy.slot === null));
+});

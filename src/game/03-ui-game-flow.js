@@ -1333,6 +1333,18 @@
     sectorAttackTokens=rules?NeonCampaign.createAttackTokens({max:rules.attackers??2}):null;
     gaiaFallbackTokens=null; // una partida nueva no hereda turnos ocupados (A17)
     if(sectorAttackTokens)sectorAttackTokens.baseMax=sectorAttackTokens.max;
+    sectorFormation=rules?.formation?NeonCampaign.createFormation(rules.formation):null;
+  }
+  // Formación del tramo (propietario, 12/11/2026): reparte un puesto a cada
+  // perseguidor vivo; sin formación (subguardián, C9, Atlas) los suelta.
+  let sectorFormation=null;
+  function assignSectorFormation(dt) {
+    const pursuers=items.filter(item=>item.classicScout?.tacticsVersion);
+    const members=sectorFormation?pursuers.filter(item=>(item.hp??1)>0&&!["retreat","destroyed"].includes(item.classicScout.state)):[];
+    const area=members[0]?.classicScout;
+    const slots=area?NeonCampaign.updateFormation(sectorFormation,members.map(item=>({id:item.id,x:item.x})),dt,
+      {playerX:player.x,minX:area.combatMinX,maxX:area.combatMaxX,topY:H*.29}):null;
+    for(const item of pursuers)item.classicScout.slot=slots?.get(item.id)||null;
   }
   // La regla de morir se guarda al estallar la nave (tramo 1, o 6 con baliza),
   // no al abrir la derrota: cerrar la app durante la explosión no la salta.

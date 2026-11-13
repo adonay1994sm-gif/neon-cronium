@@ -357,6 +357,8 @@
       // Un escudo de Égida sin su Égida desaparece.
       for (const item of items) if (item.shieldHits > 0 && !alive.has(item.shieldBy)) item.shieldHits = 0;
     }
+    // Formación del tramo: cada perseguidor recibe su puesto antes de moverse.
+    if (typeof assignSectorFormation === "function") assignSectorFormation(dt * scale);
     // Marca del Rastreador: los perseguidores apuntan mejor mientras dura.
     if (typeof playerMarkedUntil !== "undefined") player.marked = elapsed < playerMarkedUntil;
     for (let index = items.length - 1; index >= 0; index--) {
