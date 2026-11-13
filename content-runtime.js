@@ -8623,8 +8623,10 @@ var NeonCampaign = (() => {
       x,
       y: 85 * (Math.floor((count - 1) / 2) - Math.floor(Math.abs(k - (count - 1) / 2)))
     })),
-    // Pinza: dos grupos escalonados en los flancos y el centro libre.
-    pincer: (count, width) => Array.from({ length: count }, (_, k) => {
+    // Pinza: dos grupos escalonados en los flancos y el centro libre. Los
+    // flancos van en los bordes, así que la pinza no se desplaza; si solo queda
+    // uno, deja el borde y sigue al jugador (si no, no le alcanzaría al otro lado).
+    pincer: (count, width) => count === 1 ? [{ x: 0, y: 0 }] : Array.from({ length: count }, (_, k) => {
       const left = k < Math.ceil(count / 2), row = left ? k : k - Math.ceil(count / 2);
       return { x: (left ? -1 : 1) * (width / 2 - row % 2 * 80), y: 90 * row };
     }).sort((a, b) => a.x - b.x)

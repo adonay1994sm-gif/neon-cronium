@@ -80,3 +80,14 @@ test('slots do not reshuffle while the same members are alive', () => {
 test('an empty formation is fine', () => {
   assert.equal(updateFormation(createFormation('wedge'), [], .016, {...AREA, playerX: 360}).size, 0);
 });
+
+// Revisión del PR #69 (13/11/2026): un superviviente solo de la pinza se quedaba
+// clavado en el borde izquierdo y no alcanzaba al jugador en el lado contrario.
+test('a lone pincer survivor leaves the flank and follows the player', () => {
+  const formation = createFormation('pincer');
+  const lone = [{id: 'e0', x: 130}];
+  let slot = updateFormation(formation, lone, 0, {...AREA, playerX: 560}).get('e0');
+  for (let k = 0; k < 600; k++) slot = updateFormation(formation, lone, 1 / 60, {...AREA, playerX: 560}).get('e0');
+  assert.ok(Math.abs(slot.x - 560) < 2, `x ${slot.x}`);
+  assert.equal(slot.y, 370);
+});
