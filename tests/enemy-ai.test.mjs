@@ -30,7 +30,7 @@ test('artillery keeps its distance', () => {
 test('escort stays beside the weakest ally', () => {
   const strong = enemy('hunter', {id: 's', x: 100, y: 200}), weak = enemy('hunter', {id: 'w', x: 600, y: 250, hp: 1});
   const intent = decideEnemyIntent(enemy('escort'), ctx({allies: [strong, weak]}));
-  assert.ok(dist(target(intent), weak) < 90);
+  assert.ok(dist(target(intent), weak) < 115);
 });
 
 test('opportunist only attacks when the player reloads or is below 35 hull', () => {
@@ -116,4 +116,52 @@ test('the escort intent names the ally it guards', () => {
   const e = enemy('escort'), intent = decideEnemyIntent(e, ctx({allies: [e, weak, strong]}));
   assert.equal(intent.guardId, 'weak');
   assert.equal(decideEnemyIntent(e, ctx({allies: [e]})).guardId, null);
+});
+
+// Que no se pisen (propietario, 13/11/2026): dos Alfas iban al mismo punto y la
+// Égida se colocaba encima de la nave que protege.
+test('two hunters split to either side of the player instead of stacking', () => {
+  const a = enemy('hunter', {id: 'a'}), b = enemy('hunter', {id: 'b'}), c = ctx({allies: [a, b]});
+  const ta = target(decideEnemyIntent(a, c)), tb = target(decideEnemyIntent(b, c));
+  assert.ok(Math.abs(ta.x - tb.x) >= 130, `gap ${Math.abs(ta.x - tb.x)}`);
+  assert.equal((ta.x + tb.x) / 2, c.player.x, 'centred on the player');
+  assert.equal(ta.y, tb.y);
+  const alone = target(decideEnemyIntent(a, ctx({allies: [a]})));
+  assert.deepEqual([alone.x, alone.y], [c.player.x, ta.y], 'a lone hunter keeps today\'s point, at the same depth');
+});
+
+test('hunters keep their left-to-right order, so they do not cross', () => {
+  const left = enemy('hunter', {id: 'z', x: 200}), right = enemy('hunter', {id: 'a', x: 500}), c = ctx({allies: [left, right]});
+  assert.ok(decideEnemyIntent(left, c).targetX < decideEnemyIntent(right, c).targetX);
+});
+
+test('the escort sits clear of the ally it guards, not on top of it', () => {
+  const weak = enemy('hunter', {id: 'w', x: 400, y: 400, hp: 1}), e = enemy('escort', {x: 300, y: 400});
+  const d = dist(target(decideEnemyIntent(e, ctx({allies: [e, weak]}))), weak);
+  assert.ok(d >= 100 && d < 115, `distance ${d}`);
+});
+
+test('the escort takes the free side when a neighbour is in the way', () => {
+  const weak = enemy('hunter', {id: 'w', x: 360, y: 400, hp: 1}), e = enemy('escort', {x: 300, y: 450});
+  const free = decideEnemyIntent(e, ctx({allies: [e, weak]}));
+  assert.ok(free.targetX < weak.x, 'it stays on the side it is on');
+  const neighbour = enemy('hunter', {id: 'n', x: free.targetX, y: free.targetY});
+  assert.ok(decideEnemyIntent(e, ctx({allies: [e, weak, neighbour]})).targetX > weak.x);
+});
+
+test('two escorts guarding the same ally settle on opposite sides', () => {
+  const weak = enemy('hunter', {id: 'w', x: 360, y: 400, hp: 1});
+  const one = enemy('escort', {id: 'e1', x: 300, y: 300}), two = enemy('escort', {id: 'e2', x: 310, y: 300});
+  let flips = 0, side = null;
+  for (let k = 0; k < 200; k++) {
+    for (const e of [one, two]) {
+      const intent = decideEnemyIntent(e, ctx({allies: [one, two, weak]}));
+      e.x += Math.max(-4, Math.min(4, intent.targetX - e.x)); e.y += Math.max(-4, Math.min(4, intent.targetY - e.y));
+    }
+    const now = Math.sign(two.x - weak.x);
+    if (k > 100 && side !== null && now !== side) flips++;
+    side = now;
+  }
+  assert.ok(Math.abs(one.x - two.x) >= 140, `gap ${Math.abs(one.x - two.x)}`);
+  assert.equal(flips, 0, 'no flapping');
 });
