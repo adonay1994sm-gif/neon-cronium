@@ -2456,6 +2456,18 @@
     sectorAttackTokens=rules?NeonCampaign.createAttackTokens({max:rules.attackers??2}):null;
     gaiaFallbackTokens=null; // una partida nueva no hereda turnos ocupados (A17)
     if(sectorAttackTokens)sectorAttackTokens.baseMax=sectorAttackTokens.max;
+    sectorFormation=rules?.formation?NeonCampaign.createFormation(rules.formation):null;
+  }
+  // Formación del tramo (propietario, 12/11/2026): reparte un puesto a cada
+  // perseguidor vivo; sin formación (subguardián, C9, Atlas) los suelta.
+  let sectorFormation=null;
+  function assignSectorFormation(dt) {
+    const pursuers=items.filter(item=>item.classicScout?.tacticsVersion);
+    const members=sectorFormation?pursuers.filter(item=>(item.hp??1)>0&&!["retreat","destroyed"].includes(item.classicScout.state)):[];
+    const area=members[0]?.classicScout;
+    const slots=area?NeonCampaign.updateFormation(sectorFormation,members.map(item=>({id:item.id,x:item.x})),dt,
+      {playerX:player.x,minX:area.combatMinX,maxX:area.combatMaxX,topY:H*.29}):null;
+    for(const item of pursuers)item.classicScout.slot=slots?.get(item.id)||null;
   }
   // La regla de morir se guarda al estallar la nave (tramo 1, o 6 con baliza),
   // no al abrir la derrota: cerrar la app durante la explosión no la salta.
@@ -3528,6 +3540,7 @@
     manualShotCooldown = 0;
     elapsed = 0;
     continued = false;
+    sectorStageEntryHull=null;
     spawnTimer = 0.35;
     classicScoutTimer = currentLevel === 1 ? 3.8 : 0;
     classicScoutAnnounced = false;
@@ -3638,7 +3651,8 @@
     surrenderArmed=false;
     // Cuenta como una partida y como una muerte, igual que caer (propietario,
     // 12/11/2026). Antes de aplicar la regla: en HARDCORE esta borra la partida.
-    registerRun();
+    // Tras revivir con anuncio, ese intento ya se contó al caer.
+    if(!continued)registerRun();
     window.AnalyticsManager?.track("death", { level: currentLevel + 1, score, elapsed: Math.round(elapsed) });
     window.AnalyticsManager?.track("death_reason", { level: currentLevel + 1, reason: "surrender" });
     recordSectorDeath();sectorRevive=null;
@@ -5107,6 +5121,8 @@
       // Un escudo de Égida sin su Égida desaparece.
       for (const item of items) if (item.shieldHits > 0 && !alive.has(item.shieldBy)) item.shieldHits = 0;
     }
+    // Formación del tramo: cada perseguidor recibe su puesto antes de moverse.
+    if (typeof assignSectorFormation === "function") assignSectorFormation(dt * scale);
     // Marca del Rastreador: los perseguidores apuntan mejor mientras dura.
     if (typeof playerMarkedUntil !== "undefined") player.marked = elapsed < playerMarkedUntil;
     for (let index = items.length - 1; index >= 0; index--) {

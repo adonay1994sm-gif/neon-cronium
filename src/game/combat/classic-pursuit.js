@@ -143,8 +143,11 @@ export function advanceClassicPursuer(item, dt, player, spawnProjectile, gate = 
   // briefly steadies its weapon, while recovery is its largest manoeuvre.
   const depthArc = Math.cos(flightPhase) * profile.depthSweep *
     (['charge', 'fire'].includes(enemy.state) ? .35 : 1);
-  enemy.holdY = clamp(enemy.height * profile.depth + depthArc + Math.sin(enemy.phase) * 12,
-    minimumHoldY, maximumHoldY);
+  // Formación (propietario, 12/11/2026): con puesto asignado (`enemy.slot`, lo
+  // pone formation.js) lo mantiene con un vaivén corto, en vez de su carril propio.
+  const slot = enemy.slot || null;
+  enemy.holdY = clamp(slot ? slot.y + depthArc * .2 :
+    enemy.height * profile.depth + depthArc + Math.sin(enemy.phase) * 12, minimumHoldY, maximumHoldY);
   // holdFire: alto el fuego que pone el juego durante una lluvia de cometas
   // (propietario 22/10, auditoría J04). Cancela la carga y no dispara.
   const canAttack = () => hp > 0 && enemy.state !== 'retreat' && !enemy.holdFire &&
@@ -155,6 +158,7 @@ export function advanceClassicPursuer(item, dt, player, spawnProjectile, gate = 
     enemy.lockedTarget = null;
   };
   const laneTarget = () => {
+    if (slot) return combatX(slot.x);
     const sample = enemy.observation;
     const observedX = combatX(sample.x + clamp(sample.vx * .18, -64, 64));
     const span = Math.min(enemy.width * .24, 140);
@@ -212,6 +216,8 @@ export function advanceClassicPursuer(item, dt, player, spawnProjectile, gate = 
     }
   }
 
+  // Entra ya hacia su puesto y lo sigue de continuo si el dibujo se desplaza.
+  if (slot && ['entry', 'brake', 'track', 'reposition'].includes(enemy.state)) enemy.targetX = laneTarget();
   if (enemy.state === 'entry' && item.y >= enemy.holdY - 110) enter('brake');
   if (enemy.state === 'brake' && Math.abs(item.y - enemy.holdY) <= 32 && Math.abs(item.s) <= 62 &&
       item.x >= enemy.combatMinX && item.x <= enemy.combatMaxX) {

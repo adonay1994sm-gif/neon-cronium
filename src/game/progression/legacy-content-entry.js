@@ -47,6 +47,7 @@ export {CLASSIC_WEAPON_RULES, createClassicWeapons, triggerClassicWeapon, advanc
 export {calculateFlightBounds, createRelativeFlightInput, beginFlightInput, moveFlightInput, endFlightInput} from '../ship/flight-controls.js';
 export {SECTORS, getSectorFicha} from './sectors/index.js';
 export {createAttackTokens, requestAttack, releaseAttack, forgetEnemy, attackHolders} from '../combat/attack-tokens.js';
+export {createFormation, updateFormation} from '../combat/formation.js';
 export {ENEMY_AI_PROFILES, decideEnemyIntent, decideEnemyIntents} from '../combat/enemy-ai.js';
 export {GAIA_ENEMY_RULES, createGaiaEnemy, advanceGaiaEnemy, advanceMine, advanceCrossBomb} from '../combat/gaia-enemies.js';
 export {SECTOR_SAVE_KEY, createSectorSave, normalizeSectorSave, startSectorRun, enterStage, buyBeacon,

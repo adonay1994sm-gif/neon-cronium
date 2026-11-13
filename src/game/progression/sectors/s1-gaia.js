@@ -25,9 +25,11 @@ const ROSTERS = immutable({
 // horde: oleadas de CH-01 en V cada `every` segundos; comets: 'aimed' = meteoritos
 // dirigidos sin pasillo marcado (plan F3b).
 const HORDE = immutable({every: 14, size: 5});
-const encounter = (profile, patrol, {comets = false, repairAt = null, boss = null, attackers = 2, horde = null} = {}) => immutable({
+// formation: dibujo que mantienen los perseguidores del tramo (propietario,
+// 12/11/2026): 'line', 'wedge' o 'pincer'; null = cada uno por su cuenta.
+const encounter = (profile, patrol, {comets = false, repairAt = null, boss = null, attackers = 2, horde = null, formation = null} = {}) => immutable({
   patrol: patrol && immutable({cap: patrol[0], roster: patrol[1], gap: patrol[2]}),
-  hazards: VOYAGE_HAZARD_PROFILES[profile], comets, repairAt, boss: boss && immutable(boss), attackers, horde
+  hazards: VOYAGE_HAZARD_PROFILES[profile], comets, repairAt, boss: boss && immutable(boss), attackers, horde, formation
 });
 
 export const S1_GAIA = immutable({
@@ -60,15 +62,15 @@ export const S1_GAIA = immutable({
   service: immutable({stage: 6, approach: 1.2, visibleApproach: 2.4, departure: 2.4,
     renamedStage: 'Corredor de Gaia', renamedObjective: 'Prueba tu nave en el corredor; C9 vuelve tras vencer a Atlas'}),
   encounters: immutable([
-    encounter(1, [2, ROSTERS.escape, 8], {attackers: 1}),
-    encounter(2, [3, ROSTERS.flank, 7], {attackers: 1}),
-    encounter(3, [3, ROSTERS.mines, 7], {repairAt: 30, horde: HORDE}),
-    encounter(7, [4, ROSTERS.shield, 6], {comets: 'aimed'}),
+    encounter(1, [2, ROSTERS.escape, 8], {attackers: 1, formation: 'line'}),
+    encounter(2, [3, ROSTERS.flank, 7], {attackers: 1, formation: 'line'}),
+    encounter(3, [3, ROSTERS.mines, 7], {repairAt: 30, horde: HORDE, formation: 'wedge'}),
+    encounter(7, [4, ROSTERS.shield, 6], {comets: 'aimed', formation: 'wedge'}),
     encounter(4, [2, ROSTERS.flank, 9], {boss: {id: 'subguardian', role: 'subjefe'}}),
     encounter(5, [2, ROSTERS.escape, 8], {attackers: 3}),
-    encounter(8, [4, ROSTERS.elite, 6], {repairAt: 32, attackers: 3, horde: HORDE}),
-    encounter(9, [4, ROSTERS.elite, 6], {comets: 'aimed', attackers: 3}),
-    encounter(10, [5, ROSTERS.gate, 5], {repairAt: 30, attackers: 3, horde: HORDE}),
+    encounter(8, [4, ROSTERS.elite, 6], {repairAt: 32, attackers: 3, horde: HORDE, formation: 'pincer'}),
+    encounter(9, [4, ROSTERS.elite, 6], {comets: 'aimed', attackers: 3, formation: 'pincer'}),
+    encounter(10, [5, ROSTERS.gate, 5], {repairAt: 30, attackers: 3, horde: HORDE, formation: 'pincer'}),
     encounter(10, [2, ROSTERS.gate, 8], {boss: {id: 'guardian-atlas', role: 'jefe'}})
   ]),
   phase(stageIndex) {
