@@ -2284,7 +2284,7 @@
       for(const ray of rays)items.push(gaiaShot({...ray,sprite:"orb"}));
       return false;
     }
-    const allies=items.filter(other=>other.gaiaEnemy||other.classicScout).map(other=>({id:other.id,x:other.x,y:other.y,hp:other.hp??1,maxHp:other.maxHp??1}));
+    const allies=items.filter(other=>other.gaiaEnemy||other.classicScout).map(other=>({id:other.id,x:other.x,y:other.y,hp:other.hp??1,maxHp:other.maxHp??1,profile:other.gaia?.profile}));
     const tokens=sectorAttackTokens||(gaiaFallbackTokens??=NeonCampaign.createAttackTokens({max:2}));
     NeonCampaign.advanceGaiaEnemy(item,dt,{now:elapsed,player:{x:player.x,y:player.y,hull,reloading:Boolean(classicWeapons)&&classicWeapons.charges<1},
       bounds:{w:W,h:H},allies,tokens,anchor:atlasAnchor()||subBossAnchor()},event=>handleGaiaEvent(item,event));

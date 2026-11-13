@@ -1504,3 +1504,18 @@ test('stage 2 patrols hold a line at the same depth', () => {
   assert.ok(list.length >= 3 && Math.max(...depths) - Math.min(...depths) < 1, `depths ${depths}`);
   for (const a of list) for (const b of list) if (a !== b) assert.ok(Math.abs(a.x - b.x) >= 90, 'nobody stacks');
 });
+
+// Que no se pisen (propietario, 13/11/2026): dos Alfas y la Égida dentro del juego.
+test('two Alphas hunt side by side and the Aegis stays clear of the ship it guards', () => {
+  const {T} = harness();
+  startAt(T, 8); T.adv(.5);
+  T.ev('items=items.filter(i=>!i.flightPatrol);for(const kind of ["alpha","alpha","aegis"])spawnGaiaEnemy(kind)');
+  for (let k = 0; k < 24; k++) { T.ev('hull=100;hullGrace=5;classicPatrolTimer=99'); T.adv(.5); }
+  const list = JSON.parse(T.ev('JSON.stringify(items.filter(i=>i.gaiaEnemy).map(i=>({kind:i.gaia.kind,x:i.x,y:i.y,guard:i.gaia.guardId,id:i.id})))'));
+  const alphas = list.filter(enemy => enemy.kind === 'alpha'), aegis = list.find(enemy => enemy.kind === 'aegis');
+  assert.equal(alphas.length, 2);
+  assert.ok(Math.abs(alphas[0].x - alphas[1].x) >= 120, `alphas ${Math.round(Math.abs(alphas[0].x - alphas[1].x))} px apart`);
+  assert.ok(Math.abs(alphas[0].y - alphas[1].y) < 20, 'at the same depth');
+  const guarded = list.find(enemy => enemy.id === aegis.guard);
+  assert.ok(guarded && Math.hypot(aegis.x - guarded.x, aegis.y - guarded.y) >= 95, 'the Aegis is not on top of its ally');
+});
