@@ -1481,3 +1481,26 @@ test('survivors of a formation stage are released when the next stage has none',
   assert.ok(pursuers(T).length >= 1, 'survivors cross into the next stage');
   assert.ok(pursuers(T).every(enemy => enemy.slot === null));
 });
+
+// Revisión del PR #69: la pinza y la línea también se comprueban dentro del juego.
+test('stage 9 patrols hold a pincer: both flanks covered and the centre free', () => {
+  const {T} = harness();
+  startAt(T, 9); T.adv(.5);
+  T.ev('for(const role of ["raider","scout","raider","scout"])spawnClassicFlightPatrol(role)');
+  for (let k = 0; k < 20; k++) { T.ev('hull=100;hullGrace=5'); T.adv(.5); }
+  const list = pursuers(T).filter(enemy => enemy.slot);
+  const middle = T.ev('W') / 2;
+  assert.ok(list.length >= 4, `${list.length} pursuers`);
+  assert.ok(list.some(enemy => enemy.x < middle - 100) && list.some(enemy => enemy.x > middle + 100), 'both flanks');
+  assert.ok(list.every(enemy => Math.abs(enemy.x - middle) >= 100), 'nobody in the centre');
+});
+
+test('stage 2 patrols hold a line at the same depth', () => {
+  const {T} = harness();
+  startAt(T, 2); T.adv(.5);
+  fillPatrol(T, 9);
+  const list = pursuers(T);
+  const depths = list.map(enemy => enemy.slot.y);
+  assert.ok(list.length >= 3 && Math.max(...depths) - Math.min(...depths) < 1, `depths ${depths}`);
+  for (const a of list) for (const b of list) if (a !== b) assert.ok(Math.abs(a.x - b.x) >= 90, 'nobody stacks');
+});
