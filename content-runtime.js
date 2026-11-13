@@ -8639,6 +8639,7 @@ var NeonCampaign = (() => {
     const slots = SHAPES[formation.kind](members.length, maxX - minX);
     const same = formation.order.length === members.length && members.every((member) => formation.order.includes(member.id));
     if (!same) {
+      if (members.length === 1 && formation.order.length > 1) formation.centerX = members[0].x;
       const order = [...members].sort((a, b) => a.x - b.x).map((member) => member.id);
       if (formation.kind === "wedge" && order.length) {
         order.splice(order.indexOf(members[0].id), 1);

@@ -40,6 +40,8 @@ export function updateFormation(formation, members, dt, {playerX, minX, maxX, to
   const slots = SHAPES[formation.kind](members.length, maxX - minX);
   const same = formation.order.length === members.length && members.every(member => formation.order.includes(member.id));
   if (!same) {
+    // Al quedar uno solo, el dibujo arranca donde está él: no cruza hasta el centro.
+    if (members.length === 1 && formation.order.length > 1) formation.centerX = members[0].x;
     // De izquierda a derecha según están ahora: nadie cruza para llegar a su puesto.
     const order = [...members].sort((a, b) => a.x - b.x).map(member => member.id);
     if (formation.kind === 'wedge' && order.length) {

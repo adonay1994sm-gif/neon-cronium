@@ -91,3 +91,13 @@ test('a lone pincer survivor leaves the flank and follows the player', () => {
   assert.ok(Math.abs(slot.x - 560) < 2, `x ${slot.x}`);
   assert.equal(slot.y, 370);
 });
+
+// Revisión del PR #70: al quedar uno solo, el dibujo arranca donde está él;
+// antes cruzaba primero hasta el centro aunque el jugador estuviera a su lado.
+test('the last survivor starts from where it is, not from the centre', () => {
+  const formation = createFormation('pincer'), area = {...AREA, playerX: 600};
+  const two = [{id: 'e0', x: 130}, {id: 'e1', x: 590}];
+  updateFormation(formation, two, 0, area);
+  const slot = updateFormation(formation, [two[1]], 1 / 60, area).get('e1');
+  assert.ok(Math.abs(slot.x - 590) <= 1, `x ${slot.x}`);
+});
