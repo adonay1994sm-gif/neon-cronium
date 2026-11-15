@@ -120,19 +120,23 @@ test('the escort intent names the ally it guards', () => {
 
 // Que no se pisen (propietario, 13/11/2026): dos Alfas iban al mismo punto y la
 // Égida se colocaba encima de la nave que protege.
-test('two hunters split to either side of the player instead of stacking', () => {
-  const a = enemy('hunter', {id: 'a'}), b = enemy('hunter', {id: 'b'}), c = ctx({allies: [a, b]});
-  const ta = target(decideEnemyIntent(a, c)), tb = target(decideEnemyIntent(b, c));
-  assert.ok(Math.abs(ta.x - tb.x) >= 130, `gap ${Math.abs(ta.x - tb.x)}`);
-  assert.equal((ta.x + tb.x) / 2, c.player.x, 'centred on the player');
-  assert.equal(ta.y, tb.y);
-  const alone = target(decideEnemyIntent(a, ctx({allies: [a]})));
-  assert.deepEqual([alone.x, alone.y], [c.player.x, ta.y], 'a lone hunter keeps today\'s point, at the same depth');
+// En fila (propietario, 15/11/2026): lado a lado cambiaba la dificultad, porque el
+// Alfa dispara recto hacia abajo. Uno va encima del jugador y el otro detrás.
+test('two hunters line up above the player instead of stacking', () => {
+  const a = enemy('hunter', {id: 'a', y: 500}), b = enemy('hunter', {id: 'b', y: 300}), c = ctx({allies: [a, b]});
+  const front = decideEnemyIntent(a, c), rear = decideEnemyIntent(b, c);
+  assert.deepEqual([front.targetX, rear.targetX], [c.player.x, c.player.x], 'both keep the player\'s column');
+  assert.ok(front.targetY - rear.targetY >= 130, `depth gap ${front.targetY - rear.targetY}`);
+  assert.equal(rear.back, front.targetY - rear.targetY, 'the intent says how far back it holds');
+  const alone = decideEnemyIntent(a, ctx({allies: [a]}));
+  assert.deepEqual([alone.targetX, alone.targetY, alone.back], [front.targetX, front.targetY, undefined], 'a lone hunter keeps today\'s point');
 });
 
-test('hunters keep their left-to-right order, so they do not cross', () => {
-  const left = enemy('hunter', {id: 'z', x: 200}), right = enemy('hunter', {id: 'a', x: 500}), c = ctx({allies: [left, right]});
-  assert.ok(decideEnemyIntent(left, c).targetX < decideEnemyIntent(right, c).targetX);
+test('the hunter already in front stays in front, so they never cross', () => {
+  const front = enemy('hunter', {id: 'z', y: 600}), rear = enemy('hunter', {id: 'a', y: -70}), c = ctx({allies: [front, rear]});
+  assert.ok(decideEnemyIntent(front, c).targetY > decideEnemyIntent(rear, c).targetY);
+  const tie = [enemy('hunter', {id: 'p'}), enemy('hunter', {id: 'q'})], tied = ctx({allies: tie});
+  assert.notEqual(decideEnemyIntent(tie[0], tied).targetY, decideEnemyIntent(tie[1], tied).targetY, 'a tie still separates them');
 });
 
 test('the escort sits clear of the ally it guards, not on top of it', () => {
@@ -164,4 +168,13 @@ test('two escorts guarding the same ally settle on opposite sides', () => {
   }
   assert.ok(Math.abs(one.x - two.x) >= 140, `gap ${Math.abs(one.x - two.x)}`);
   assert.equal(flips, 0, 'no flapping');
+});
+
+// Revisión del PR #71: en el borde, el lado que se sale de la pantalla quedaba
+// recortado justo delante de la protegida.
+test('at the screen edge the escort takes the side that fits', () => {
+  const weak = enemy('hunter', {id: 'w', x: 40, y: 400, hp: 1}), e = enemy('escort', {x: 40, y: 300});
+  const intent = decideEnemyIntent(e, ctx({allies: [e, weak]}));
+  assert.ok(dist(target(intent), weak) >= 100, `distance ${dist(target(intent), weak)}`);
+  assert.ok(intent.targetX > weak.x);
 });

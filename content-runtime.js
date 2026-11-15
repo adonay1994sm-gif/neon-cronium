@@ -8655,13 +8655,13 @@ var NeonCampaign = (() => {
 
   // src/game/combat/enemy-ai.js
   var ENEMY_AI_PROFILES = Object.freeze({
-    // packGap: separación entre cazadores que persiguen a la vez (propietario,
-    // 13/11/2026: dos Alfas iban al mismo punto y se pisaban).
+    // packGap: separación en fila entre cazadores que persiguen a la vez
+    // (propietario, 15/11/2026: dos Alfas iban al mismo punto y se pisaban).
     hunter: Object.freeze({ attackRange: 700, chaseOffset: 170, packGap: 140 }),
     artillery: Object.freeze({ preferred: 420, minRange: 250 }),
     // En diagonal por delante de su protegida, sin taparla (antes 55/40: encima).
     // switchMargin: cuánto más despejado debe estar el otro lado para cambiarse.
-    escort: Object.freeze({ sideOffset: 80, depthOffset: 70, switchMargin: 40 }),
+    escort: Object.freeze({ sideOffset: 80, depthOffset: 70, switchMargin: 20 }),
     opportunist: Object.freeze({ hullThreshold: 35, hover: 320 }),
     ambusher: Object.freeze({ belowOffset: 140, entryLine: 1100 }),
     miner: Object.freeze({ laneShare: 0.78, edge: 60, arrive: 30 })
@@ -8672,9 +8672,9 @@ var NeonCampaign = (() => {
     const { player, bounds } = ctx, d = distance(enemy, player);
     switch (enemy.profile) {
       case "hunter": {
-        const pack = ctx.allies.filter((ally) => ally.profile === "hunter" || ally.id === enemy.id).sort((a, b) => a.x - b.x || (a.id < b.id ? -1 : 1));
-        const rank = pack.findIndex((ally) => ally.id === enemy.id);
-        return { x: player.x + (rank < 0 ? 0 : (rank - (pack.length - 1) / 2) * rules.packGap), y: player.y - rules.chaseOffset };
+        const pack = ctx.allies.filter((ally) => ally.profile === "hunter" || ally.id === enemy.id).sort((a, b) => b.y - a.y || (a.id < b.id ? -1 : 1));
+        const back = Math.max(0, pack.findIndex((ally) => ally.id === enemy.id)) * rules.packGap;
+        return { x: player.x, y: player.y - rules.chaseOffset - back, ...back ? { back } : {} };
       }
       case "artillery": {
         if (d >= rules.preferred || d === 0) return { x: enemy.x, y: enemy.y };
@@ -8686,8 +8686,8 @@ var NeonCampaign = (() => {
         if (!allies.length) return { x: enemy.x, y: enemy.y, guardId: null };
         const weakest = allies.reduce((a, b) => b.hp / b.maxHp < a.hp / a.maxHp ? b : a);
         const others = allies.filter((ally) => ally.id !== weakest.id && !(ally.profile === "escort" && ally.id > enemy.id));
-        const spot = (side) => ({ x: weakest.x + side * rules.sideOffset, y: weakest.y + rules.depthOffset });
-        const room = (side) => Math.min(...others.map((ally) => distance(spot(side), ally)));
+        const spot = (side) => ({ x: clamp17(weakest.x + side * rules.sideOffset, 40, bounds.w - 40), y: weakest.y + rules.depthOffset });
+        const room = (side) => Math.min(...[weakest, ...others].map((ally) => distance(spot(side), ally)));
         const here = enemy.x <= weakest.x ? -1 : 1;
         return { ...spot(room(-here) > room(here) + rules.switchMargin ? -here : here), guardId: weakest.id };
       }
@@ -8731,7 +8731,8 @@ var NeonCampaign = (() => {
       targetY: clamp17(move2.y, 40, h - 40),
       attack: false,
       ability: null,
-      ...move2.heading !== void 0 ? { heading: move2.heading } : {}
+      ...move2.heading !== void 0 ? { heading: move2.heading } : {},
+      ...move2.back ? { back: move2.back } : {}
     };
     const ready = enemy.cooldowns.unique <= ctx.now ? "unique" : enemy.cooldowns.basic <= ctx.now ? "basic" : null;
     if (enemy.profile === "escort") return { ...intent, ability: ready === "unique" ? "unique" : null, guardId: move2.guardId };
@@ -8938,7 +8939,7 @@ var NeonCampaign = (() => {
     };
     const intent = decideEnemyIntent(view, ctx);
     if (intent.heading !== void 0) gaia.heading = intent.heading;
-    const targetY = rules.clearance ? Math.min(intent.targetY, ctx.player.y - rules.clearance) : intent.targetY;
+    const targetY = rules.clearance ? Math.min(intent.targetY, ctx.player.y - rules.clearance - (intent.back || 0)) : intent.targetY;
     moveToward(item, { x: intent.targetX, y: targetY }, rules.speed * dt);
     if (gaia.profile === "escort") {
       gaia.guardId = intent.guardId;
