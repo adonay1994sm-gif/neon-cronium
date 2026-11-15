@@ -95,16 +95,11 @@ test('the sower throws exactly four mines spread across the ship\'s path, then l
   const xs = mines.map(mine => mine.tx).sort((a, b) => a - b);
   for (const mine of mines) {
     assert.ok(mine.tx >= 60 && mine.tx <= BOUNDS.w - 60, `x ${mine.tx}`);
-    assert.ok(mine.ty >= SHIP.y - 450 && mine.ty <= SHIP.y - 250, `lands ahead of the ship at y ${mine.ty}`);
+    assert.ok(mine.ty >= SHIP.y - 650 && mine.ty <= SHIP.y - 250, `lands ahead of the ship at y ${mine.ty}`);
     assert.ok(mine.y < mine.ty, 'thrown down from the sower');
   }
   assert.ok(xs[0] <= SHIP.x - 150 && xs[3] >= SHIP.x + 150, `covers both sides: ${xs}`);
-  // Zigzag: entre dos minas vecinas queda hueco para pasar (estallan a 70 px).
-  const byX = [...mines].sort((a, b) => a.tx - b.tx);
-  for (let k = 1; k < byX.length; k++) {
-    const gap = Math.hypot(byX[k].tx - byX[k - 1].tx, byX[k].ty - byX[k - 1].ty);
-    assert.ok(gap - 2 * 70 >= 70, `a gap of ${(gap - 140).toFixed(0)} px between mines ${k - 1} and ${k}`);
-  }
+  // El hueco para pasar se mide con las minas ya bajando (prueba de más abajo).
   assert.ok(goneAt !== null && goneAt - lastMineAt < 5, `gone ${goneAt} s, last mine ${lastMineAt} s`);
 });
 
@@ -322,5 +317,37 @@ test('one mine always lands in the lane of the ship, so standing still is not sa
 
 test('with the ship high up the mines still land below the sower, in view', () => {
   const {mines} = sowerRun(16, {x: 360, y: 420});
-  for (const mine of mines) assert.ok(mine.ty >= .22 * BOUNDS.h + 100, `lands at y ${mine.ty}`);
+  for (const mine of mines) assert.ok(mine.ty >= .22 * BOUNDS.h, `lands at y ${mine.ty}`);
+});
+
+// Revisión del PR #77: las minas ya bajan cuando cae la siguiente; el hueco se
+// mide con sus posiciones reales mientras conviven, no solo donde caen.
+function realGaps(player) {
+  const {mines} = sowerRun(16, player);
+  const live = mines.map(event => ({at: event.at, mine: {x: event.x, y: event.y, tx: event.tx, ty: event.ty, age: 0, armed: false}}));
+  let narrowest = Infinity;
+  for (let t = 0; t < 16; t += DT) {
+    const landed = live.filter(entry => entry.at <= t && (entry.mine.age >= GAIA_ENEMY_RULES.sower.mine.flight));
+    for (const entry of live) if (entry.at <= t) advanceMine(entry.mine, DT, {x: -999, y: -999});
+    for (let a = 0; a < landed.length; a++) for (let b = a + 1; b < landed.length; b++) {
+      const one = landed[a].mine, two = landed[b].mine;
+      narrowest = Math.min(narrowest, Math.hypot(one.x - two.x, one.y - two.y) - 2 * GAIA_ENEMY_RULES.sower.mine.radius);
+    }
+  }
+  return narrowest;
+}
+
+test('while the mines drift down there is always room to pass between two of them', () => {
+  for (const player of [SHIP, {x: 120, y: 1050}, {x: 600, y: 900}, {x: 360, y: 700}]) {
+    const gap = realGaps(player);
+    assert.ok(gap >= 60, `ship at ${player.x},${player.y}: narrowest real gap ${gap.toFixed(0)} px`);
+  }
+});
+
+test('with the ship near the top, its lane mine still lands well above it', () => {
+  for (const y of [420, 520, 620]) {
+    const {mines} = sowerRun(16, {x: 360, y});
+    const lane = mines.find(mine => Math.abs(mine.tx - 360) < 45);
+    assert.ok(lane && lane.ty <= y - 115, `ship at y=${y}: lane mine lands at ${lane?.ty}`);
+  }
 });

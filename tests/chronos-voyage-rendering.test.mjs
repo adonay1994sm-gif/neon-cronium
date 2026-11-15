@@ -173,3 +173,12 @@ test('reduced effects removes the actual full-screen storm flash without changin
   assert.equal(flash(draw(true)).length, 0);
   assert.equal(h.sandbox.stormPulse, 1, 'presentation cannot alter storm timing or damage');
 });
+
+// Revisión del PR #77 (15/11/2026): Gaia aparece con fundido al empezar el
+// tramo 2; el dibujo debe respetar su transparencia.
+test('Gaia is painted with its own transparency while it fades in', () => {
+  const h = harness({planet: {visible: true, x: .79, y: .06, scale: .014, alpha: .3}});
+  const planet = images(h.draw()).filter(call => call.args[0].name === 'kit');
+  assert.equal(planet.length, 1);
+  assert.ok(Math.abs(planet[0].alpha - .3) < 1e-9, `alpha ${planet[0].alpha}`);
+});

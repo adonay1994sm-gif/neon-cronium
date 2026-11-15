@@ -8793,7 +8793,7 @@ var NeonCampaign = (() => {
       // life: lo bastante larga para salir por abajo en vez de apagarse a la vista.
       mine: Object.freeze({ arm: 0.8, radius: 70, life: 12, damage: 16, flight: 0.5, drift: 90 }),
       // top: las minas nunca caen por encima de esta franja (bajo el Sembrador, a la vista).
-      lay: Object.freeze({ spacing: 150, ahead: 420, stagger: 160, top: 0.22 }),
+      lay: Object.freeze({ spacing: 150, ahead: 520, stagger: 160, top: 0.22 }),
       leave: Object.freeze({ attacks: 4, seconds: 14, speed: 220, sideOffset: 200, exitY: -100 }),
       bomb: Object.freeze({ raySpeed: 320, damage: 12 })
     }),
@@ -8885,16 +8885,15 @@ var NeonCampaign = (() => {
             if (!best || score < best.score) best = { first, score };
           }
           gaia.mineStart = lane + best.first * spacing;
-          gaia.mineRow = Math.max(h * top2 + 100, gaia.aim.y - ahead);
+          const row = gaia.aim.y - ahead;
+          gaia.mineRow = row >= h * top2 + 100 ? row : Math.max(h * top2, Math.min(h * top2 + 100, gaia.aim.y - 120));
         }
-        const k = gaia.attacks;
-        emit({
-          type: "mine",
-          x: item.x,
-          y: item.y + 20,
-          tx: Math.max(60, Math.min(w - 60, gaia.mineStart + k * spacing)),
-          ty: gaia.mineRow + k % 2 * stagger
-        });
+        const k = gaia.attacks, { flight, drift } = rules.mine;
+        const previous = gaia.lastMine, landsAt = ctx.now + flight;
+        const zigzag = previous ? previous.ty + drift * Math.max(0, landsAt - previous.landsAt) + (k % 2 ? -stagger : stagger) : gaia.mineRow;
+        gaia.lastMine = { ty: zigzag, landsAt };
+        const ty = Math.max(h * top2, Math.min(zigzag, ctx.player.y - 120));
+        emit({ type: "mine", x: item.x, y: item.y + 20, tx: Math.max(60, Math.min(w - 60, gaia.mineStart + k * spacing)), ty });
       } else emit({ type: "cross-bomb", x: item.x, y: item.y, vx: (item.x < ctx.bounds.w / 2 ? -1 : 1) * rules.unique.speed });
     } else if (gaia.kind === "atlasEscort") {
       const { speed, damage } = rules.basic;
