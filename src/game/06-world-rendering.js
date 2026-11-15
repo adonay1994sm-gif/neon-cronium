@@ -206,7 +206,10 @@
     ctx.save();
     ctx.translate(node.x * W, node.y * H);
     ctx.rotate(node.rotation || 0);
-    // Both station poses share their reactor pivot and remain fully opaque.
+    // Gaia (fotograma 2) respeta su transparencia: aparece con fundido al
+    // empezar el tramo 2 (revisión del PR #77). Las dos poses de la estación
+    // comparten el pivote del reactor y siguen opacas.
+    if (frame === 2) ctx.globalAlpha *= node.alpha ?? 1;
     ctx.drawImage(image, (frame % 3) * cellWidth, Math.floor(frame / 3) * cellHeight,
       cellWidth, cellHeight, -size / 2, -size / 2, size, size);
     ctx.restore();
