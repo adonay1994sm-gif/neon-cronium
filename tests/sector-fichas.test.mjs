@@ -113,3 +113,26 @@ test('Gaia grows visibly in every stage from stage 2 and still ends at its full 
   assert.ok(Math.abs(ends[9] - .92) < 1e-9, 'the arrival is unchanged');
   for (let p = 0; p <= 1; p += .01) { const now = scaleAt(p, 0); assert.ok(now >= previous - 1e-9, `never shrinks at p=${p.toFixed(2)}`); previous = now; }
 });
+
+// Bug visto por el propietario (15/11/2026): en el tramo 1 el puntito de Gaia se
+// pintaba encima del planeta de salida. Gaia no se ve en el tramo 1 y aparece
+// poco a poco al empezar el 2.
+test('Gaia is hidden in stage 1 and fades in at the start of stage 2', () => {
+  const total = S1_GAIA.stages.reduce((sum, stage) => sum + stage[1], 0), stage2 = S1_GAIA.stages[0][1] / total;
+  const planetAt = (p, stageIndex) => S1_GAIA.scenery({p, stageIndex, stage: {nebulaOpacity: .1, starDensity: .6}, arrived: false}).planet;
+  for (let p = 0; p < stage2; p += .005) {
+    const planet = planetAt(p, 0);
+    assert.ok(!planet.visible || planet.alpha === 0, `hidden in stage 1 at p=${p.toFixed(3)}`);
+  }
+  assert.ok(planetAt(stage2, 1).alpha < .1, 'it does not pop in at full strength');
+  assert.ok(planetAt(stage2 + .05, 1).visible && planetAt(stage2 + .05, 1).alpha >= .5, 'visible early in stage 2');
+  assert.equal(planetAt(1, 9).alpha, 1);
+});
+
+// El Alfa sale del sector 1 y pasa a Vulkar (propietario, 15/11/2026). Los
+// tramos 7 y 8 siguen con los enemigos que ya había; el 7 cambia de nombre.
+test('the Alpha is no longer in sector 1 and stage 7 is no longer named after it', () => {
+  for (const rules of S1_GAIA.encounters) assert.ok(!rules.patrol?.roster.includes('alpha'));
+  assert.deepEqual([...S1_GAIA.encounters[6].patrol.roster].sort(), ['aegis', 'interceptor', 'sower']);
+  for (const stage of S1_GAIA.stages) assert.ok(!/Alfa/.test(stage[0] + stage[3]), stage[0]);
+});

@@ -206,7 +206,7 @@ test('a sector stage spawns CRONIUM and patrols', () => {
 });
 
 test('stages that open with new Gaia enemies play without errors', () => {
-  // Tramos 3, 4 y 7 abren con sower, aegis y alpha (ficha del sector 1).
+  // Tramos 3, 4 y 7 abren con sower, aegis y aegis (ficha del sector 1; el Alfa pasó a Vulkar el 15/11).
   for (const stageNumber of [3, 4, 7]) {
     const {T} = harness({query: '?dev=1'});
     startAt(T, stageNumber);
@@ -403,7 +403,7 @@ test('a removed enemy frees its token in the same frame', () => {
 
 // Plan F3b, tarea 7: los enemigos de Gaia en el juego.
 test('each Gaia roster entry spawns its own enemy', () => {
-  for (const [stage, kind] of [[2, 'tracker'], [3, 'sower'], [4, 'aegis'], [7, 'alpha']]) {
+  for (const [stage, kind] of [[2, 'tracker'], [3, 'sower'], [4, 'aegis'], [7, 'aegis']]) {
     const {T} = harness({query: '?dev=1'});
     startAt(T, stage);
     T.ev('DEV.invulnerable=true');
@@ -1593,4 +1593,47 @@ test('the new sower lays four mines ahead of the ship and leaves the screen', ()
   const xs = [...seen.values()].map(mine => mine.x);
   assert.ok(Math.max(...xs) - Math.min(...xs) > 400, `spread across the path: ${xs.map(Math.round)}`);
   for (const mine of seen.values()) assert.ok(mine.y < ship.y - 200, 'they land ahead of the ship');
+});
+
+// Revisión del PR #76: al revivir con anuncio desaparecen el Sembrador que
+// estaba sembrando y todas sus minas, también las que aún vuelan.
+test('reviving clears the sower and every mine, even those still in the air', () => {
+  const {T} = harness();
+  startAt(T, 3); T.adv(.5);
+  T.ev('items=items.filter(i=>!i.flightPatrol);classicPatrolTimer=999;window.__s=spawnGaiaEnemy("sower")');
+  for (let k = 0; k < 400 && T.ev('items.filter(i=>i.gaiaMine).length') < 2; k++) { T.ev('hull=100;hullGrace=5;classicPatrolTimer=999'); T.adv(1 / 30); }
+  assert.ok(T.ev('items.filter(i=>i.gaiaMine).length') >= 2);
+  T.ev('hull=0'); T.finishGame('hull'); T.resumeReward();
+  assert.equal(T.ev('items.filter(i=>i.gaiaMine).length'), 0);
+  assert.equal(T.ev('items.includes(window.__s)'), false);
+});
+
+test('mines that drift past the ship leave by the bottom instead of vanishing on screen', () => {
+  const {T} = harness();
+  startAt(T, 3); T.adv(.5);
+  T.ev('items=items.filter(i=>!i.flightPatrol);classicPatrolTimer=999;spawnGaiaMine(60,H*.5,60,H*.5)');
+  let lastY = 0;
+  for (let k = 0; k < 900 && T.ev('items.some(i=>i.gaiaMine)'); k++) { T.ev('hull=100;hullGrace=5;classicPatrolTimer=999;player.x=player.target=600'); T.adv(1 / 30); lastY = T.ev('items.find(i=>i.gaiaMine)?.y??0') || lastY; }
+  assert.ok(lastY > T.ev('H'), `the mine was last seen at y=${Math.round(lastY)} (H=${T.ev('H')})`);
+});
+
+// Munición llena al empezar cada jefe (propietario, 15/11/2026): en el subjefe
+// se acababan los disparos muy rápido. Sin aviso: el jugador solo lo nota.
+test('the battery is quietly refilled when the sub-boss arrives', () => {
+  const {T} = harness({query: '?dev=1'});
+  startAt(T, 5); T.ev('DEV.invulnerable=true');
+  T.ev('classicWeapons.charges=2;classicWeapons.recharge=.5');
+  for (let k = 0; k < 400 && !T.ev('Boolean(subBoss)'); k++) { T.ev('if(!subBoss)classicWeapons.charges=Math.min(classicWeapons.charges,2)'); T.adv(1 / 30); }
+  assert.ok(T.ev('Boolean(subBoss)'), 'the sub-boss arrived');
+  assert.equal(T.ev('classicWeapons.charges'), T.ev('classicWeapons.maxCharges'));
+});
+
+test('the battery is quietly refilled when Atlas arrives', () => {
+  const {T} = harness({query: '?dev=1'});
+  startAt(T, 10); T.ev('DEV.invulnerable=true');
+  T.ev('classicWeapons.charges=1');
+  toFinish(T);
+  for (let k = 0; k < 200 && !T.ev('Boolean(atlasBoss)'); k++) { T.ev('if(!atlasBoss)classicWeapons.charges=1'); T.adv(1 / 30); }
+  assert.ok(T.ev('Boolean(atlasBoss)'), 'Atlas arrived');
+  assert.equal(T.ev('classicWeapons.charges'), T.ev('classicWeapons.maxCharges'));
 });

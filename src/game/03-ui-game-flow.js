@@ -1053,9 +1053,17 @@
       if(!ensureSprite(image)._warm){image._warm=true;image.decode?.().catch(()=>{});}
     if(view.stageElapsed<6)return;
     subBoss=NeonCampaign.createSubguardian({width:W,height:H,seed:view.stageNumber*97});
+    refillBossBattery();
     spawnAtlasEscorts(4,subBossAnchor());
     uiSound("boss-alert");
     showStoryTransmission("RED ATLAS","Subguardián en línea. El anillo de Gaia queda cerrado.",3.4);
+  }
+  // Cada jefe empieza con la batería llena, sin aviso (propietario, 15/11/2026):
+  // en el subjefe se acababan los disparos muy rápido.
+  function refillBossBattery() {
+    if(!classicWeapons)return;
+    classicWeapons.charges=classicWeapons.maxCharges;classicWeapons.recharge=0;classicWeapons.hotReloading=false;
+    ammo=classicWeapons.charges;updateAmmoHud();
   }
   function updateSubBossEncounter(dt) {
     maybeStartSubBoss();
@@ -1153,7 +1161,8 @@
       const result=NeonCampaign.advanceMine(item.mine,dt,player);
       item.x=item.baseX=item.mine.x;item.y=item.mine.y;
       if(result==="explode"){addExplosion(item.x,item.y,.6,.4);damageShip(item.damage,item.x,item.y);}
-      return result===null;
+      // La mina que pasa de largo sale por abajo; no se apaga a la vista.
+      return result===null&&item.y<H+60;
     }
     if(item.gaiaBomb) {
       const rays=NeonCampaign.advanceCrossBomb(item.bomb,dt,{w:W,h:H});
@@ -1544,6 +1553,7 @@
     if (typeof resetGameInput === "function") resetGameInput();
     cancelSupplyFailureTimer();
     atlasBoss = NeonCampaign.createGuardianAtlas({width: W, height: H, playerY: player.y});resetAtlasFury();
+    refillBossBattery();
     // El Fulminante usa el haz pintado del láser del subguardián.
     ensureSprite(SPRITES.subguardianLaser);
     // Vida de Atlas según el modo de dificultad (Normal = la de siempre).
@@ -2848,7 +2858,9 @@
     // Avisos de meteoritos pendientes: se cancelan al volver (plan F3b).
     classicMeteorWarnings=[];if(classicAimedRain)classicAimedRain.pending.length=0;
     // Elimina amenazas próximas y todos los residuos visuales de destrucción.
-    items = items.filter((item) => !isThreat(item) || item.y < H * 0.38);
+    // Las minas (también las que aún vuelan) y el Sembrador que las lanza se
+    // van todos, estén donde estén (revisión del PR #76).
+    items = items.filter((item) => !isThreat(item) || (item.y < H * 0.38 && !item.gaiaMine && !item.gaiaBomb && item.gaia?.kind !== "sower"));
     gates = [];
     clearTransientEffects();
     tractorTarget = null;

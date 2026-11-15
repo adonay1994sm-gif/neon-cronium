@@ -98,7 +98,7 @@ test('the sower throws exactly four mines spread across the ship\'s path, then l
     assert.ok(mine.ty >= SHIP.y - 450 && mine.ty <= SHIP.y - 250, `lands ahead of the ship at y ${mine.ty}`);
     assert.ok(mine.y < mine.ty, 'thrown down from the sower');
   }
-  assert.ok(xs[0] < SHIP.x - 150 && xs[3] > SHIP.x + 150, `covers both sides: ${xs}`);
+  assert.ok(xs[0] <= SHIP.x - 150 && xs[3] >= SHIP.x + 150, `covers both sides: ${xs}`);
   // Zigzag: entre dos minas vecinas queda hueco para pasar (estallan a 70 px).
   const byX = [...mines].sort((a, b) => a.tx - b.tx);
   for (let k = 1; k < byX.length; k++) {
@@ -129,13 +129,14 @@ test('a thrown mine flies to its spot, arms, then drifts down across the ship\'s
 test('a mine arms after 0.8 s and only explodes near the ship', () => {
   const near = {x: 360, y: 1000, age: 0, armed: false}, far = {x: 360, y: 1000, age: 0, armed: false};
   const results = [];
-  for (let t = 0; t < 7.2; t += DT) {
+  const {life} = GAIA_ENEMY_RULES.sower.mine;
+  for (let t = 0; t < life + .2; t += DT) {
     results.push([t, advanceMine(near, DT, {x: near.x + 60, y: near.y}), advanceMine(far, DT, {x: far.x + 100, y: far.y})]);
   }
   const boom = results.find(([, result]) => result === 'explode');
   assert.ok(boom && boom[0] >= .8 - DT, `explodes at ${boom?.[0]}`);
   assert.ok(!results.some(([, , result]) => result === 'explode'), 'a mine 100 px away never explodes');
-  assert.ok(results.some(([t, , result]) => result === 'expire' && t >= 7 - 2 * DT));
+  assert.ok(results.some(([t, , result]) => result === 'expire' && t >= life - 2 * DT));
 });
 
 test('the cross bomb bursts into three rays at the edge', () => {
@@ -150,7 +151,7 @@ test('the cross bomb bursts into three rays at the edge', () => {
 });
 
 // La bomba en X sigue disponible para los Sembradores en manada de los tramos
-// altos (calendario del sector 1); el de una pasada se va antes de tenerla lista.
+// altos (calendario del sector 1); el de una pasada no la lanza (abajo).
 test('the sower throws its cross bomb toward the nearest edge when it has it ready', () => {
   const sower = spawn('sower', {x: 80, y: 256});
   sower.gaia.cooldowns.unique = 0;
@@ -301,4 +302,25 @@ test('an alpha that arrives six seconds later joins the column without touching 
 test('the sower only throws once it has reached its band, in view', () => {
   const {mines} = sowerRun();
   for (const mine of mines) assert.ok(mine.y - 20 >= .22 * BOUNDS.h - 41, `thrown from y=${(mine.y - 20).toFixed(0)}`);
+});
+
+// Revisión del PR #76 (15/11/2026).
+test('a one-pass sower never throws the cross bomb', () => {
+  for (const player of [SHIP, {x: 120, y: 1050}, {x: 600, y: 900}]) {
+    const {events} = sowerRun(16, player);
+    assert.equal(events.filter(event => event.type === 'cross-bomb').length, 0);
+  }
+});
+
+test('one mine always lands in the lane of the ship, so standing still is not safe', () => {
+  for (const x of [120, 190, 300, 360, 420, 600]) {
+    const {mines} = sowerRun(16, {x, y: 1050});
+    const nearest = Math.min(...mines.map(mine => Math.abs(mine.tx - x)));
+    assert.ok(nearest <= 45, `ship at x=${x}: nearest mine ${nearest.toFixed(0)} px away`);
+  }
+});
+
+test('with the ship high up the mines still land below the sower, in view', () => {
+  const {mines} = sowerRun(16, {x: 360, y: 420});
+  for (const mine of mines) assert.ok(mine.ty >= .22 * BOUNDS.h + 100, `lands at y ${mine.ty}`);
 });

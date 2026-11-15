@@ -3558,7 +3558,7 @@ var NeonCampaign = (() => {
     // El Sembrador rehecho vuelve donde estaba antes del 31/10 (propietario, 15/11/2026).
     mines: immutable12(["sower", "raider", "interceptor"]),
     shield: immutable12(["aegis", "interceptor", "tracker", "scout"]),
-    elite: immutable12(["alpha", "aegis", "interceptor", "sower"]),
+    elite: immutable12(["aegis", "interceptor", "sower"]),
     gate: immutable12(["interceptor", "tracker", "aegis", "raider"])
   });
   var HORDE = immutable12({ every: 14, size: 5 });
@@ -3599,7 +3599,7 @@ var NeonCampaign = (() => {
       ["Cuarentena", 52, 23, "Rompe los escudos de la \xC9gida y sigue adelante", "Red exterior de Gaia", "Anillo de sat\xE9lites", "quarantine", 0.16, 0.62, 0.64],
       ["El subguardi\xE1n", 56, 27, "Derriba al subguardi\xE1n que cierra el anillo", "Anillo de sat\xE9lites", "Corredor de enlace", "sub-boss", 0.18, 0.66, 0.7],
       ["Enlace C9", 48, 27, "Repara en C9 y prueba tu nave en el corredor", "Corredor de enlace", "Lado nocturno", "service-stop", 0.06, 0.34, 0.3],
-      ["El Alfa", 54, 38, "El Alfa del C-17 lidera la caza en la oscuridad", "Lado nocturno", "Escolta del C-17", "alpha-hunt", 0.08, 0.28, 0.72],
+      ["La caza en la oscuridad", 54, 38, "Las patrullas de Gaia te cazan en el lado nocturno", "Lado nocturno", "Escolta del C-17", "alpha-hunt", 0.08, 0.28, 0.72],
       ["Lluvia en el acceso", 52, 44, "Cruza la lluvia de meteoritos sin dejar de combatir", "Escolta del C-17", "Piquetes de Gaia", "meteor-rain", 0.14, 0.58, 0.76],
       ["Defensa orbital", 54, 50, "Resiste la defensa orbital mientras Atlas se activa", "Piquetes de Gaia", "Acceso orbital", "orbital-defence", 0.16, 0.62, 0.82],
       ["Atlas", 60, 54, "Vence a Atlas para que verifique el registro", "Acceso orbital", "Acceso orbital de Gaia Nova", "boss", 0.18, 0.62, 0.9]
@@ -3651,9 +3651,11 @@ var NeonCampaign = (() => {
           x: 0.79 - 0.4 * smooth(p, 0.2, 1),
           y: 0.08 + 0.08 * gate,
           scale: 0.02 + 0.9 * Math.max(0, (p - 0.08) / 0.92) ** 1.15,
+          // En el tramo 1 no se ve: su puntito quedaba encima del planeta de salida
+          // (propietario, 15/11/2026). Aparece poco a poco al empezar el tramo 2.
           rotation: 0.06 * p,
-          visible: true,
-          alpha: 0.5 + 0.5 * smooth(p, 0.1, 0.4)
+          visible: stageIndex >= 1,
+          alpha: stageIndex < 1 ? 0 : Math.min(smooth(p, 0.09, 0.13), 0.5 + 0.5 * smooth(p, 0.1, 0.4))
         }),
         beacon: immutable12({ x: 0.54, y: 0.14 + 0.1 * gate, scale: 0.03 + 0.2 * gate, visible: p >= 0.75, alpha: 1, active: stageIndex >= 9 }),
         relay: immutable12({ visible: false, x: 0, y: 0, scale: 0, alpha: 0, active: false, state: "approach" }),
@@ -8788,8 +8790,10 @@ var NeonCampaign = (() => {
       salvageRole: "raider",
       basic: Object.freeze({ cooldown: 0.6 }),
       unique: Object.freeze({ cooldown: 10, speed: 300 }),
-      mine: Object.freeze({ arm: 0.8, radius: 70, life: 7, damage: 16, flight: 0.5, drift: 90 }),
-      lay: Object.freeze({ spacing: 170, ahead: 420, stagger: 140 }),
+      // life: lo bastante larga para salir por abajo en vez de apagarse a la vista.
+      mine: Object.freeze({ arm: 0.8, radius: 70, life: 12, damage: 16, flight: 0.5, drift: 90 }),
+      // top: las minas nunca caen por encima de esta franja (bajo el Sembrador, a la vista).
+      lay: Object.freeze({ spacing: 150, ahead: 420, stagger: 160, top: 0.22 }),
       leave: Object.freeze({ attacks: 4, seconds: 14, speed: 220, sideOffset: 200, exitY: -100 }),
       bomb: Object.freeze({ raySpeed: 320, damage: 12 })
     }),
@@ -8835,7 +8839,8 @@ var NeonCampaign = (() => {
       hp: rules.hp,
       maxHp: rules.hp,
       bornAt: now,
-      cooldowns: { basic: now + rules.firstAttack, unique: rules.unique ? now + rules.unique.cooldown * 0.5 : Infinity },
+      // El Sembrador de una pasada (con `lay`) no lanza la bomba en X: siembra y se va.
+      cooldowns: { basic: now + rules.firstAttack, unique: rules.unique && !rules.lay ? now + rules.unique.cooldown * 0.5 : Infinity },
       telegraph: 0,
       pending: null,
       aim: null,
@@ -8870,14 +8875,25 @@ var NeonCampaign = (() => {
       }
     } else if (gaia.kind === "sower") {
       if (ability === "basic") {
-        const { spacing, ahead, stagger } = rules.lay, k = gaia.attacks, half = spacing * (rules.leave.attacks - 1) / 2;
-        gaia.mineCenter ??= Math.max(60 + half, Math.min(ctx.bounds.w - 60 - half, gaia.aim.x));
+        const { spacing, ahead, stagger, top: top2 } = rules.lay, count = rules.leave.attacks, { w, h } = ctx.bounds;
+        if (gaia.mineStart === void 0) {
+          const lane = Math.max(60, Math.min(w - 60, gaia.aim.x));
+          let best = null;
+          for (let first = -(count - 1); first <= 0; first++) {
+            const fits = lane + first * spacing >= 60 && lane + (first + count - 1) * spacing <= w - 60;
+            const score = Math.abs(first + (count - 1) / 2) + (fits ? 0 : 100);
+            if (!best || score < best.score) best = { first, score };
+          }
+          gaia.mineStart = lane + best.first * spacing;
+          gaia.mineRow = Math.max(h * top2 + 100, gaia.aim.y - ahead);
+        }
+        const k = gaia.attacks;
         emit({
           type: "mine",
           x: item.x,
           y: item.y + 20,
-          tx: gaia.mineCenter - half + k * spacing,
-          ty: gaia.aim.y - ahead + k % 2 * stagger
+          tx: Math.max(60, Math.min(w - 60, gaia.mineStart + k * spacing)),
+          ty: gaia.mineRow + k % 2 * stagger
         });
       } else emit({ type: "cross-bomb", x: item.x, y: item.y, vx: (item.x < ctx.bounds.w / 2 ? -1 : 1) * rules.unique.speed });
     } else if (gaia.kind === "atlasEscort") {
