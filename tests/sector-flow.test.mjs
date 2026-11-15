@@ -206,7 +206,7 @@ test('a sector stage spawns CRONIUM and patrols', () => {
 });
 
 test('stages that open with new Gaia enemies play without errors', () => {
-  // Tramos 3, 4 y 7 abren con raider (el Sembrador está fuera de momento), aegis y alpha.
+  // Tramos 3, 4 y 7 abren con sower, aegis y alpha (ficha del sector 1).
   for (const stageNumber of [3, 4, 7]) {
     const {T} = harness({query: '?dev=1'});
     startAt(T, stageNumber);
@@ -403,7 +403,7 @@ test('a removed enemy frees its token in the same frame', () => {
 
 // Plan F3b, tarea 7: los enemigos de Gaia en el juego.
 test('each Gaia roster entry spawns its own enemy', () => {
-  for (const [stage, kind] of [[2, 'tracker'], [4, 'aegis'], [7, 'alpha']]) {
+  for (const [stage, kind] of [[2, 'tracker'], [3, 'sower'], [4, 'aegis'], [7, 'alpha']]) {
     const {T} = harness({query: '?dev=1'});
     startAt(T, stage);
     T.ev('DEV.invulnerable=true');

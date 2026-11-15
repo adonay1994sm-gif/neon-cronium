@@ -3555,11 +3555,10 @@ var NeonCampaign = (() => {
   var ROSTERS11 = immutable12({
     escape: immutable12(["raider", "scout"]),
     flank: immutable12(["raider", "tracker", "scout"]),
-    // Sin el Sembrador de momento (propietario, 31/10/2026): hay que rehacer
-    // su lógica (tarea sembrador-minas). Vuelve aquí y en elite cuando esté.
-    mines: immutable12(["raider", "interceptor"]),
+    // El Sembrador rehecho vuelve donde estaba antes del 31/10 (propietario, 15/11/2026).
+    mines: immutable12(["sower", "raider", "interceptor"]),
     shield: immutable12(["aegis", "interceptor", "tracker", "scout"]),
-    elite: immutable12(["alpha", "aegis", "interceptor"]),
+    elite: immutable12(["alpha", "aegis", "interceptor", "sower"]),
     gate: immutable12(["interceptor", "tracker", "aegis", "raider"])
   });
   var HORDE = immutable12({ every: 14, size: 5 });
