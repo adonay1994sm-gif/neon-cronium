@@ -1551,3 +1551,20 @@ test('with effects off there are no extra sparks, and reduced effects drops the 
   const reduced = pulseHit(harness().T, 'settings.reduceEffects=true;');
   assert.equal(reduced.target.flash, 0);
 });
+
+// Revisión del PR #74 (15/11/2026): derribar una bala enemiga no suelta el
+// estallido grande ni chispas (era el 44 % de los estallidos del tramo 3 y
+// tapaba las balas que llegan). Se queda el chispazo pequeño de antes.
+test('shooting down an enemy bullet keeps the small spark, without burst, sparks or flash', () => {
+  const {T} = harness();
+  startAt(T, 3);
+  T.ev('classicVoyageHazardTimer=999;classicPatrolTimer=999;items.length=0;impactEffects.length=0');
+  T.ev("window.__b={type:'meteor',classicScoutProjectile:true,id:'bullet',x:player.x,baseX:player.x,y:player.y-300,vx:0,vy:0,s:0,r:9,life:5,damage:12,rot:0,rs:0,p:0,phase:0,amp:0,special:'',alpha:1,hp:1,maxHp:1};items.push(window.__b)");
+  T.ev('classicWeapons.charges=Math.max(classicWeapons.charges,1);classicWeapons.cooldown=0;manualShotCooldown=0;fireManualShot()');
+  for (let k = 0; k < 60 && T.ev("items.includes(window.__b)"); k++) T.adv(1 / 60);
+  assert.equal(T.ev("items.includes(window.__b)"), false, 'the bullet was shot down');
+  const fx = JSON.parse(T.ev('JSON.stringify(impactEffects)'));
+  assert.equal(fx.filter(effect => effect.hullSparks).length, 0);
+  assert.ok(fx.length === 1 && fx[0].scale < 1, `one small spark, got ${JSON.stringify(fx.map(effect => effect.scale))}`);
+  assert.ok(!(T.ev('window.__b.hitFlashUntil') > 0));
+});
