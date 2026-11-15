@@ -1153,7 +1153,8 @@
       const result=NeonCampaign.advanceMine(item.mine,dt,player);
       item.x=item.baseX=item.mine.x;item.y=item.mine.y;
       if(result==="explode"){addExplosion(item.x,item.y,.6,.4);damageShip(item.damage,item.x,item.y);}
-      return result===null;
+      // La mina que pasa de largo sale por abajo; no se apaga a la vista.
+      return result===null&&item.y<H+60;
     }
     if(item.gaiaBomb) {
       const rays=NeonCampaign.advanceCrossBomb(item.bomb,dt,{w:W,h:H});
@@ -2848,7 +2849,9 @@
     // Avisos de meteoritos pendientes: se cancelan al volver (plan F3b).
     classicMeteorWarnings=[];if(classicAimedRain)classicAimedRain.pending.length=0;
     // Elimina amenazas próximas y todos los residuos visuales de destrucción.
-    items = items.filter((item) => !isThreat(item) || item.y < H * 0.38);
+    // Las minas (también las que aún vuelan) y el Sembrador que las lanza se
+    // van todos, estén donde estén (revisión del PR #76).
+    items = items.filter((item) => !isThreat(item) || (item.y < H * 0.38 && !item.gaiaMine && !item.gaiaBomb && item.gaia?.kind !== "sower"));
     gates = [];
     clearTransientEffects();
     tractorTarget = null;

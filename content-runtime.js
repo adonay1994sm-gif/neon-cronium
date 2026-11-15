@@ -8788,8 +8788,10 @@ var NeonCampaign = (() => {
       salvageRole: "raider",
       basic: Object.freeze({ cooldown: 0.6 }),
       unique: Object.freeze({ cooldown: 10, speed: 300 }),
-      mine: Object.freeze({ arm: 0.8, radius: 70, life: 7, damage: 16, flight: 0.5, drift: 90 }),
-      lay: Object.freeze({ spacing: 170, ahead: 420, stagger: 140 }),
+      // life: lo bastante larga para salir por abajo en vez de apagarse a la vista.
+      mine: Object.freeze({ arm: 0.8, radius: 70, life: 12, damage: 16, flight: 0.5, drift: 90 }),
+      // top: las minas nunca caen por encima de esta franja (bajo el Sembrador, a la vista).
+      lay: Object.freeze({ spacing: 150, ahead: 420, stagger: 160, top: 0.22 }),
       leave: Object.freeze({ attacks: 4, seconds: 14, speed: 220, sideOffset: 200, exitY: -100 }),
       bomb: Object.freeze({ raySpeed: 320, damage: 12 })
     }),
@@ -8835,7 +8837,8 @@ var NeonCampaign = (() => {
       hp: rules.hp,
       maxHp: rules.hp,
       bornAt: now,
-      cooldowns: { basic: now + rules.firstAttack, unique: rules.unique ? now + rules.unique.cooldown * 0.5 : Infinity },
+      // El Sembrador de una pasada (con `lay`) no lanza la bomba en X: siembra y se va.
+      cooldowns: { basic: now + rules.firstAttack, unique: rules.unique && !rules.lay ? now + rules.unique.cooldown * 0.5 : Infinity },
       telegraph: 0,
       pending: null,
       aim: null,
@@ -8870,14 +8873,25 @@ var NeonCampaign = (() => {
       }
     } else if (gaia.kind === "sower") {
       if (ability === "basic") {
-        const { spacing, ahead, stagger } = rules.lay, k = gaia.attacks, half = spacing * (rules.leave.attacks - 1) / 2;
-        gaia.mineCenter ??= Math.max(60 + half, Math.min(ctx.bounds.w - 60 - half, gaia.aim.x));
+        const { spacing, ahead, stagger, top: top2 } = rules.lay, count = rules.leave.attacks, { w, h } = ctx.bounds;
+        if (gaia.mineStart === void 0) {
+          const lane = Math.max(60, Math.min(w - 60, gaia.aim.x));
+          let best = null;
+          for (let first = -(count - 1); first <= 0; first++) {
+            const fits = lane + first * spacing >= 60 && lane + (first + count - 1) * spacing <= w - 60;
+            const score = Math.abs(first + (count - 1) / 2) + (fits ? 0 : 100);
+            if (!best || score < best.score) best = { first, score };
+          }
+          gaia.mineStart = lane + best.first * spacing;
+          gaia.mineRow = Math.max(h * top2 + 100, gaia.aim.y - ahead);
+        }
+        const k = gaia.attacks;
         emit({
           type: "mine",
           x: item.x,
           y: item.y + 20,
-          tx: gaia.mineCenter - half + k * spacing,
-          ty: gaia.aim.y - ahead + k % 2 * stagger
+          tx: Math.max(60, Math.min(w - 60, gaia.mineStart + k * spacing)),
+          ty: gaia.mineRow + k % 2 * stagger
         });
       } else emit({ type: "cross-bomb", x: item.x, y: item.y, vx: (item.x < ctx.bounds.w / 2 ? -1 : 1) * rules.unique.speed });
     } else if (gaia.kind === "atlasEscort") {

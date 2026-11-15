@@ -1594,3 +1594,25 @@ test('the new sower lays four mines ahead of the ship and leaves the screen', ()
   assert.ok(Math.max(...xs) - Math.min(...xs) > 400, `spread across the path: ${xs.map(Math.round)}`);
   for (const mine of seen.values()) assert.ok(mine.y < ship.y - 200, 'they land ahead of the ship');
 });
+
+// Revisión del PR #76: al revivir con anuncio desaparecen el Sembrador que
+// estaba sembrando y todas sus minas, también las que aún vuelan.
+test('reviving clears the sower and every mine, even those still in the air', () => {
+  const {T} = harness();
+  startAt(T, 3); T.adv(.5);
+  T.ev('items=items.filter(i=>!i.flightPatrol);classicPatrolTimer=999;window.__s=spawnGaiaEnemy("sower")');
+  for (let k = 0; k < 400 && T.ev('items.filter(i=>i.gaiaMine).length') < 2; k++) { T.ev('hull=100;hullGrace=5;classicPatrolTimer=999'); T.adv(1 / 30); }
+  assert.ok(T.ev('items.filter(i=>i.gaiaMine).length') >= 2);
+  T.ev('hull=0'); T.finishGame('hull'); T.resumeReward();
+  assert.equal(T.ev('items.filter(i=>i.gaiaMine).length'), 0);
+  assert.equal(T.ev('items.includes(window.__s)'), false);
+});
+
+test('mines that drift past the ship leave by the bottom instead of vanishing on screen', () => {
+  const {T} = harness();
+  startAt(T, 3); T.adv(.5);
+  T.ev('items=items.filter(i=>!i.flightPatrol);classicPatrolTimer=999;spawnGaiaMine(60,H*.5,60,H*.5)');
+  let lastY = 0;
+  for (let k = 0; k < 900 && T.ev('items.some(i=>i.gaiaMine)'); k++) { T.ev('hull=100;hullGrace=5;classicPatrolTimer=999;player.x=player.target=600'); T.adv(1 / 30); lastY = T.ev('items.find(i=>i.gaiaMine)?.y??0') || lastY; }
+  assert.ok(lastY > T.ev('H'), `the mine was last seen at y=${Math.round(lastY)} (H=${T.ev('H')})`);
+});
