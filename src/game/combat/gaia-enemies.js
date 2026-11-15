@@ -149,8 +149,9 @@ export function advanceGaiaEnemy(item, dt, ctx, emit) {
     cooldowns: gaia.cooldowns, bornAt: gaia.bornAt, ...(gaia.heading !== undefined ? {heading: gaia.heading} : {})};
   const intent = decideEnemyIntent(view, ctx);
   if (intent.heading !== undefined) gaia.heading = intent.heading;
-  // El Alfa caza desde arriba: nunca baja a menos de `clearance` de la nave.
-  const targetY = rules.clearance ? Math.min(intent.targetY, ctx.player.y - rules.clearance) : intent.targetY;
+  // El Alfa caza desde arriba: nunca baja a menos de `clearance` de la nave;
+  // el que va detrás en la fila (`back`) guarda además esa distancia.
+  const targetY = rules.clearance ? Math.min(intent.targetY, ctx.player.y - rules.clearance - (intent.back || 0)) : intent.targetY;
   moveToward(item, {x: intent.targetX, y: targetY}, rules.speed * dt);
   // La Égida no dispara ni pide turno: su escudo cubre al aliado que protege.
   if (gaia.profile === 'escort') {
