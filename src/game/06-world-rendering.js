@@ -209,7 +209,7 @@
     // Gaia (fotograma 2) respeta su transparencia: aparece con fundido al
     // empezar el tramo 2 (revisión del PR #77). Las dos poses de la estación
     // comparten el pivote del reactor y siguen opacas.
-    if (frame === 2) ctx.globalAlpha *= node.alpha ?? 1;
+    if (frame === 2 && Number.isFinite(node.alpha) && node.alpha < 1) ctx.globalAlpha *= node.alpha;
     ctx.drawImage(image, (frame % 3) * cellWidth, Math.floor(frame / 3) * cellHeight,
       cellWidth, cellHeight, -size / 2, -size / 2, size, size);
     ctx.restore();
