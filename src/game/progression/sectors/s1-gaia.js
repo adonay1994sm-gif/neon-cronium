@@ -83,7 +83,10 @@ export const S1_GAIA = immutable({
       // Gaia crece en cada tramo desde el 2 para que se note el viaje (propietario,
       // 09/11/2026); antes era un punto hasta el tramo 4. La llegada no cambia (.92).
       planet: immutable({x: .79 - .40 * smooth(p, .2, 1), y: .08 + .08 * gate, scale: .02 + .9 * Math.max(0, (p - .08) / .92) ** 1.15,
-        rotation: .06 * p, visible: true, alpha: .5 + .5 * smooth(p, .1, .4)}),
+        // En el tramo 1 no se ve: su puntito quedaba encima del planeta de salida
+        // (propietario, 15/11/2026). Aparece poco a poco al empezar el tramo 2.
+        rotation: .06 * p, visible: stageIndex >= 1,
+        alpha: stageIndex < 1 ? 0 : Math.min(smooth(p, .09, .13), .5 + .5 * smooth(p, .1, .4))}),
       beacon: immutable({x: .54, y: .14 + .10 * gate, scale: .03 + .20 * gate, visible: p >= .75, alpha: 1, active: stageIndex >= 9}),
       relay: immutable({visible: false, x: 0, y: 0, scale: 0, alpha: 0, active: false, state: 'approach'}),
       attacker: immutable({x: 1.2, y: 0, scale: 0, rotation: 0, visible: false, state: 'retreat'}),

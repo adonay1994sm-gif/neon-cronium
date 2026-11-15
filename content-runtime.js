@@ -3651,9 +3651,11 @@ var NeonCampaign = (() => {
           x: 0.79 - 0.4 * smooth(p, 0.2, 1),
           y: 0.08 + 0.08 * gate,
           scale: 0.02 + 0.9 * Math.max(0, (p - 0.08) / 0.92) ** 1.15,
+          // En el tramo 1 no se ve: su puntito quedaba encima del planeta de salida
+          // (propietario, 15/11/2026). Aparece poco a poco al empezar el tramo 2.
           rotation: 0.06 * p,
-          visible: true,
-          alpha: 0.5 + 0.5 * smooth(p, 0.1, 0.4)
+          visible: stageIndex >= 1,
+          alpha: stageIndex < 1 ? 0 : Math.min(smooth(p, 0.09, 0.13), 0.5 + 0.5 * smooth(p, 0.1, 0.4))
         }),
         beacon: immutable12({ x: 0.54, y: 0.14 + 0.1 * gate, scale: 0.03 + 0.2 * gate, visible: p >= 0.75, alpha: 1, active: stageIndex >= 9 }),
         relay: immutable12({ visible: false, x: 0, y: 0, scale: 0, alpha: 0, active: false, state: "approach" }),
