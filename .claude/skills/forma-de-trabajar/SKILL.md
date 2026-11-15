@@ -224,6 +224,18 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
   destruido aún «hay que darle más vueltas».
 - Para su paso del sector 1 quedan el color de la Égida y la pose del
   Fulminante de Atlas.
+- Pausa del sector (12/11): REINICIAR TRAMO se llama RENDIRSE, pide confirmar
+  y cuenta como morir (y como una partida). Salir al menú y continuar te
+  devuelve con el casco que tenías, nunca más del de entrada al tramo.
+- Formaciones del sector 1 (12/11, «las tres, por tramos»): línea en los
+  tramos 1–2, cuña en 3–4, pinza en 7–9; el 5, el 6 y el 10 no cambian. Solo
+  cambia dónde se colocan: ni vida, ni daño, ni turnos de ataque.
+- Alfa y Égida (13 y 15/11): no se pisan y conservan su papel. Dos Alfas van
+  **en fila** sobre el jugador (no a los lados: el Alfa dispara recto hacia
+  abajo y a los lados cambiaba la dificultad). La Égida va en diagonal junto a
+  su protegida.
+- Sonido de jefe destruido (12/11): «aún no lo he oído». No volver a
+  preguntarlo hasta que él lo diga.
 
 ## 8. Antes de dar algo por terminado
 
@@ -241,6 +253,19 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 15/11/2026: le dije que poner dos Alfas lado a lado «no cambia la
+  dificultad» sin medirlo, y sí la cambiaba (lo encontró la revisión). Antes
+  de prometer que algo no toca la dificultad, mira cómo dispara ese enemigo y
+  mídelo. Al fallar: decírselo claro en la primera línea, con las opciones y
+  la recomendada; eligió la recomendada sin reproche.
+- 13/11/2026: una captura con el casco bloqueado y el jugador quieto no
+  enseña lo que pasa al moverse. Las pruebas y capturas de enemigos se hacen
+  también con el jugador moviéndose y pegado a un borde.
+- 13/11/2026: medir antes y después con el piloto automático (golpes y
+  derribos por tramo) le sirve para decidir sobre dificultad; decirle siempre
+  que la muestra es pequeña.
+- 12/11/2026: si dice «aún no lo he oído/visto», no se le vuelve a preguntar:
+  se espera a que él lo traiga.
 - 11/11/2026: el mismo encargo se hizo dos veces (la sesión del PC y la de la
   nube arreglaron la misma música y revisaron el mismo PR). Antes de empezar
   un encargo: `git fetch`, mira los PR abiertos y las tareas del tablero con
