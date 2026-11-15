@@ -14,7 +14,7 @@ export const ENEMY_AI_PROFILES = Object.freeze({
   artillery: Object.freeze({preferred: 420, minRange: 250}),
   // En diagonal por delante de su protegida, sin taparla (antes 55/40: encima).
   // switchMargin: cuánto más despejado debe estar el otro lado para cambiarse.
-  escort: Object.freeze({sideOffset: 80, depthOffset: 70, switchMargin: 20}),
+  escort: Object.freeze({sideOffset: 80, depthOffset: 70, switchMargin: 40}),
   opportunist: Object.freeze({hullThreshold: 35, hover: 320}),
   ambusher: Object.freeze({belowOffset: 140, entryLine: 1100}),
   miner: Object.freeze({laneShare: .78, edge: 60, arrive: 30})
@@ -32,8 +32,14 @@ function movement(enemy, ctx, rules) {
       // porque el Alfa dispara recto hacia abajo y eso cambiaría la dificultad.
       const pack = ctx.allies.filter(ally => ally.profile === 'hunter' || ally.id === enemy.id)
         .sort((a, b) => b.y - a.y || (a.id < b.id ? -1 : 1));
-      const back = Math.max(0, pack.findIndex(ally => ally.id === enemy.id)) * rules.packGap;
-      return {x: player.x, y: player.y - rules.chaseOffset - back, ...(back ? {back} : {})};
+      const rank = Math.max(0, pack.findIndex(ally => ally.id === enemy.id));
+      const ahead = pack[rank - 1], behind = pack[rank + 1], back = rank * rules.packGap;
+      // La separación se guarda con el vecino real, no solo con el jugador: el
+      // de detrás no baja hasta tener hueco (y entretanto espera en su carril)
+      // y el de delante no sube contra el que tiene detrás.
+      const room = !ahead || ahead.y - enemy.y >= rules.packGap;
+      return {x: room ? player.x : enemy.x, y: player.y - rules.chaseOffset - back, ...(back ? {back} : {}),
+        ...(ahead ? {maxY: ahead.y - rules.packGap} : {}), ...(behind ? {minY: behind.y + rules.packGap} : {})};
     }
     case 'artillery': {
       if (d >= rules.preferred || d === 0) return {x: enemy.x, y: enemy.y};
@@ -47,11 +53,14 @@ function movement(enemy, ctx, rules) {
       // Se queda en el lado en que está, salvo que el otro esté claramente más
       // despejado. Entre dos escoltas cede la de id mayor: así no bailan.
       const others = allies.filter(ally => ally.id !== weakest.id && !(ally.profile === 'escort' && ally.id > enemy.id));
-      const spot = side => ({x: clamp(weakest.x + side * rules.sideOffset, 40, bounds.w - 40), y: weakest.y + rules.depthOffset});
-      // La protegida también cuenta: en el borde, el lado que no cabe queda pegado a ella.
-      const room = side => Math.min(...[weakest, ...others].map(ally => distance(spot(side), ally)));
+      const spot = side => ({x: weakest.x + side * rules.sideOffset, y: weakest.y + rules.depthOffset});
+      const room = side => Math.min(...others.map(ally => distance(spot(side), ally)));
+      // En el borde se descarta el lado que no cabe en pantalla: recortado
+      // quedaría pegado a la protegida.
+      const fits = side => spot(side).x >= 40 && spot(side).x <= bounds.w - 40;
       const here = enemy.x <= weakest.x ? -1 : 1;
-      return {...spot(room(-here) > room(here) + rules.switchMargin ? -here : here), guardId: weakest.id};
+      const swap = fits(-here) && (!fits(here) || room(-here) > room(here) + rules.switchMargin);
+      return {...spot(swap ? -here : here), guardId: weakest.id};
     }
     case 'opportunist': return {x: enemy.x <= bounds.w / 2 ? bounds.w * .2 : bounds.w * .8, y: Math.max(120, player.y - rules.hover)};
     case 'ambusher': return enemy.y > rules.entryLine ? {x: player.x, y: player.y + rules.belowOffset} : {x: enemy.x, y: bounds.h - 100};
@@ -84,7 +93,8 @@ export function decideEnemyIntent(enemy, ctx) {
   if (!rules) throw new RangeError(`Unknown enemy profile: ${enemy.profile}`);
   const {w, h} = ctx.bounds, move = movement(enemy, ctx, rules);
   const intent = {targetX: clamp(move.x, 40, w - 40), targetY: clamp(move.y, 40, h - 40), attack: false, ability: null,
-    ...(move.heading !== undefined ? {heading: move.heading} : {}), ...(move.back ? {back: move.back} : {})};
+    ...(move.heading !== undefined ? {heading: move.heading} : {}), ...(move.back ? {back: move.back} : {}),
+    ...(move.maxY !== undefined ? {maxY: move.maxY} : {}), ...(move.minY !== undefined ? {minY: move.minY} : {})};
   const ready = enemy.cooldowns.unique <= ctx.now ? 'unique' : enemy.cooldowns.basic <= ctx.now ? 'basic' : null;
   // La Escolta no dispara: su habilidad única (escudo) no gasta turno.
   if (enemy.profile === 'escort') return {...intent, ability: ready === 'unique' ? 'unique' : null, guardId: move.guardId};
