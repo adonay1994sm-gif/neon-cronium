@@ -2176,9 +2176,17 @@
       if(!ensureSprite(image)._warm){image._warm=true;image.decode?.().catch(()=>{});}
     if(view.stageElapsed<6)return;
     subBoss=NeonCampaign.createSubguardian({width:W,height:H,seed:view.stageNumber*97});
+    refillBossBattery();
     spawnAtlasEscorts(4,subBossAnchor());
     uiSound("boss-alert");
     showStoryTransmission("RED ATLAS","Subguardián en línea. El anillo de Gaia queda cerrado.",3.4);
+  }
+  // Cada jefe empieza con la batería llena, sin aviso (propietario, 15/11/2026):
+  // en el subjefe se acababan los disparos muy rápido.
+  function refillBossBattery() {
+    if(!classicWeapons)return;
+    classicWeapons.charges=classicWeapons.maxCharges;classicWeapons.recharge=0;classicWeapons.hotReloading=false;
+    ammo=classicWeapons.charges;updateAmmoHud();
   }
   function updateSubBossEncounter(dt) {
     maybeStartSubBoss();
@@ -2668,6 +2676,7 @@
     if (typeof resetGameInput === "function") resetGameInput();
     cancelSupplyFailureTimer();
     atlasBoss = NeonCampaign.createGuardianAtlas({width: W, height: H, playerY: player.y});resetAtlasFury();
+    refillBossBattery();
     // El Fulminante usa el haz pintado del láser del subguardián.
     ensureSprite(SPRITES.subguardianLaser);
     // Vida de Atlas según el modo de dificultad (Normal = la de siempre).
