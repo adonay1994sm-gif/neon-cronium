@@ -438,9 +438,22 @@
     explosions.push({ x, y, scale, life: duration, duration, rotation: Math.random() * Math.PI * 2 });
   }
 
-  function addImpactEffect(x, y, scale = 1, angle = 0) {
+  function addImpactEffect(x, y, scale = 1, angle = 0, duration = 0.24) {
     if (impactEffects.length >= EFFECT_LIMITS.impacts) impactEffects.shift();
-    impactEffects.push({ x, y, scale, angle, life: 0.24, duration: 0.24, variant: (Math.random() * SPRITE_GROUPS.impact.length) | 0 });
+    impactEffects.push({ x, y, scale, angle, life: duration, duration, variant: (Math.random() * SPRITE_GROUPS.impact.length) | 0 });
+  }
+
+  // Disparo con golpe (propietario, 15/11/2026): el pulso estalla en el lado
+  // por el que llega, suelta chispas hacia quien disparó y el objetivo destella.
+  // Solo presentación: el daño lo decide quien llama.
+  function addPulseImpact(item, shot) {
+    const fromX = (shot.previousX ?? shot.x) - item.x, fromY = (shot.previousY ?? shot.y) - item.y;
+    const reach = (item.r || 32) * .75 / (Math.hypot(fromX, fromY) || 1);
+    const x = item.x + fromX * reach, y = item.y + fromY * reach;
+    addImpactEffect(x, y, 2.2, 0, .3);
+    if (settings.effects === false) return;
+    addHullSparks(x, y, Math.atan2(fromY, fromX));
+    if (!settings.reduceEffects) item.hitFlashUntil = elapsed + .1;
   }
 
   function addHullSparks(x, y, angle) {

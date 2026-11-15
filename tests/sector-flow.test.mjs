@@ -1521,3 +1521,33 @@ test('two Alphas hunt in a column and the Aegis stays clear of the ship it guard
   const guarded = list.find(enemy => enemy.id === aegis.guard);
   assert.ok(guarded && Math.hypot(aegis.x - guarded.x, aegis.y - guarded.y) >= 95, 'the Aegis is not on top of its ally');
 });
+
+// Disparo con golpe (propietario, 15/11/2026): el pulso estalla donde pega,
+// suelta chispas hacia la nave y el objetivo destella. Solo presentación.
+function pulseHit(T, before = '') {
+  startAt(T, 3);
+  T.ev(`classicVoyageHazardTimer=999;classicPatrolTimer=999;items.length=0;impactEffects.length=0;${before}`);
+  T.ev("window.__t=createThreat('scout',level());Object.assign(window.__t,{id:'target',classicScout:null,x:player.x,baseX:player.x,y:player.y-260,s:0,rot:0,rs:0,amp:0,hp:9,maxHp:9,r:34});items.push(window.__t)");
+  T.ev('classicWeapons.charges=Math.max(classicWeapons.charges,1);classicWeapons.cooldown=0;manualShotCooldown=0;fireManualShot()');
+  for (let k = 0; k < 60 && T.ev('window.__t.hp') === 9; k++) T.adv(1 / 60);
+  assert.ok(T.ev('window.__t.hp') < 9, 'the pulse hit');
+  return JSON.parse(T.ev('JSON.stringify({fx:impactEffects,target:{x:window.__t.x,y:window.__t.y,flash:window.__t.hitFlashUntil||0},elapsed})'));
+}
+
+test('a pulse hit bursts where it lands, throws sparks toward the ship and flashes the target', () => {
+  const {T} = harness();
+  const {fx, target, elapsed} = pulseHit(T);
+  const burst = fx.find(effect => !effect.hullSparks), sparks = fx.find(effect => effect.hullSparks);
+  assert.ok(burst && burst.scale >= 2, 'a burst twice as big as before');
+  assert.ok(burst.y > target.y + 15 && Math.abs(burst.x - target.x) < 12, 'on the side the pulse came from, not at the centre');
+  assert.ok(sparks && Math.abs(sparks.angle - Math.PI / 2) < .2, 'sparks fan back toward the ship');
+  assert.ok(target.flash > elapsed && target.flash - elapsed <= .11, 'the target flashes for a tenth of a second');
+});
+
+test('with effects off there are no extra sparks, and reduced effects drops the flash', () => {
+  const off = pulseHit(harness().T, 'settings.effects=false;');
+  assert.equal(off.fx.filter(effect => effect.hullSparks).length, 0);
+  assert.equal(off.fx.filter(effect => !effect.hullSparks).length, 1, 'the burst stays: it is the hit confirmation');
+  const reduced = pulseHit(harness().T, 'settings.reduceEffects=true;');
+  assert.equal(reduced.target.flash, 0);
+});
