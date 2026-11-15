@@ -194,3 +194,42 @@ test('atlas escorts circle Atlas and shoot down with a token', () => {
   assert.ok(shots.length >= 1 && warnings.length >= 1);
   assert.ok(shots.every(shot => shot.vx === 0 && shot.vy > 0 && shot.damage > 0), 'it shoots straight down');
 });
+
+// Revisión del PR #72 (15/11/2026): dos Alfas en fila tampoco se pisan cuando el
+// jugador sube y baja, ni al entrar los dos a la vez (radio 58 cada uno).
+function packRun(move, seconds = 30) {
+  const pack = [spawn('alpha', {x: 216, y: -70, id: 'gaia:0:8:0'}), spawn('alpha', {x: 504, y: -70, id: 'gaia:0:8:1'})];
+  const tokens = createAttackTokens({max: 3});
+  let now = 0, closest = Infinity, shots = 0;
+  for (let frame = 0; frame < Math.round(seconds / DT); frame++) {
+    now += DT;
+    const player = {...move(now), hull: 100, reloading: false};
+    for (const item of pack) {
+      const allies = pack.map(other => ({id: other.id, x: other.x, y: other.y, hp: other.hp, maxHp: other.maxHp, profile: other.gaia.profile}));
+      advanceGaiaEnemy(item, DT, {now, player, bounds: BOUNDS, allies, tokens}, event => { if (event.type === 'shot') shots++; });
+    }
+    closest = Math.min(closest, Math.hypot(pack[0].x - pack[1].x, pack[0].y - pack[1].y));
+  }
+  return {closest, pack, shots};
+}
+
+test('two alphas that arrive together settle in a column above a still ship', () => {
+  const {closest, pack, shots} = packRun(() => ({x: 360, y: 1050}));
+  assert.ok(closest >= 116, `closest ${closest.toFixed(1)}`);
+  assert.ok(Math.abs(pack[0].x - 360) < 2 && Math.abs(pack[1].x - 360) < 2, 'both above the ship');
+  assert.ok(Math.abs(Math.abs(pack[0].y - pack[1].y) - 140) < 2, 'one 140 px behind the other');
+  assert.ok(shots > 40, 'both keep firing');
+});
+
+for (const [name, move] of Object.entries({
+  'sways sideways': t => ({x: 360 + 250 * Math.sin(t * 1.3), y: 1050}),
+  'climbs and dives slowly': t => ({x: 360, y: 900 + 200 * Math.sin(t * .9)}),
+  'climbs and dives fast': t => ({x: 360, y: 950 + 150 * Math.sin(t * 2.4)}),
+  'moves diagonally': t => ({x: 360 + 200 * Math.sin(t * 1.1), y: 900 + 200 * Math.sin(t * 1.7)}),
+  'hugs the edge': t => ({x: 62, y: 1050 - 150 * Math.sin(t)})
+})) {
+  test(`two alphas never overlap while the ship ${name}`, () => {
+    const {closest} = packRun(move);
+    assert.ok(closest >= 116, `closest ${closest.toFixed(1)}`);
+  });
+}
