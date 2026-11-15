@@ -17,7 +17,8 @@ export const ENEMY_AI_PROFILES = Object.freeze({
   escort: Object.freeze({sideOffset: 80, depthOffset: 70, switchMargin: 40}),
   opportunist: Object.freeze({hullThreshold: 35, hover: 320}),
   ambusher: Object.freeze({belowOffset: 140, entryLine: 1100}),
-  miner: Object.freeze({laneShare: .78, edge: 60, arrive: 30})
+  // Sembrador (propietario, 15/11/2026): trabaja la franja alta, lejos de la nave.
+  miner: Object.freeze({laneShare: .22, edge: 60, arrive: 30})
 });
 
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
@@ -84,7 +85,8 @@ function wantsToAttack(enemy, ctx, rules) {
     case 'artillery': return d >= rules.minRange;
     case 'opportunist': return player.reloading || player.hull < rules.hullThreshold;
     case 'ambusher': return enemy.y > player.y;
-    case 'miner': return true;
+    // Solo siembra cuando ya está en su franja, a la vista (no bajo el marcador).
+    case 'miner': return enemy.y >= ctx.bounds.h * rules.laneShare - 40;
     default: return false;
   }
 }
