@@ -10,14 +10,14 @@ import {VOYAGE_HAZARD_PROFILES} from '../voyage-hazards.js';
 const immutable = object => Object.freeze(object);
 // Perfiles nuevos de Gaia: tracker = CH-04 Rastreador (Emboscador),
 // sower = CH-05 Sembrador (Minador), aegis = CH-06 Égida (Escolta),
-// alpha = CH-02 Alfa (élite, solo tramos 6–9).
+// alpha = CH-02 Alfa: salió del sector 1 y pasa a Vulkar (propietario, 15/11/2026).
 const ROSTERS = immutable({
   escape: immutable(['raider', 'scout']),
   flank: immutable(['raider', 'tracker', 'scout']),
   // El Sembrador rehecho vuelve donde estaba antes del 31/10 (propietario, 15/11/2026).
   mines: immutable(['sower', 'raider', 'interceptor']),
   shield: immutable(['aegis', 'interceptor', 'tracker', 'scout']),
-  elite: immutable(['alpha', 'aegis', 'interceptor', 'sower']),
+  elite: immutable(['aegis', 'interceptor', 'sower']),
   gate: immutable(['interceptor', 'tracker', 'aegis', 'raider'])
 });
 // attackers: cuántos enemigos pueden atacar a la vez (turnos de ataque) y
@@ -47,7 +47,7 @@ export const S1_GAIA = immutable({
     ['Cuarentena',52,23,'Rompe los escudos de la Égida y sigue adelante','Red exterior de Gaia','Anillo de satélites','quarantine',.16,.62,.64],
     ['El subguardián',56,27,'Derriba al subguardián que cierra el anillo','Anillo de satélites','Corredor de enlace','sub-boss',.18,.66,.70],
     ['Enlace C9',48,27,'Repara en C9 y prueba tu nave en el corredor','Corredor de enlace','Lado nocturno','service-stop',.06,.34,.30],
-    ['El Alfa',54,38,'El Alfa del C-17 lidera la caza en la oscuridad','Lado nocturno','Escolta del C-17','alpha-hunt',.08,.28,.72],
+    ['La caza en la oscuridad',54,38,'Las patrullas de Gaia te cazan en el lado nocturno','Lado nocturno','Escolta del C-17','alpha-hunt',.08,.28,.72],
     ['Lluvia en el acceso',52,44,'Cruza la lluvia de meteoritos sin dejar de combatir','Escolta del C-17','Piquetes de Gaia','meteor-rain',.14,.58,.76],
     ['Defensa orbital',54,50,'Resiste la defensa orbital mientras Atlas se activa','Piquetes de Gaia','Acceso orbital','orbital-defence',.16,.62,.82],
     ['Atlas',60,54,'Vence a Atlas para que verifique el registro','Acceso orbital','Acceso orbital de Gaia Nova','boss',.18,.62,.90]

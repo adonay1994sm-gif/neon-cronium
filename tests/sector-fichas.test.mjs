@@ -128,3 +128,11 @@ test('Gaia is hidden in stage 1 and fades in at the start of stage 2', () => {
   assert.ok(planetAt(stage2 + .05, 1).visible && planetAt(stage2 + .05, 1).alpha >= .5, 'visible early in stage 2');
   assert.equal(planetAt(1, 9).alpha, 1);
 });
+
+// El Alfa sale del sector 1 y pasa a Vulkar (propietario, 15/11/2026). Los
+// tramos 7 y 8 siguen con los enemigos que ya había; el 7 cambia de nombre.
+test('the Alpha is no longer in sector 1 and stage 7 is no longer named after it', () => {
+  for (const rules of S1_GAIA.encounters) assert.ok(!rules.patrol?.roster.includes('alpha'));
+  assert.deepEqual([...S1_GAIA.encounters[6].patrol.roster].sort(), ['aegis', 'interceptor', 'sower']);
+  for (const stage of S1_GAIA.stages) assert.ok(!/Alfa/.test(stage[0] + stage[3]), stage[0]);
+});

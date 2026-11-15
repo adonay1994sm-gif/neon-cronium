@@ -3558,7 +3558,7 @@ var NeonCampaign = (() => {
     // El Sembrador rehecho vuelve donde estaba antes del 31/10 (propietario, 15/11/2026).
     mines: immutable12(["sower", "raider", "interceptor"]),
     shield: immutable12(["aegis", "interceptor", "tracker", "scout"]),
-    elite: immutable12(["alpha", "aegis", "interceptor", "sower"]),
+    elite: immutable12(["aegis", "interceptor", "sower"]),
     gate: immutable12(["interceptor", "tracker", "aegis", "raider"])
   });
   var HORDE = immutable12({ every: 14, size: 5 });
@@ -3599,7 +3599,7 @@ var NeonCampaign = (() => {
       ["Cuarentena", 52, 23, "Rompe los escudos de la \xC9gida y sigue adelante", "Red exterior de Gaia", "Anillo de sat\xE9lites", "quarantine", 0.16, 0.62, 0.64],
       ["El subguardi\xE1n", 56, 27, "Derriba al subguardi\xE1n que cierra el anillo", "Anillo de sat\xE9lites", "Corredor de enlace", "sub-boss", 0.18, 0.66, 0.7],
       ["Enlace C9", 48, 27, "Repara en C9 y prueba tu nave en el corredor", "Corredor de enlace", "Lado nocturno", "service-stop", 0.06, 0.34, 0.3],
-      ["El Alfa", 54, 38, "El Alfa del C-17 lidera la caza en la oscuridad", "Lado nocturno", "Escolta del C-17", "alpha-hunt", 0.08, 0.28, 0.72],
+      ["La caza en la oscuridad", 54, 38, "Las patrullas de Gaia te cazan en el lado nocturno", "Lado nocturno", "Escolta del C-17", "alpha-hunt", 0.08, 0.28, 0.72],
       ["Lluvia en el acceso", 52, 44, "Cruza la lluvia de meteoritos sin dejar de combatir", "Escolta del C-17", "Piquetes de Gaia", "meteor-rain", 0.14, 0.58, 0.76],
       ["Defensa orbital", 54, 50, "Resiste la defensa orbital mientras Atlas se activa", "Piquetes de Gaia", "Acceso orbital", "orbital-defence", 0.16, 0.62, 0.82],
       ["Atlas", 60, 54, "Vence a Atlas para que verifique el registro", "Acceso orbital", "Acceso orbital de Gaia Nova", "boss", 0.18, 0.62, 0.9]
