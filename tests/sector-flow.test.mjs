@@ -1568,3 +1568,29 @@ test('shooting down an enemy bullet keeps the small spark, without burst, sparks
   assert.ok(fx.length === 1 && fx[0].scale < 1, `one small spark, got ${JSON.stringify(fx.map(effect => effect.scale))}`);
   assert.ok(!(T.ev('window.__b.hitFlashUntil') > 0));
 });
+
+// Sembrador rehecho (propietario, 15/11/2026): dentro del juego entra por
+// arriba, lanza 4 minas delante de la nave que bajan hacia ella y se marcha.
+test('the new sower lays four mines ahead of the ship and leaves the screen', () => {
+  const {T} = harness();
+  startAt(T, 3); T.adv(.5);
+  T.ev('items=items.filter(i=>!i.flightPatrol&&!i.gaiaMine);classicPatrolTimer=999;classicVoyageHazardTimer=999;classicHordeTimer=999;window.__s=spawnGaiaEnemy("sower")');
+  const seen = new Map();
+  let lowest = -Infinity, gone = false;
+  for (let k = 0; k < 600 && !gone; k++) {
+    T.ev('hull=100;hullGrace=5;classicPatrolTimer=999;classicHordeTimer=999');
+    T.adv(1 / 30);
+    for (const mine of JSON.parse(T.ev('JSON.stringify(items.filter(i=>i.gaiaMine).map(i=>({id:i.id,x:i.x,y:i.y,landed:Boolean(i.mine.landed)})))'))) {
+      if (mine.landed && !seen.has(mine.id)) seen.set(mine.id, mine);
+    }
+    lowest = Math.max(lowest, T.ev('window.__s.y'));
+    gone = !T.ev('items.includes(window.__s)');
+  }
+  const ship = JSON.parse(T.ev('JSON.stringify({x:player.x,y:player.y})'));
+  assert.ok(gone, 'the sower left');
+  assert.ok(lowest < ship.y - 500, `never comes near the ship (lowest y ${Math.round(lowest)})`);
+  assert.equal(seen.size, 4);
+  const xs = [...seen.values()].map(mine => mine.x);
+  assert.ok(Math.max(...xs) - Math.min(...xs) > 400, `spread across the path: ${xs.map(Math.round)}`);
+  for (const mine of seen.values()) assert.ok(mine.y < ship.y - 200, 'they land ahead of the ship');
+});

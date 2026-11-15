@@ -17,10 +17,15 @@ export const GAIA_ENEMY_RULES = Object.freeze({
     // Las armas solo disparan hacia arriba: tras 3 ataques o 12 s adelanta a la
     // nave por un lado y sale por arriba, donde se le puede derribar.
     leave: Object.freeze({attacks: 3, seconds: 12, speed: 260, sideOffset: 120, exitY: -100})}),
+  // Sembrador (propietario, 30/10 y 15/11/2026): «que tire unas cuantas minas
+  // repartidas por donde vas a pasar y que se vaya». Una pasada: 4 minas en
+  // zigzag delante de la nave (con hueco entre ellas) y se marcha por arriba.
   sower: Object.freeze({profile: 'miner', hp: 3, speed: 150, warning: .3, firstAttack: 1.2, salvageRole: 'raider',
-    basic: Object.freeze({cooldown: 2.2}),
+    basic: Object.freeze({cooldown: .6}),
     unique: Object.freeze({cooldown: 10, speed: 300}),
-    mine: Object.freeze({arm: .8, radius: 70, life: 7, damage: 16}),
+    mine: Object.freeze({arm: .8, radius: 70, life: 7, damage: 16, flight: .5, drift: 90}),
+    lay: Object.freeze({spacing: 170, ahead: 420, stagger: 140}),
+    leave: Object.freeze({attacks: 4, seconds: 14, speed: 220, sideOffset: 200, exitY: -100}),
     bomb: Object.freeze({raySpeed: 320, damage: 12})}),
   aegis: Object.freeze({profile: 'escort', hp: 3, speed: 200, warning: 0, firstAttack: 1.5, salvageRole: 'scout',
     unique: Object.freeze({cooldown: 8, hits: 3})}),
@@ -64,7 +69,13 @@ function unleash(item, ability, ctx, emit) {
       emit({type: 'shot', ...from, ...aimed(from, gaia.aim, rules.basic.speed), damage: rules.basic.damage, sprite: 'orb'});
     }
   } else if (gaia.kind === 'sower') {
-    if (ability === 'basic') emit({type: 'mine', x: item.x, y: item.y + 20});
+    if (ability === 'basic') {
+      // Zigzag alrededor de donde estaba la nave al empezar la pasada.
+      const {spacing, ahead, stagger} = rules.lay, k = gaia.attacks, half = spacing * (rules.leave.attacks - 1) / 2;
+      gaia.mineCenter ??= Math.max(60 + half, Math.min(ctx.bounds.w - 60 - half, gaia.aim.x));
+      emit({type: 'mine', x: item.x, y: item.y + 20, tx: gaia.mineCenter - half + k * spacing,
+        ty: gaia.aim.y - ahead + (k % 2) * stagger});
+    }
     else emit({type: 'cross-bomb', x: item.x, y: item.y, vx: (item.x < ctx.bounds.w / 2 ? -1 : 1) * rules.unique.speed});
   } else if (gaia.kind === 'atlasEscort') {
     const {speed, damage} = rules.basic;
@@ -85,11 +96,23 @@ function unleash(item, ability, ctx, emit) {
   }
 }
 
-/** Mina del Sembrador: se arma, estalla si la nave se acerca o se apaga sola.
- * mine = {x, y, age, armed}. Devuelve null, 'explode' o 'expire'. */
+/** Mina del Sembrador: vuela hasta su sitio (tx, ty) si se lanzó, baja despacio
+ * hacia la nave, se arma, estalla si la nave se acerca o se apaga sola.
+ * mine = {x, y, age, armed, tx?, ty?}. Devuelve null, 'explode' o 'expire'. */
 export function advanceMine(mine, dt, player) {
   const rules = GAIA_ENEMY_RULES.sower.mine;
+  const thrown = mine.tx !== undefined;
+  if (thrown) mine.from ??= {x: mine.x, y: mine.y};
   mine.age += dt;
+  if (thrown && mine.age < rules.flight) {
+    const k = mine.age / rules.flight;
+    mine.x = mine.from.x + (mine.tx - mine.from.x) * k;
+    mine.y = mine.from.y + (mine.ty - mine.from.y) * k;
+  } else if (thrown && !mine.landed) {
+    mine.landed = true;
+    mine.x = mine.tx;
+    mine.y = mine.ty + (mine.age - rules.flight) * rules.drift;
+  } else mine.y += rules.drift * dt;
   mine.armed = mine.age >= rules.arm;
   if (mine.armed && Math.hypot(player.x - mine.x, player.y - mine.y) < rules.radius) return 'explode';
   return mine.age >= rules.life ? 'expire' : null;

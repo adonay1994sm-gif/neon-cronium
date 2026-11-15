@@ -47,9 +47,9 @@ test('ambusher enters from below and aims upwards', () => {
   assert.ok(dist(t, c.player) < dist(e, c.player));
 });
 
-test('miner crosses the bottom third and drops mines', () => {
-  const intent = decideEnemyIntent(enemy('miner', {y: 1000}), ctx());
-  assert.ok(intent.targetY >= 1280 * 2 / 3);
+test('miner works the upper band, far above the player, and drops mines', () => {
+  const intent = decideEnemyIntent(enemy('miner', {y: 300}), ctx());
+  assert.ok(intent.targetY <= 1280 * .22 + 1, `y ${intent.targetY}`);
   assert.equal(intent.ability, 'unique');
 });
 
@@ -98,7 +98,7 @@ test('an enemy that no longer wants to attack gives its token back', () => {
 });
 
 test('miner crosses the screen from side to side', () => {
-  let m = enemy('miner', {x: 100, y: 1000, cooldowns: {basic: 99, unique: 99}});
+  let m = enemy('miner', {x: 100, y: 256, cooldowns: {basic: 99, unique: 99}});
   const seen = [];
   for (let i = 0; i < 60; i++) {
     const intent = decideEnemyIntent(m, ctx());

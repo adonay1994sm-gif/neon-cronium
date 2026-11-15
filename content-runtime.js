@@ -8664,7 +8664,8 @@ var NeonCampaign = (() => {
     escort: Object.freeze({ sideOffset: 80, depthOffset: 70, switchMargin: 40 }),
     opportunist: Object.freeze({ hullThreshold: 35, hover: 320 }),
     ambusher: Object.freeze({ belowOffset: 140, entryLine: 1100 }),
-    miner: Object.freeze({ laneShare: 0.78, edge: 60, arrive: 30 })
+    // Sembrador (propietario, 15/11/2026): trabaja la franja alta, lejos de la nave.
+    miner: Object.freeze({ laneShare: 0.22, edge: 60, arrive: 30 })
   });
   var clamp17 = (value, low, high) => Math.max(low, Math.min(high, value));
   var distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -8726,8 +8727,9 @@ var NeonCampaign = (() => {
         return player.reloading || player.hull < rules.hullThreshold;
       case "ambusher":
         return enemy.y > player.y;
+      // Solo siembra cuando ya está en su franja, a la vista (no bajo el marcador).
       case "miner":
-        return true;
+        return enemy.y >= ctx.bounds.h * rules.laneShare - 40;
       default:
         return false;
     }
@@ -8775,6 +8777,9 @@ var NeonCampaign = (() => {
       // nave por un lado y sale por arriba, donde se le puede derribar.
       leave: Object.freeze({ attacks: 3, seconds: 12, speed: 260, sideOffset: 120, exitY: -100 })
     }),
+    // Sembrador (propietario, 30/10 y 15/11/2026): «que tire unas cuantas minas
+    // repartidas por donde vas a pasar y que se vaya». Una pasada: 4 minas en
+    // zigzag delante de la nave (con hueco entre ellas) y se marcha por arriba.
     sower: Object.freeze({
       profile: "miner",
       hp: 3,
@@ -8782,9 +8787,11 @@ var NeonCampaign = (() => {
       warning: 0.3,
       firstAttack: 1.2,
       salvageRole: "raider",
-      basic: Object.freeze({ cooldown: 2.2 }),
+      basic: Object.freeze({ cooldown: 0.6 }),
       unique: Object.freeze({ cooldown: 10, speed: 300 }),
-      mine: Object.freeze({ arm: 0.8, radius: 70, life: 7, damage: 16 }),
+      mine: Object.freeze({ arm: 0.8, radius: 70, life: 7, damage: 16, flight: 0.5, drift: 90 }),
+      lay: Object.freeze({ spacing: 170, ahead: 420, stagger: 140 }),
+      leave: Object.freeze({ attacks: 4, seconds: 14, speed: 220, sideOffset: 200, exitY: -100 }),
       bomb: Object.freeze({ raySpeed: 320, damage: 12 })
     }),
     aegis: Object.freeze({
@@ -8863,8 +8870,17 @@ var NeonCampaign = (() => {
         emit({ type: "shot", ...from, ...aimed(from, gaia.aim, rules.basic.speed), damage: rules.basic.damage, sprite: "orb" });
       }
     } else if (gaia.kind === "sower") {
-      if (ability === "basic") emit({ type: "mine", x: item.x, y: item.y + 20 });
-      else emit({ type: "cross-bomb", x: item.x, y: item.y, vx: (item.x < ctx.bounds.w / 2 ? -1 : 1) * rules.unique.speed });
+      if (ability === "basic") {
+        const { spacing, ahead, stagger } = rules.lay, k = gaia.attacks, half = spacing * (rules.leave.attacks - 1) / 2;
+        gaia.mineCenter ??= Math.max(60 + half, Math.min(ctx.bounds.w - 60 - half, gaia.aim.x));
+        emit({
+          type: "mine",
+          x: item.x,
+          y: item.y + 20,
+          tx: gaia.mineCenter - half + k * spacing,
+          ty: gaia.aim.y - ahead + k % 2 * stagger
+        });
+      } else emit({ type: "cross-bomb", x: item.x, y: item.y, vx: (item.x < ctx.bounds.w / 2 ? -1 : 1) * rules.unique.speed });
     } else if (gaia.kind === "atlasEscort") {
       const { speed, damage } = rules.basic;
       emit({ type: "shot", x: item.x, y: item.y + 24, vx: 0, vy: speed, damage, sprite: "orb" });
@@ -8883,7 +8899,18 @@ var NeonCampaign = (() => {
   }
   function advanceMine(mine, dt, player) {
     const rules = GAIA_ENEMY_RULES.sower.mine;
+    const thrown = mine.tx !== void 0;
+    if (thrown) mine.from ??= { x: mine.x, y: mine.y };
     mine.age += dt;
+    if (thrown && mine.age < rules.flight) {
+      const k = mine.age / rules.flight;
+      mine.x = mine.from.x + (mine.tx - mine.from.x) * k;
+      mine.y = mine.from.y + (mine.ty - mine.from.y) * k;
+    } else if (thrown && !mine.landed) {
+      mine.landed = true;
+      mine.x = mine.tx;
+      mine.y = mine.ty + (mine.age - rules.flight) * rules.drift;
+    } else mine.y += rules.drift * dt;
     mine.armed = mine.age >= rules.arm;
     if (mine.armed && Math.hypot(player.x - mine.x, player.y - mine.y) < rules.radius) return "explode";
     return mine.age >= rules.life ? "expire" : null;

@@ -1111,8 +1111,8 @@
   function spawnGaiaEnemy(kind) {
     const ordinal=classicPatrolSequence++,stage=classicFlightView?.stageNumber||0,rules=NeonCampaign.GAIA_ENEMY_RULES[kind];
     // El Rastreador entra por abajo, el Sembrador por un lado del carril bajo y los demás por arriba.
-    const x=kind==="sower"?(ordinal%2===0?-30:W+30):W*(ordinal%2===0?.3:.7);
-    const y=kind==="tracker"?H+30:kind==="sower"?H*.78:-70;
+    const x=W*(kind==="sower"?(ordinal%2===0?.15:.85):(ordinal%2===0?.3:.7));
+    const y=kind==="tracker"?H+30:-70;
     const item=createThreat("scout",level());
     // Sin el piloto del explorador antiguo: lo mueve su propia IA.
     Object.assign(item,{id:`gaia:${currentLevel}:${stage}:${ordinal}`,x,baseX:x,y,s:0,rot:0,rs:0,amp:0,classicScout:null,
@@ -1127,9 +1127,9 @@
   function gaiaHazard(fields) {
     return {type:"meteor",s:0,rot:0,rs:0,p:0,phase:Math.random()*4,amp:0,alpha:1,special:"",hp:1,maxHp:1,...fields};
   }
-  function spawnGaiaMine(x,y) {
+  function spawnGaiaMine(x,y,tx,ty) {
     const item=gaiaHazard({id:`gaia-mine:${++classicThreatSequence}`,gaiaMine:true,x,baseX:x,y,r:16,
-      damage:NeonCampaign.GAIA_ENEMY_RULES.sower.mine.damage,mine:{x,y,age:0,armed:false}});
+      damage:NeonCampaign.GAIA_ENEMY_RULES.sower.mine.damage,mine:{x,y,age:0,armed:false,...(tx!==undefined?{tx,ty}:{})}});
     items.push(item);return item;
   }
   function gaiaShot(shot) {
@@ -1139,7 +1139,7 @@
   function handleGaiaEvent(item,event) {
     if(event.type==="shot"){items.push(gaiaShot(event));combatSound("enemy-phaser",event.x);}
     if(event.type==="mark"){playerMarkedUntil=elapsed+event.seconds;}
-    if(event.type==="mine")spawnGaiaMine(event.x,event.y);
+    if(event.type==="mine")spawnGaiaMine(event.x,event.y,event.tx,event.ty);
     if(event.type==="cross-bomb")items.push(gaiaHazard({id:`gaia-bomb:${++classicThreatSequence}`,gaiaBomb:true,
       x:event.x,baseX:event.x,y:event.y,r:14,damage:NeonCampaign.GAIA_ENEMY_RULES.sower.bomb.damage,bomb:{x:event.x,y:event.y,vx:event.vx}}));
     if(event.type==="shield"){
@@ -1151,6 +1151,7 @@
   function advanceGaiaItem(item,dt) {
     if(item.gaiaMine) {
       const result=NeonCampaign.advanceMine(item.mine,dt,player);
+      item.x=item.baseX=item.mine.x;item.y=item.mine.y;
       if(result==="explode"){addExplosion(item.x,item.y,.6,.4);damageShip(item.damage,item.x,item.y);}
       return result===null;
     }

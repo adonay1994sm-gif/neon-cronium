@@ -67,29 +67,70 @@ test('same seed, same events', () => {
 });
 
 // Tarea 5: Sembrador, minas y bomba en cruz.
-test('the sower crosses the lower lane from edge to edge', () => {
-  const item = spawn('sower', {x: 80, y: 1000});
-  let minX = Infinity, maxX = -Infinity, worstY = 0;
-  sim(item, 12, {onStep: (now, it) => {
-    if (now < 2) return;
-    minX = Math.min(minX, it.x); maxX = Math.max(maxX, it.x);
-    worstY = Math.max(worstY, Math.abs(it.y - .78 * BOUNDS.h));
+// Sembrador rehecho (propietario, 30/10 y 15/11/2026): «que tire unas cuantas
+// minas repartidas por donde vas a pasar y que se vaya». Entra por arriba,
+// cruza la franja alta, lanza 4 minas en zigzag delante de la nave y se marcha.
+const SHIP = {x: 360, y: 1050};
+function sowerRun(seconds = 16, player = SHIP) {
+  const item = spawn('sower', {x: 216, y: -70});
+  let lowest = -Infinity, lastMineAt = 0, goneAt = null;
+  const {events} = sim(item, seconds, {player, onStep: (now, it) => {
+    lowest = Math.max(lowest, it.y);
+    if (goneAt === null && it.gaia.leaving && it.y < -80) goneAt = now;
   }});
-  assert.ok(minX <= 100 && maxX >= 620, `${minX}..${maxX}`);
-  assert.ok(worstY <= 40, `drifts ${worstY}`);
+  const mines = events.filter(event => event.type === 'mine');
+  if (mines.length) lastMineAt = mines.at(-1).at;
+  return {item, events, mines, lowest, lastMineAt, goneAt};
+}
+
+test('the sower enters from above and works the upper band, far from the ship', () => {
+  const {lowest} = sowerRun();
+  assert.ok(lowest <= .22 * BOUNDS.h + 40, `comes down to y=${lowest.toFixed(0)}`);
+  assert.ok(lowest <= SHIP.y - 600);
 });
 
-test('the sower drops a mine every 2.2 seconds', () => {
-  const mines = sim(spawn('sower', {x: 80, y: 1000}), 12).events.filter(event => event.type === 'mine');
-  assert.ok(mines.length >= 3);
-  for (let index = 1; index < mines.length; index++) assert.ok(mines[index].at - mines[index - 1].at >= 2.2 - 1e-9);
+test('the sower throws exactly four mines spread across the ship\'s path, then leaves', () => {
+  const {mines, lastMineAt, goneAt} = sowerRun();
+  assert.equal(mines.length, 4);
+  const xs = mines.map(mine => mine.tx).sort((a, b) => a - b);
+  for (const mine of mines) {
+    assert.ok(mine.tx >= 60 && mine.tx <= BOUNDS.w - 60, `x ${mine.tx}`);
+    assert.ok(mine.ty >= SHIP.y - 450 && mine.ty <= SHIP.y - 250, `lands ahead of the ship at y ${mine.ty}`);
+    assert.ok(mine.y < mine.ty, 'thrown down from the sower');
+  }
+  assert.ok(xs[0] < SHIP.x - 150 && xs[3] > SHIP.x + 150, `covers both sides: ${xs}`);
+  // Zigzag: entre dos minas vecinas queda hueco para pasar (estallan a 70 px).
+  const byX = [...mines].sort((a, b) => a.tx - b.tx);
+  for (let k = 1; k < byX.length; k++) {
+    const gap = Math.hypot(byX[k].tx - byX[k - 1].tx, byX[k].ty - byX[k - 1].ty);
+    assert.ok(gap - 2 * 70 >= 70, `a gap of ${(gap - 140).toFixed(0)} px between mines ${k - 1} and ${k}`);
+  }
+  assert.ok(goneAt !== null && goneAt - lastMineAt < 5, `gone ${goneAt} s, last mine ${lastMineAt} s`);
+});
+
+test('the four mines are laid around where the ship was when the run began', () => {
+  const left = sowerRun(16, {x: 120, y: 1050}).mines.map(mine => mine.tx);
+  const right = sowerRun(16, {x: 600, y: 1050}).mines.map(mine => mine.tx);
+  assert.ok(Math.min(...left) < Math.min(...right) || Math.max(...left) < Math.max(...right));
+});
+
+test('a thrown mine flies to its spot, arms, then drifts down across the ship\'s lane', () => {
+  const mine = {x: 300, y: 260, tx: 200, ty: 640, age: 0, armed: false};
+  const far = {x: 900, y: 0};
+  for (let t = 0; t < .5 - 1e-9; t += DT) advanceMine(mine, DT, far);
+  assert.ok(Math.hypot(mine.x - 200, mine.y - 640) < 6, `lands at ${mine.x.toFixed(0)},${mine.y.toFixed(0)}`);
+  const landed = mine.y;
+  for (let t = 0; t < 2; t += DT) advanceMine(mine, DT, far);
+  assert.ok(mine.armed);
+  assert.ok(mine.y - landed > 120 && mine.y - landed < 240, `drifts ${(mine.y - landed).toFixed(0)} px in 2 s`);
+  assert.ok(Math.abs(mine.x - 200) < 1e-9, 'straight down');
 });
 
 test('a mine arms after 0.8 s and only explodes near the ship', () => {
   const near = {x: 360, y: 1000, age: 0, armed: false}, far = {x: 360, y: 1000, age: 0, armed: false};
   const results = [];
   for (let t = 0; t < 7.2; t += DT) {
-    results.push([t, advanceMine(near, DT, {x: 420, y: 1000}), advanceMine(far, DT, {x: 460, y: 1000})]);
+    results.push([t, advanceMine(near, DT, {x: near.x + 60, y: near.y}), advanceMine(far, DT, {x: far.x + 100, y: far.y})]);
   }
   const boom = results.find(([, result]) => result === 'explode');
   assert.ok(boom && boom[0] >= .8 - DT, `explodes at ${boom?.[0]}`);
@@ -108,8 +149,12 @@ test('the cross bomb bursts into three rays at the edge', () => {
   for (const ray of rays) assert.ok(ray.x <= 1 && ray.damage > 0);
 });
 
-test('the sower throws its cross bomb toward the nearest edge', () => {
-  const bombs = sim(spawn('sower', {x: 80, y: 1000}), 12).events.filter(event => event.type === 'cross-bomb');
+// La bomba en X sigue disponible para los Sembradores en manada de los tramos
+// altos (calendario del sector 1); el de una pasada se va antes de tenerla lista.
+test('the sower throws its cross bomb toward the nearest edge when it has it ready', () => {
+  const sower = spawn('sower', {x: 80, y: 256});
+  sower.gaia.cooldowns.unique = 0;
+  const bombs = sim(sower, 3).events.filter(event => event.type === 'cross-bomb');
   assert.ok(bombs.length >= 1);
   for (const bomb of bombs) assert.equal(Math.sign(bomb.vx), bomb.x < BOUNDS.w / 2 ? -1 : 1);
 });
@@ -249,4 +294,11 @@ test('an alpha that arrives six seconds later joins the column without touching 
   const {closest, pack} = packRun(t => ({x: 360 + 120 * Math.sin(t * 1.3), y: 1050}), 30, 6);
   assert.ok(closest >= 116, `closest ${closest.toFixed(1)}`);
   assert.ok(Math.abs(pack[0].y - pack[1].y) >= 139);
+});
+
+// Visto en Chromium (15/11/2026): lanzaba las minas al entrar, todavía bajo el
+// marcador. Solo lanza cuando ya está en su franja, a la vista.
+test('the sower only throws once it has reached its band, in view', () => {
+  const {mines} = sowerRun();
+  for (const mine of mines) assert.ok(mine.y - 20 >= .22 * BOUNDS.h - 41, `thrown from y=${(mine.y - 20).toFixed(0)}`);
 });
