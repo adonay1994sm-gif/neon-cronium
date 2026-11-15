@@ -2400,7 +2400,9 @@
       const destroyed=item.hp<=1e-8;
       animateScoutHit(item,destroyed);
       if(shot.weapon==="missile")addMissileImpact(item.x,item.y);
-      else if(shot.weapon==="pulse"||shot.weapon==="twin")addPulseImpact(item,shot);
+      // El golpe grande es para enemigos y rocas; las balas, minas y bombas
+      // derribadas guardan el chispazo pequeño (revisión del PR #74).
+      else if((shot.weapon==="pulse"||shot.weapon==="twin")&&!item.classicScoutProjectile&&!item.gaiaMine&&!item.gaiaBomb)addPulseImpact(item,shot);
       else addImpactEffect(item.x,item.y,.8);
       score+=item.classicScoutProjectile?0:(destroyed?10:3);combatSound(destroyed?"enemy-break":"impact-metal",item.x);
       hudScoreTarget=score;
