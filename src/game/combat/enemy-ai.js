@@ -36,10 +36,11 @@ function movement(enemy, ctx, rules) {
       const ahead = pack[rank - 1], behind = pack[rank + 1], back = rank * rules.packGap;
       // La separación se guarda con el vecino real, no solo con el jugador: el
       // de detrás no baja hasta tener hueco (y entretanto espera en su carril)
-      // y el de delante no sube contra el que tiene detrás.
+      // y el de delante no sube contra el que tiene detrás, salvo que ese ya
+      // esté arriba del todo: la fila nunca retiene a un Alfa cerca de la nave.
       const room = !ahead || ahead.y - enemy.y >= rules.packGap;
       return {x: room ? player.x : enemy.x, y: player.y - rules.chaseOffset - back, ...(back ? {back} : {}),
-        ...(ahead ? {maxY: ahead.y - rules.packGap} : {}), ...(behind ? {minY: behind.y + rules.packGap} : {})};
+        ...(ahead ? {maxY: ahead.y - rules.packGap} : {}), ...(behind && behind.y > 41 ? {minY: behind.y + rules.packGap} : {})};
     }
     case 'artillery': {
       if (d >= rules.preferred || d === 0) return {x: enemy.x, y: enemy.y};

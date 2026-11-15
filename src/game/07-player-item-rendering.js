@@ -108,8 +108,13 @@
         // Armas por niveles (dec-armas-plan): el disparo pintado de su nivel,
         // con la cabeza en la posición física del proyectil.
         const atlas=SPRITES.weaponBolts,width=atlas.naturalWidth/4,height=atlas.naturalHeight/2;
-        const tall=shot.weapon==="pulse"?58+(shot.level||1)*4:60,wide=tall/2;
-        ctx.drawImage(atlas,((shot.level||1)-1)*width,shot.weapon==="twin"?height:0,width,height,-wide/2,-tall*.3,wide,tall);
+        // Disparo con golpe (propietario, 15/11/2026): un 60 % más grande y con
+        // una segunda pasada de luz. Solo se pinta mayor: acierta igual.
+        const tall=(shot.weapon==="pulse"?58+(shot.level||1)*4:60)*1.6,wide=tall/2;
+        for(const light of [false,true]) {
+          if(light){ctx.globalCompositeOperation="lighter";ctx.globalAlpha*=.6;}
+          ctx.drawImage(atlas,((shot.level||1)-1)*width,shot.weapon==="twin"?height:0,width,height,-wide/2,-tall*.3,wide,tall);
+        }
       } else if(shot.weapon==='needle') {
         // The authored high-energy lance is compressed into a slender rail
         // pulse; the physics, penetration and cooldown belong to Aguja.
@@ -677,6 +682,16 @@
     if (!(item.shieldHits > 0) || !spriteReady(sprite)) return;
     ctx.save(); ctx.translate(item.x, item.y); ctx.globalAlpha = .85;
     drawGaiaCell(sprite, 4, item.shieldHits >= 3 ? 5 : item.shieldHits === 2 ? 6 : 7, item.r * 3.4);
+    ctx.restore();
+  }
+
+  // Destello al recibir un disparo propio (propietario, 15/11/2026): el
+  // objetivo se pinta otra vez sumando luz durante una décima de segundo.
+  function drawHitFlash(item) {
+    if (!(item.hitFlashUntil > elapsed)) return;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    drawMeteor(item); drawMeteor(item);
     ctx.restore();
   }
 

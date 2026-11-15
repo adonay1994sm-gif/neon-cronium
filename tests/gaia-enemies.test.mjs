@@ -197,18 +197,20 @@ test('atlas escorts circle Atlas and shoot down with a token', () => {
 
 // Revisión del PR #72 (15/11/2026): dos Alfas en fila tampoco se pisan cuando el
 // jugador sube y baja, ni al entrar los dos a la vez (radio 58 cada uno).
-function packRun(move, seconds = 30) {
-  const pack = [spawn('alpha', {x: 216, y: -70, id: 'gaia:0:8:0'}), spawn('alpha', {x: 504, y: -70, id: 'gaia:0:8:1'})];
+function packRun(move, seconds = 30, delay = 0) {
+  const pack = [spawn('alpha', {x: 216, y: -70, id: 'gaia:0:8:0'})], late = spawn('alpha', {x: 504, y: -70, id: 'gaia:0:8:1'});
+  if (!delay) pack.push(late);
   const tokens = createAttackTokens({max: 3});
   let now = 0, closest = Infinity, shots = 0;
   for (let frame = 0; frame < Math.round(seconds / DT); frame++) {
     now += DT;
+    if (delay && pack.length === 1 && now >= delay) pack.push(late);
     const player = {...move(now), hull: 100, reloading: false};
     for (const item of pack) {
       const allies = pack.map(other => ({id: other.id, x: other.x, y: other.y, hp: other.hp, maxHp: other.maxHp, profile: other.gaia.profile}));
       advanceGaiaEnemy(item, DT, {now, player, bounds: BOUNDS, allies, tokens}, event => { if (event.type === 'shot') shots++; });
     }
-    closest = Math.min(closest, Math.hypot(pack[0].x - pack[1].x, pack[0].y - pack[1].y));
+    if (pack.length > 1) closest = Math.min(closest, Math.hypot(pack[0].x - pack[1].x, pack[0].y - pack[1].y));
   }
   return {closest, pack, shots};
 }
@@ -233,3 +235,18 @@ for (const [name, move] of Object.entries({
     assert.ok(closest >= 116, `closest ${closest.toFixed(1)}`);
   });
 }
+
+// Revisión del PR #73: la fila no puede empujar al Alfa de delante hacia la nave.
+test('with the ship at the top of the screen the alphas still keep their 320 px', () => {
+  const {pack} = packRun(() => ({x: 360, y: 418}));
+  for (const alpha of pack) {
+    assert.ok(alpha.y <= 418 - 320 + 1, `alpha at y=${alpha.y.toFixed(1)}`);
+    assert.ok(alpha.y >= 40, 'and stays on screen');
+  }
+});
+
+test('an alpha that arrives six seconds later joins the column without touching the first', () => {
+  const {closest, pack} = packRun(t => ({x: 360 + 120 * Math.sin(t * 1.3), y: 1050}), 30, 6);
+  assert.ok(closest >= 116, `closest ${closest.toFixed(1)}`);
+  assert.ok(Math.abs(pack[0].y - pack[1].y) >= 139);
+});

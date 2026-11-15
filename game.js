@@ -2399,7 +2399,9 @@
       item.hp=Math.max(0,(item.hp??1)-impact.damage);
       const destroyed=item.hp<=1e-8;
       animateScoutHit(item,destroyed);
-      if(shot.weapon==="missile")addMissileImpact(item.x,item.y);else addImpactEffect(item.x,item.y,.8);
+      if(shot.weapon==="missile")addMissileImpact(item.x,item.y);
+      else if(shot.weapon==="pulse"||shot.weapon==="twin")addPulseImpact(item,shot);
+      else addImpactEffect(item.x,item.y,.8);
       score+=item.classicScoutProjectile?0:(destroyed?10:3);combatSound(destroyed?"enemy-break":"impact-metal",item.x);
       hudScoreTarget=score;
       if(destroyed){
@@ -4430,9 +4432,22 @@
     explosions.push({ x, y, scale, life: duration, duration, rotation: Math.random() * Math.PI * 2 });
   }
 
-  function addImpactEffect(x, y, scale = 1, angle = 0) {
+  function addImpactEffect(x, y, scale = 1, angle = 0, duration = 0.24) {
     if (impactEffects.length >= EFFECT_LIMITS.impacts) impactEffects.shift();
-    impactEffects.push({ x, y, scale, angle, life: 0.24, duration: 0.24, variant: (Math.random() * SPRITE_GROUPS.impact.length) | 0 });
+    impactEffects.push({ x, y, scale, angle, life: duration, duration, variant: (Math.random() * SPRITE_GROUPS.impact.length) | 0 });
+  }
+
+  // Disparo con golpe (propietario, 15/11/2026): el pulso estalla en el lado
+  // por el que llega, suelta chispas hacia quien disparó y el objetivo destella.
+  // Solo presentación: el daño lo decide quien llama.
+  function addPulseImpact(item, shot) {
+    const fromX = (shot.previousX ?? shot.x) - item.x, fromY = (shot.previousY ?? shot.y) - item.y;
+    const reach = (item.r || 32) * .75 / (Math.hypot(fromX, fromY) || 1);
+    const x = item.x + fromX * reach, y = item.y + fromY * reach;
+    addImpactEffect(x, y, 2.2, 0, .3);
+    if (settings.effects === false) return;
+    addHullSparks(x, y, Math.atan2(fromY, fromX));
+    if (!settings.reduceEffects) item.hitFlashUntil = elapsed + .1;
   }
 
   function addHullSparks(x, y, angle) {
@@ -6385,8 +6400,13 @@
         // Armas por niveles (dec-armas-plan): el disparo pintado de su nivel,
         // con la cabeza en la posición física del proyectil.
         const atlas=SPRITES.weaponBolts,width=atlas.naturalWidth/4,height=atlas.naturalHeight/2;
-        const tall=shot.weapon==="pulse"?58+(shot.level||1)*4:60,wide=tall/2;
-        ctx.drawImage(atlas,((shot.level||1)-1)*width,shot.weapon==="twin"?height:0,width,height,-wide/2,-tall*.3,wide,tall);
+        // Disparo con golpe (propietario, 15/11/2026): un 60 % más grande y con
+        // una segunda pasada de luz. Solo se pinta mayor: acierta igual.
+        const tall=(shot.weapon==="pulse"?58+(shot.level||1)*4:60)*1.6,wide=tall/2;
+        for(const light of [false,true]) {
+          if(light){ctx.globalCompositeOperation="lighter";ctx.globalAlpha*=.6;}
+          ctx.drawImage(atlas,((shot.level||1)-1)*width,shot.weapon==="twin"?height:0,width,height,-wide/2,-tall*.3,wide,tall);
+        }
       } else if(shot.weapon==='needle') {
         // The authored high-energy lance is compressed into a slender rail
         // pulse; the physics, penetration and cooldown belong to Aguja.
@@ -6957,6 +6977,16 @@
     ctx.restore();
   }
 
+  // Destello al recibir un disparo propio (propietario, 15/11/2026): el
+  // objetivo se pinta otra vez sumando luz durante una décima de segundo.
+  function drawHitFlash(item) {
+    if (!(item.hitFlashUntil > elapsed)) return;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    drawMeteor(item); drawMeteor(item);
+    ctx.restore();
+  }
+
   function drawMeteor(item) {
     ctx.save();
     ctx.globalAlpha = itemVisualAlpha(item);
@@ -7395,7 +7425,7 @@
       else if (item.type === "salvage") drawSalvagePickup(item);
       else if (item.type === "flightModule") drawFlightModule(item);
       else if (item.type === "energy") drawEnergy(item);
-      else if (item.type === "meteor" || item.type === "scout") { drawMeteor(item); if (typeof drawGaiaShield === "function") drawGaiaShield(item); }
+      else if (item.type === "meteor" || item.type === "scout") { drawMeteor(item); if (typeof drawHitFlash === "function") drawHitFlash(item); if (typeof drawGaiaShield === "function") drawGaiaShield(item); }
       else if (item.type === "debris") drawDebris(item);
       else if (item.type === "satellite") drawSatellite(item);
       else drawPower(item);

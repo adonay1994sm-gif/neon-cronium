@@ -1276,7 +1276,9 @@
       item.hp=Math.max(0,(item.hp??1)-impact.damage);
       const destroyed=item.hp<=1e-8;
       animateScoutHit(item,destroyed);
-      if(shot.weapon==="missile")addMissileImpact(item.x,item.y);else addImpactEffect(item.x,item.y,.8);
+      if(shot.weapon==="missile")addMissileImpact(item.x,item.y);
+      else if(shot.weapon==="pulse"||shot.weapon==="twin")addPulseImpact(item,shot);
+      else addImpactEffect(item.x,item.y,.8);
       score+=item.classicScoutProjectile?0:(destroyed?10:3);combatSound(destroyed?"enemy-break":"impact-metal",item.x);
       hudScoreTarget=score;
       if(destroyed){

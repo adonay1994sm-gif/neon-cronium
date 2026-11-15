@@ -8681,7 +8681,7 @@ var NeonCampaign = (() => {
           y: player.y - rules.chaseOffset - back,
           ...back ? { back } : {},
           ...ahead ? { maxY: ahead.y - rules.packGap } : {},
-          ...behind ? { minY: behind.y + rules.packGap } : {}
+          ...behind && behind.y > 41 ? { minY: behind.y + rules.packGap } : {}
         };
       }
       case "artillery": {
