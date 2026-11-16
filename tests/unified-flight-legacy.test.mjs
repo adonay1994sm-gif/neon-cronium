@@ -261,6 +261,7 @@ function harness(t, {campaign = '', saved, backups, pointerEvents = true, failBa
       configureDestructionImage(image, status);
     },
     node: id => window.document.getElementById(id),
+    query: selector => window.document.querySelector(selector),
     stored: key => window.localStorage.getItem(key),
     equipment: () => JSON.parse(window.localStorage.getItem(EQUIPMENT_KEY)),
     voyage: () => JSON.parse(window.localStorage.getItem(VOYAGE_KEY))};
@@ -680,7 +681,8 @@ test('recovering and preparing the C9 emitter preserves the battery while keepin
   assert.equal(h.pending.size, 1); assert.equal(restored.pending.size, 1);
 });
 
-test('C9 requires earned salvage and purchases cooling once without granting weapons or ammunition', t => {
+// Árbol nuevo (15/11/2026): Potencia I es la primera casilla; antes se probaba con Refrigeración.
+test('C9 requires earned salvage and purchases power once without granting weapons or ammunition', t => {
   const empty=harness(t);empty.api.prepare();empty.api.collectModule();empty.api.goHome();
   empty.node('openFlightDock').click();
   assert.equal(empty.node('flightInstallTwin').disabled,true);
@@ -693,34 +695,35 @@ test('C9 requires earned salvage and purchases cooling once without granting wea
   const before=h.snapshot().weapons;
   h.api.goHome();h.node('openFlightDock').click();
   assert.match(h.node('c9Balance').textContent,/100/);
-  h.node('c9BuyCoolant').click();
+  const power=h.query('[data-c9-sku="power-1"]');
+  power.click();
   const wallet=JSON.parse(h.stored(SALVAGE_KEY)),cooled=h.snapshot().weapons;
-  assert.equal(wallet.balance,55);assert.equal(wallet.spent,45);
-  assert.ok(wallet.upgrades.includes('coolant-feed'));
-  assert.equal(cooled.rechargeSeconds,1.5);
+  assert.equal(wallet.balance,40);assert.equal(wallet.spent,60);
+  assert.ok(wallet.upgrades.includes('power-1'));
+  assert.equal(cooled.power,1.1);assert.equal(cooled.rechargeSeconds,2);
   assert.equal(cooled.charges,before.charges);assert.equal(cooled.recharge,before.recharge);
   assert.equal(cooled.cooldown,before.cooldown);assert.equal(cooled.shotSequence,before.shotSequence);
   assert.deepEqual(h.snapshot().equipment.unlocked,['pulse']);
   const committed=h.stored(SALVAGE_KEY);
-  h.node('c9BuyCoolant').click();assert.equal(h.stored(SALVAGE_KEY),committed);
+  power.click();assert.equal(h.stored(SALVAGE_KEY),committed);
   h.node('c9BuyShield').click();
   const shield=JSON.parse(h.stored(SALVAGE_KEY));
-  assert.equal(shield.balance,25);assert.equal(shield.spent,75);
+  assert.equal(shield.balance,10);assert.equal(shield.spent,90);
   assert.ok(shield.upgrades.includes('hull-reinforcement'));
   assert.equal(h.snapshot().reserveCapacity,45);assert.equal(h.snapshot().reserve,45);
   assert.equal(h.snapshot().weapons.charges,before.charges);
   const restored=harness(t,{savedSalvage:h.stored(SALVAGE_KEY)});restored.api.prepare();
-  assert.equal(restored.snapshot().weapons.rechargeSeconds,1.5);
-  assert.equal(restored.snapshot().weapons.charges,20,'A new match starts full and keeps its purchased cooling');
+  assert.equal(restored.snapshot().weapons.power,1.1);
+  assert.equal(restored.snapshot().weapons.charges,20,'A new match starts full and keeps its purchased power');
 });
 
-test('a blocked C9 monetary write cannot grant its cooling entitlement or consume ammunition', t => {
+test('a blocked C9 monetary write cannot grant its power entitlement or consume ammunition', t => {
   const save=JSON.stringify(fundedSalvage(100));
   const h=harness(t,{savedSalvage:save,failSalvageWrite:true});h.api.prepare();
   const before=h.snapshot().weapons;
-  h.api.goHome();h.node('openFlightDock').click();h.node('c9BuyCoolant').click();
+  h.api.goHome();h.node('openFlightDock').click();h.query('[data-c9-sku="power-1"]').click();
   assert.equal(h.stored(SALVAGE_KEY),save);
-  assert.equal(h.snapshot().weapons.rechargeSeconds,2);
+  assert.ok(!(h.snapshot().weapons.power>1));
   assert.deepEqual(h.snapshot().weapons,before);
   assert.equal(h.snapshot().equipment.unlocked.includes('twin'),false);
   assert.match(h.node('c9PurchaseStatus').textContent,/guardar|guardado|persist|bloque|reintent/i);

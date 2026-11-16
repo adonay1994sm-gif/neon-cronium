@@ -32,6 +32,7 @@ var NeonCampaign = (() => {
     CLASSIC_WEAPON_RULES: () => CLASSIC_WEAPON_RULES,
     DIFFICULTY_MODES: () => DIFFICULTY_MODES,
     ENEMY_AI_PROFILES: () => ENEMY_AI_PROFILES,
+    FORGE_TREE: () => FORGE_TREE,
     GAIA_ENEMY_RULES: () => GAIA_ENEMY_RULES,
     GUARDIAN_ATLAS_RULES: () => GUARDIAN_ATLAS_RULES,
     HORDE_RULES: () => HORDE_RULES,
@@ -123,6 +124,7 @@ var NeonCampaign = (() => {
     dieInSector: () => dieInSector,
     endFlightInput: () => endFlightInput,
     enterStage: () => enterStage,
+    forgeTier: () => forgeTier,
     forgetEnemy: () => forgetEnemy,
     formatDenominations: () => formatDenominations,
     getChronosDestructionPose: () => getChronosDestructionPose,
@@ -139,6 +141,7 @@ var NeonCampaign = (() => {
     hitSubguardian: () => hitSubguardian,
     markMenuSeen: () => markMenuSeen,
     menuView: () => menuView,
+    missileCapacity: () => missileCapacity,
     moveFlightInput: () => moveFlightInput,
     normalizeChronosChapterCheckpoint: () => normalizeChronosChapterCheckpoint,
     normalizeChronosVoyageCheckpoint: () => normalizeChronosVoyageCheckpoint,
@@ -161,6 +164,7 @@ var NeonCampaign = (() => {
     selectClassicWeapon: () => selectClassicWeapon,
     setClassicHotReload: () => setClassicHotReload,
     setClassicMaxCharges: () => setClassicMaxCharges,
+    setClassicPower: () => setClassicPower,
     setClassicRechargeInterval: () => setClassicRechargeInterval,
     setClassicUnlimitedFire: () => setClassicUnlimitedFire,
     setClassicWeaponLevels: () => setClassicWeaponLevels,
@@ -168,7 +172,9 @@ var NeonCampaign = (() => {
     shipAssemblyPose: () => shipAssemblyPose,
     shipNozzleAnchors: () => shipNozzleAnchors,
     shipPartFrame: () => shipPartFrame,
+    spawnClassicShards: () => spawnClassicShards,
     startSectorRun: () => startSectorRun,
+    steerClassicMissiles: () => steerClassicMissiles,
     subguardianEmitter: () => subguardianEmitter,
     subguardianFrame: () => subguardianFrame,
     subguardianHitsShip: () => subguardianHitsShip,
@@ -1405,6 +1411,7 @@ var NeonCampaign = (() => {
   var upgrade = (definition) => Object.freeze({
     ...definition,
     requires: Object.freeze([...definition.requires || []]),
+    after: Object.freeze([...definition.after || []]),
     receiptPrices: Object.freeze([...definition.receiptPrices || [definition.price]])
   });
   var SCRAP_UPGRADES = Object.freeze({
@@ -1414,33 +1421,136 @@ var NeonCampaign = (() => {
       label: "Preparar emisor",
       description: "Prepara la pieza recuperada; Gemelo sigue requiriendo vencer a Atlas."
     }),
+    // Potencia: el daño sube un poco por rango (×1,1 · ×1,2 · ×1,3).
+    "power-1": upgrade({
+      id: "power-1",
+      price: 60,
+      branch: "power",
+      row: 1,
+      rank: 1,
+      label: "Potencia I",
+      description: "Todas tus armas hacen un 10 % m\xE1s de da\xF1o."
+    }),
+    "power-2": upgrade({
+      id: "power-2",
+      price: 120,
+      branch: "power",
+      row: 2,
+      rank: 2,
+      requires: ["power-1"],
+      label: "Potencia II",
+      description: "El da\xF1o de tus armas sube al +20 %."
+    }),
+    "power-3": upgrade({
+      id: "power-3",
+      price: 220,
+      branch: "power",
+      row: 3,
+      rank: 3,
+      tier: 3,
+      requires: ["power-2"],
+      label: "Potencia III",
+      description: "El da\xF1o de tus armas sube al +30 %."
+    }),
     "hull-reinforcement": upgrade({
       id: "hull-reinforcement",
       price: 30,
       label: "Blindaje I",
       branch: "defense",
+      row: 1,
       rank: 1,
       description: "Ampl\xEDa la reserva de integridad de 30 a 45; absorbe da\xF1o sin temporizador."
-    }),
-    "coolant-feed": upgrade({
-      id: "coolant-feed",
-      price: 45,
-      label: "Refrigeraci\xF3n I",
-      branch: "cooling",
-      rank: 1,
-      description: "Recupera un proyectil cada 1,5 segundos en lugar de cada dos."
     }),
     "hull-plating-ii": upgrade({
       id: "hull-plating-ii",
       price: 90,
       branch: "defense",
+      row: 2,
       rank: 2,
       requires: ["hull-reinforcement"],
       label: "Blindaje II",
       description: "Ampl\xEDa la reserva de casco de 45 a 65. No repara la reserva ya consumida."
     }),
+    "fork-armor": upgrade({
+      id: "fork-armor",
+      price: 220,
+      branch: "defense",
+      row: 3,
+      rank: 3,
+      tier: 3,
+      requires: ["hull-plating-ii"],
+      label: "Blindaje \xB7 elige una",
+      choices: Object.freeze(["reactive-armor", "hard-hull"]),
+      description: "Eliges una: Blindaje reactivo o Casco duro."
+    }),
+    "ammo-1": upgrade({
+      id: "ammo-1",
+      price: 60,
+      branch: "ammo",
+      row: 1,
+      rank: 1,
+      label: "Cargador I",
+      description: "El cargador pasa de 20 a 40 disparos. Llegan cargados al instalarlo."
+    }),
+    // Antes costaba 45 e iba suelta: los recibos antiguos siguen valiendo.
+    "coolant-feed": upgrade({
+      id: "coolant-feed",
+      price: 90,
+      receiptPrices: [45, 90],
+      after: ["ammo-1"],
+      label: "Refrigeraci\xF3n I",
+      branch: "cooling",
+      row: 2,
+      rank: 1,
+      description: "Recupera un proyectil cada 1,5 segundos en lugar de cada dos."
+    }),
+    "fork-battery": upgrade({
+      id: "fork-battery",
+      price: 220,
+      branch: "ammo",
+      row: 3,
+      rank: 3,
+      tier: 3,
+      requires: ["coolant-feed"],
+      label: "Bater\xEDa \xB7 elige una",
+      choices: Object.freeze(["hot-reload", "wide-magazine"]),
+      description: "Eliges una: Recarga en caliente o Cargador ancho."
+    }),
+    "scrap-magnet": upgrade({
+      id: "scrap-magnet",
+      price: 50,
+      branch: "systems",
+      row: 1,
+      rank: 1,
+      label: "Im\xE1n",
+      description: "Atraes la chatarra desde un 50 % m\xE1s lejos."
+    }),
+    "missile-rack": upgrade({
+      id: "missile-rack",
+      price: 120,
+      branch: "systems",
+      row: 2,
+      rank: 2,
+      requires: ["scrap-magnet"],
+      label: "Cuarto misil",
+      description: "Llevas 4 misiles en vez de 3. El cuarto llega cargado."
+    }),
+    "fork-systems": upgrade({
+      id: "fork-systems",
+      price: 220,
+      branch: "systems",
+      row: 3,
+      rank: 3,
+      tier: 3,
+      requires: ["missile-rack"],
+      label: "Misiles \xB7 elige una",
+      choices: Object.freeze(["seeker-missile", "cluster-missile"]),
+      description: "Eliges una: Misil buscador o Misil de racimo."
+    }),
+    // De antes del árbol nuevo: ya no se venden; quien los tiene los conserva.
     "coolant-feed-ii": upgrade({
       id: "coolant-feed-ii",
+      legacy: true,
       price: 110,
       branch: "cooling",
       rank: 2,
@@ -1448,18 +1558,9 @@ var NeonCampaign = (() => {
       label: "Refrigeraci\xF3n II",
       description: "Recupera un proyectil cada segundo de vuelo; conserva la carga y recuperaci\xF3n en curso."
     }),
-    // Línea de munición (dec-arbol-ampliado, 02/11/2026): 20 → 100 cargas en
-    // cuatro rangos. Precios: decisión técnica; se ajustan jugando.
-    "ammo-1": upgrade({
-      id: "ammo-1",
-      price: 60,
-      branch: "ammo",
-      rank: 1,
-      label: "Munici\xF3n I",
-      description: "El cargador pasa de 20 a 40 disparos. Llegan cargados al instalarlo."
-    }),
     "ammo-2": upgrade({
       id: "ammo-2",
+      legacy: true,
       price: 140,
       branch: "ammo",
       rank: 2,
@@ -1469,6 +1570,7 @@ var NeonCampaign = (() => {
     }),
     "ammo-3": upgrade({
       id: "ammo-3",
+      legacy: true,
       price: 260,
       branch: "ammo",
       rank: 3,
@@ -1478,6 +1580,7 @@ var NeonCampaign = (() => {
     }),
     "ammo-4": upgrade({
       id: "ammo-4",
+      legacy: true,
       price: 400,
       branch: "ammo",
       rank: 4,
@@ -1485,10 +1588,9 @@ var NeonCampaign = (() => {
       label: "Munici\xF3n IV",
       description: "El cargador pasa de 80 a 100 disparos."
     }),
-    // Nodos clave (dec-nodos-clave, 02/11/2026): cada pareja se compra una vez
-    // eligiendo una opción; cambiarla cuesta keySwapPrice (switchKeyNode).
     "key-1": upgrade({
       id: "key-1",
+      legacy: true,
       price: 300,
       branch: "key",
       rank: 1,
@@ -1499,6 +1601,7 @@ var NeonCampaign = (() => {
     }),
     "key-2": upgrade({
       id: "key-2",
+      legacy: true,
       price: 300,
       branch: "key",
       rank: 2,
@@ -1556,6 +1659,14 @@ var NeonCampaign = (() => {
       tradeoff: "Mantiene el da\xF1o directo de 2: destaca frente a objetivos alineados."
     })
   });
+  var FORGE_TREE = Object.freeze({
+    power: Object.freeze(["power-1", "power-2", "power-3"]),
+    armor: Object.freeze(["hull-reinforcement", "hull-plating-ii", "fork-armor"]),
+    battery: Object.freeze(["ammo-1", "coolant-feed", "fork-battery"]),
+    systems: Object.freeze(["scrap-magnet", "missile-rack", "fork-systems"])
+  });
+  var forgeTier = ({ atlasBeaten = false } = {}) => atlasBeaten ? 3 : 2;
+  var missileCapacity = (record) => SCRAP_ECONOMY_RULES.maxMissiles + (Array.isArray(record?.upgrades) && record.upgrades.includes("missile-rack") ? 1 : 0);
   var RETIRED_UPGRADES = Object.freeze(Object.keys(SCRAP_UPGRADES).filter((sku) => SCRAP_UPGRADES[sku].retired));
   var SCRAP_WEAPON_LEVELS = Object.freeze(Object.fromEntries(["pulse", "twin"].flatMap((weaponId) => [[2, 300], [3, 800], [4, 1800]].map(([level2, price]) => [`level-${weaponId}-${level2}`, upgrade({
     id: `level-${weaponId}-${level2}`,
@@ -1569,10 +1680,13 @@ var NeonCampaign = (() => {
   var catalogue = (sku) => SCRAP_UPGRADES[sku] || SCRAP_SHIPS[sku] || SCRAP_WEAPON_LEVELS[sku];
   var inCatalogue = (sku) => has(SCRAP_UPGRADES, sku) || has(SCRAP_SHIPS, sku) || has(SCRAP_WEAPON_LEVELS, sku);
   var KEY_NODES = Object.freeze({
-    "hot-reload": Object.freeze({ slot: "key-1", label: "Recarga en caliente", description: "Si vac\xEDas el cargador, se recarga al doble de velocidad hasta llenarse." }),
+    "hot-reload": Object.freeze({ slot: "fork-battery", label: "Recarga en caliente", description: "Si vac\xEDas el cargador, se recarga al doble de velocidad hasta llenarse." }),
     magnet: Object.freeze({ slot: "key-1", label: "Im\xE1n de chatarra", description: "Atraes la chatarra desde el doble de distancia." }),
-    "reactive-armor": Object.freeze({ slot: "key-2", label: "Blindaje reactivo", description: "Tras un golpe, 1 segundo m\xE1s sin recibir da\xF1o." }),
-    "wide-magazine": Object.freeze({ slot: "key-2", label: "Cargador ancho", description: "10 disparos m\xE1s en el cargador." })
+    "reactive-armor": Object.freeze({ slot: "fork-armor", label: "Blindaje reactivo", description: "Tras un golpe, 1 segundo m\xE1s sin recibir da\xF1o." }),
+    "wide-magazine": Object.freeze({ slot: "fork-battery", label: "Cargador ancho", description: "10 disparos m\xE1s en el cargador." }),
+    "hard-hull": Object.freeze({ slot: "fork-armor", label: "Casco duro", description: "Recibes un 15 % menos de todo el da\xF1o." }),
+    "seeker-missile": Object.freeze({ slot: "fork-systems", label: "Misil buscador", description: "El misil gira hacia el enemigo m\xE1s cercano." }),
+    "cluster-missile": Object.freeze({ slot: "fork-systems", label: "Misil de racimo", description: "Al impactar se abre en tres fragmentos." })
   });
   var SCRAP_CONSUMABLES = Object.freeze({ "sector-beacon": Object.freeze({ price: 40 }) });
   var integer = (value) => Number.isSafeInteger(value) && value >= 0;
@@ -1611,7 +1725,19 @@ var NeonCampaign = (() => {
       defenseRank: owns2("hull-plating-ii") ? 2 : owns2("hull-reinforcement") ? 1 : 0,
       coolingRank: owns2("coolant-feed-ii") ? 2 : owns2("coolant-feed") ? 1 : 0,
       ammoRank,
-      keyNodes: { hotReload: choice("hot-reload"), magnet: choice("magnet"), reactiveArmor: choice("reactive-armor"), wideMagazine: choice("wide-magazine") },
+      power: owns2("power-3") ? 1.3 : owns2("power-2") ? 1.2 : owns2("power-1") ? 1.1 : 1,
+      // El imán del árbol nuevo llega a ×1,5; el nodo clave antiguo, a ×2.
+      magnetRange: choice("magnet") ? 2 : owns2("scrap-magnet") ? 1.5 : 1,
+      missileCapacity: missileCapacity(saved),
+      keyNodes: {
+        hotReload: choice("hot-reload"),
+        magnet: choice("magnet"),
+        reactiveArmor: choice("reactive-armor"),
+        wideMagazine: choice("wide-magazine"),
+        hardHull: choice("hard-hull"),
+        seekerMissile: choice("seeker-missile"),
+        clusterMissile: choice("cluster-missile")
+      },
       weaponIds: [],
       weaponLevels: Object.fromEntries(["pulse", "twin"].map((id) => [id, owns2(`level-${id}-4`) ? 4 : owns2(`level-${id}-3`) ? 3 : owns2(`level-${id}-2`) ? 2 : 1])),
       weaponRanks: {
@@ -1685,10 +1811,11 @@ var NeonCampaign = (() => {
     const missileRoundsPurchased = legacy ? 0 : value.missileRoundsPurchased;
     const missileRefillSequence = legacy ? 0 : value.missileRefillSequence;
     const lastMissileRefill = legacy ? null : value.lastMissileRefill;
-    if (![missileAmmo, missileShotsSpent, missileRoundsPurchased, missileRefillSequence].every(integer) || missileAmmo > SCRAP_ECONOMY_RULES.maxMissiles || !Number.isSafeInteger(missileRoundsPurchased * SCRAP_ECONOMY_RULES.missileUnitPrice) || !Number.isSafeInteger(SCRAP_ECONOMY_RULES.maxMissiles + missileRoundsPurchased) || SCRAP_ECONOMY_RULES.maxMissiles + missileRoundsPurchased - missileShotsSpent !== missileAmmo || missileRoundsPurchased < missileRefillSequence || missileRoundsPurchased > missileRefillSequence * 3) return null;
+    const missileMax = missileCapacity({ upgrades });
+    if (![missileAmmo, missileShotsSpent, missileRoundsPurchased, missileRefillSequence].every(integer) || missileAmmo > missileMax || !Number.isSafeInteger(missileRoundsPurchased * SCRAP_ECONOMY_RULES.missileUnitPrice) || !Number.isSafeInteger(missileMax + missileRoundsPurchased) || missileMax + missileRoundsPurchased - missileShotsSpent !== missileAmmo || missileRoundsPurchased < missileRefillSequence || missileRoundsPurchased > missileRefillSequence * missileMax) return null;
     if (missileRefillSequence === 0) {
       if (lastMissileRefill !== null) return null;
-    } else if (!object(lastMissileRefill) || lastMissileRefill.sequence !== missileRefillSequence || lastMissileRefill.id !== `c9:missiles:${missileRefillSequence}` || !integer(lastMissileRefill.amount) || lastMissileRefill.amount < 1 || lastMissileRefill.amount > 3 || lastMissileRefill.price !== lastMissileRefill.amount * SCRAP_ECONOMY_RULES.missileUnitPrice) return null;
+    } else if (!object(lastMissileRefill) || lastMissileRefill.sequence !== missileRefillSequence || lastMissileRefill.id !== `c9:missiles:${missileRefillSequence}` || !integer(lastMissileRefill.amount) || lastMissileRefill.amount < 1 || lastMissileRefill.amount > missileMax || lastMissileRefill.price !== lastMissileRefill.amount * SCRAP_ECONOMY_RULES.missileUnitPrice) return null;
     const consumableSpent = has(value, "consumableSpent") ? value.consumableSpent : 0;
     const lastConsumable = has(value, "lastConsumable") ? value.lastConsumable : null;
     if (!integer(consumableSpent)) return null;
@@ -1931,7 +2058,7 @@ var NeonCampaign = (() => {
         remaining: current.missileAmmo
       });
       if (sequence !== current.missileRefillSequence + 1) return blocked("refill-sequence-conflict");
-      const amount = SCRAP_ECONOMY_RULES.maxMissiles - current.missileAmmo;
+      const amount = missileCapacity(current) - current.missileAmmo;
       if (amount === 0) return { ok: false, status: "unavailable", reason: "missiles-full", state: copy(current) };
       const price = amount * SCRAP_ECONOMY_RULES.missileUnitPrice;
       if (current.balance < price) return {
@@ -1976,7 +2103,7 @@ var NeonCampaign = (() => {
       next.missileShotsSpent = sequence;
       return commit(next, loaded.raw, { duplicate: false, shotId, remaining: next.missileAmmo });
     }
-    function purchase({ transactionId, sku: requestedSku, choice } = {}) {
+    function purchase({ transactionId, sku: requestedSku, choice, tier } = {}) {
       const sku = upgradeName(requestedSku);
       if (!identifier(transactionId) || typeof sku !== "string" || !inCatalogue(sku) && sku !== "missile-refill") throw new TypeError("A stable transaction ID and catalogue SKU are required");
       if (catalogue(sku)?.choices && !catalogue(sku).choices.includes(choice)) throw new TypeError("A key node needs one of its choices");
@@ -1989,9 +2116,16 @@ var NeonCampaign = (() => {
       if (prior) return prior.sku === sku ? success("duplicate", { duplicate: true, sku, price: 0 }) : blocked("transaction-id-conflict");
       if (current.lastConsumable?.id === transactionId) return blocked("transaction-id-conflict");
       if (current.upgrades.includes(sku)) return { ok: false, status: "unavailable", reason: "already-owned", state: copy(current) };
-      if (catalogue(sku).retired) return { ok: false, status: "unavailable", reason: "retired", state: copy(current) };
+      if (catalogue(sku).retired || catalogue(sku).legacy) return { ok: false, status: "unavailable", reason: "retired", state: copy(current) };
       if (current.purchases.length >= SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return blocked("purchase-receipt-capacity");
-      const requires = catalogue(sku).requires.filter((required) => !current.upgrades.includes(required));
+      if (catalogue(sku).tier && !(tier >= catalogue(sku).tier)) return {
+        ok: false,
+        status: "unavailable",
+        reason: "tier-locked",
+        tier: catalogue(sku).tier,
+        state: copy(current)
+      };
+      const requires = [...catalogue(sku).requires, ...catalogue(sku).after || []].filter((required) => !current.upgrades.includes(required));
       if (requires.length) return {
         ok: false,
         status: "unavailable",
@@ -2014,6 +2148,7 @@ var NeonCampaign = (() => {
       next.upgrades.push(sku);
       next.purchases.push({ id: transactionId, sku, price });
       if (catalogue(sku).choices) next.keyChoices = { ...next.keyChoices, [sku]: choice };
+      if (sku === "missile-rack") next.missileAmmo++;
       return commit(next, loaded.raw, { sku, price, duplicate: false });
     }
     function switchKeyNode({ transactionId, sku, choice } = {}) {
@@ -8247,6 +8382,53 @@ var NeonCampaign = (() => {
     if (!enabled) state.hotReloading = false;
     return enabled;
   }
+  function setClassicPower(state, multiplier) {
+    if (typeof multiplier !== "number" || !(multiplier >= 1 && multiplier <= 2)) throw new RangeError("Power must be between 1 and 2");
+    state.power = multiplier;
+    return multiplier;
+  }
+  function steerClassicMissiles(state, targets, delta, turnRate = 3.2) {
+    for (const shot of state.projectiles) {
+      if (!shot.missile) continue;
+      let best = null;
+      for (const target of targets) {
+        if (target.y >= shot.y) continue;
+        const distance2 = Math.hypot(target.x - shot.x, target.y - shot.y);
+        if (distance2 <= 520 && (!best || distance2 < best.distance)) best = { distance: distance2, target };
+      }
+      if (!best) continue;
+      const speed = Math.hypot(shot.vx, shot.vy), heading = Math.atan2(shot.vy, shot.vx);
+      let turn = Math.atan2(best.target.y - shot.y, best.target.x - shot.x) - heading;
+      turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+      const next = heading + Math.max(-turnRate * delta, Math.min(turnRate * delta, turn));
+      shot.vx = Math.cos(next) * speed;
+      shot.vy = Math.sin(next) * speed;
+    }
+  }
+  function spawnClassicShards(state, { x, y }) {
+    finite7(x, "shard x");
+    finite7(y, "shard y");
+    const damage = CLASSIC_WEAPON_RULES.missile.damage / 3 * (state.power ?? 1);
+    const shards = [-0.6, 0, 0.6].map((spread3, barrel) => ({
+      id: `${state.version}:projectile:${++state.projectileSequence}`,
+      shotId: `${state.version}:shard:${state.projectileSequence}`,
+      weapon: "shard",
+      barrel,
+      level: 1,
+      x,
+      y,
+      vx: spread3 === 0 ? 0 : Math.sin(spread3) * 700,
+      vy: -Math.cos(spread3) * 700,
+      damage,
+      radius: 8,
+      pierce: 1,
+      duration: 0.4,
+      life: 0.4,
+      hitTargets: []
+    }));
+    state.projectiles.push(...shards);
+    return shards;
+  }
   function setClassicWeaponTuning(state, ranks = {}) {
     if (!ranks || typeof ranks !== "object" || Array.isArray(ranks) || Object.keys(ranks).some((id) => id !== "scatter" && id !== "needle")) {
       throw new TypeError("Known weapon ranks required");
@@ -8326,7 +8508,7 @@ var NeonCampaign = (() => {
       y,
       vx: Math.cos(angle) * definition.speed,
       vy: Math.sin(angle) * definition.speed,
-      damage: definition.damage,
+      damage: definition.damage * (state.power ?? 1),
       radius: definition.radius,
       pierce: 1,
       duration: definition.duration,
@@ -8389,7 +8571,7 @@ var NeonCampaign = (() => {
         y: y + Math.cos(angle) * barrel.offset,
         vx: Math.cos(direction) * definition.speed,
         vy: Math.sin(direction) * definition.speed,
-        damage: barrel.damage ?? definition.damage,
+        damage: (barrel.damage ?? definition.damage) * (state.power ?? 1),
         radius: definition.radius,
         pierce: definition.pierce || 1,
         duration: definition.duration,

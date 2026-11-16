@@ -746,3 +746,52 @@ test('Pulse 3 and 4 side pulses are only visual: they pass through targets witho
     assert.equal(total, value === 3 ? 1.6 : 2, 'a volley that lands whole does what the hangar says');
   }
 });
+
+// Potencia de la Forja (propietario, 15/11/2026): el daño sube un poco por rango.
+import {setClassicPower} from '../src/game/combat/classic-weapons.js';
+test('forge power scales the damage of future shots and missiles, never the visual side pulses', () => {
+  const state = createClassicWeapons({width: 720, height: 1280});
+  assert.equal(triggerClassicWeapon(state, origin).projectiles[0].damage, 1);
+  assert.equal(setClassicPower(state, 1.2), 1.2);
+  run(state, 1);
+  assert.equal(triggerClassicWeapon(state, origin).projectiles[0].damage, 1.2);
+  const missile = triggerClassicMissile(state, {...origin, shotId: 'missile:1'}).projectiles[0];
+  assert.ok(Math.abs(missile.damage - CLASSIC_WEAPON_RULES.missile.damage * 1.2) < 1e-9);
+  setClassicWeaponLevels(state, {pulse: 3, twin: 1});
+  run(state, 1);
+  const fan = triggerClassicWeapon(state, origin).projectiles.map(projectile => projectile.damage);
+  assert.deepEqual(fan.map(damage => Math.round(damage * 100) / 100), [0, 1.92, 0]);
+  for (const bad of [0, .9, 3, NaN, '1.2']) assert.throws(() => setClassicPower(state, bad), RangeError);
+});
+
+// Fila III del árbol (propietario, 15/11/2026): misil buscador y misil de racimo.
+import {steerClassicMissiles, spawnClassicShards} from '../src/game/combat/classic-weapons.js';
+test('a seeker missile turns toward the nearest target without changing its speed', () => {
+  const state = createClassicWeapons({width: 720, height: 1280});
+  const missile = triggerClassicMissile(state, {...origin, shotId: 'missile:1'}).projectiles[0];
+  const speed = Math.hypot(missile.vx, missile.vy);
+  for (let frame = 0; frame < 30; frame++) { steerClassicMissiles(state, [{x: 560, y: 500}], 1 / 60); advanceClassicWeapons(state, 1 / 60); }
+  assert.ok(missile.vx > 100, `turned right: vx ${missile.vx.toFixed(0)}`);
+  assert.ok(Math.abs(Math.hypot(missile.vx, missile.vy) - speed) < 1e-6, 'same speed');
+  const pulse = triggerClassicWeapon(state, origin).projectiles[0];
+  steerClassicMissiles(state, [{x: 100, y: 500}], 1 / 60);
+  assert.ok(Math.abs(pulse.vx) < 1e-6, 'only missiles steer');
+  const lone = createClassicWeapons({width: 720, height: 1280});
+  const straight = triggerClassicMissile(lone, {...origin, shotId: 'missile:1'}).projectiles[0];
+  steerClassicMissiles(lone, [], 1 / 60); steerClassicMissiles(lone, [{x: 360, y: 1200}], 1 / 60);
+  assert.ok(Math.abs(straight.vx) < 1e-6, 'no target ahead: it keeps flying straight');
+});
+
+test('a cluster missile opens into three short-lived shards that share a third of its damage each', () => {
+  const state = createClassicWeapons({width: 720, height: 1280});
+  setClassicPower(state, 1.2);
+  const shards = spawnClassicShards(state, {x: 300, y: 400});
+  assert.equal(shards.length, 3);
+  assert.deepEqual(shards.map(shard => shard.weapon), ['shard', 'shard', 'shard']);
+  for (const shard of shards) {
+    assert.ok(Math.abs(shard.damage - CLASSIC_WEAPON_RULES.missile.damage / 3 * 1.2) < 1e-9);
+    assert.ok(shard.vy < 0 && shard.duration <= .5);
+  }
+  assert.ok(shards[0].vx < 0 && shards[1].vx === 0 && shards[2].vx > 0, 'they fan out');
+  assert.equal(state.projectiles.length, 3);
+});

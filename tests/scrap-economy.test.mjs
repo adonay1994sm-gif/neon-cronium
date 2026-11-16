@@ -135,7 +135,7 @@ test('C9 purchase commits balance, entitlement and receipt in one write without 
   assert.equal(device.map.has('neonCronium.flightEquipment.v1'), false);
   assert.equal(SCRAP_UPGRADES['twin-preparation'].price, 24);
   assert.equal(SCRAP_UPGRADES['hull-reinforcement'].price, 30);
-  assert.equal(SCRAP_UPGRADES['coolant-feed'].price, 45);
+  assert.equal(SCRAP_UPGRADES['coolant-feed'].price, 90);
 });
 
 // Hangar (01/11/2026): las naves de chatarra se compran en la misma bodega.
@@ -198,15 +198,15 @@ for (const afterWrite of [false, true]) {
     const device = memory(), first = ledger(device), run = start(first);
     fund(first, run.runId);
     const failing = memory(device.map, {failWrite: 1, afterWrite}), log = ledger(failing);
-    const input = {transactionId: 'c9:coolant:1', sku: 'coolant-feed'};
+    const input = {transactionId: 'c9:magnet:1', sku: 'scrap-magnet'};
     assert.equal(log.purchase(input).ok, afterWrite);
     const saved = JSON.parse(device.map.get(SCRAP_ECONOMY_KEY));
-    assert.equal(saved.balance, afterWrite ? 9 : 54);
-    assert.equal(saved.upgrades.includes('coolant-feed'), afterWrite);
+    assert.equal(saved.balance, afterWrite ? 4 : 54);
+    assert.equal(saved.upgrades.includes('scrap-magnet'), afterWrite);
     assert.equal(saved.purchases.length, afterWrite ? 1 : 0);
     const restored = ledger(memory(device.map)), retried = restored.purchase(input);
     assert.equal(retried.ok, true); assert.equal(retried.duplicate, afterWrite);
-    assert.equal(restored.getBalance(), 9);
+    assert.equal(restored.getBalance(), 4);
     assert.equal(restored.getState().purchases.length, 1);
   });
 }
@@ -285,7 +285,7 @@ test('reload and a second ledger instance observe each other instead of spending
   fund(one, run.runId);
   const two = ledger(memory(device.map)); two.load();
   one.purchase({transactionId: 'first', sku: 'hull-reinforcement'});
-  assert.equal(two.purchase({transactionId: 'second', sku: 'coolant-feed'}).reason, 'insufficient-funds');
+  assert.equal(two.purchase({transactionId: 'second', sku: 'scrap-magnet'}).reason, 'insufficient-funds');
   assert.equal(two.getBalance(), 24);
   assert.deepEqual(two.getState().upgrades, ['hull-reinforcement']);
 });
@@ -572,7 +572,7 @@ test('salvage from ship fragments and satellites is a physical pickup receipt, o
 
 test('workshop branches and weapon levels require their paid prerequisite and each rank changes an actual effect', () => {
   const device = memory(), log = ledger(device), run = start(log); fund(log, run.runId, 400);
-  for (const sku of ['hull-plating-ii', 'coolant-feed-ii', 'level-pulse-3', 'level-twin-4']) {
+  for (const sku of ['hull-plating-ii', 'coolant-feed', 'power-2', 'level-pulse-3', 'level-twin-4']) {
     const before = new Map(device.map);
     assert.equal(log.purchase({transactionId: `try:${sku}`, sku}).reason, 'prerequisite-required');
     assert.deepEqual(device.map, before);
@@ -580,24 +580,27 @@ test('workshop branches and weapon levels require their paid prerequisite and ea
   // Abanico y Aguja salieron de la Forja (dec-armas-plan): ya no se venden.
   for (const sku of RETIRED_UPGRADES) assert.equal(log.purchase({transactionId: `try:${sku}`, sku}).reason, 'retired');
   assert.deepEqual(classicWorkshopState(log.getState()), {reserveCapacity: 30, rechargeSeconds: 2, maxCharges: 20,
-    defenseRank: 0, coolingRank: 0, ammoRank: 0,
-    keyNodes: {hotReload: false, magnet: false, reactiveArmor: false, wideMagazine: false}, weaponIds: [], weaponLevels: {pulse: 1, twin: 1}, weaponRanks: {scatter: 0, needle: 0}});
-  for (const sku of ['twin-preparation', 'hull-reinforcement', 'coolant-feed', 'level-pulse-2', 'level-twin-2']) {
+    defenseRank: 0, coolingRank: 0, ammoRank: 0, power: 1, magnetRange: 1, missileCapacity: 3,
+    keyNodes: {hotReload: false, magnet: false, reactiveArmor: false, wideMagazine: false, hardHull: false, seekerMissile: false, clusterMissile: false},
+    weaponIds: [], weaponLevels: {pulse: 1, twin: 1}, weaponRanks: {scatter: 0, needle: 0}});
+  for (const sku of ['twin-preparation', 'hull-reinforcement', 'ammo-1', 'coolant-feed', 'level-pulse-2', 'level-twin-2']) {
     assert.equal(log.purchase({transactionId: `buy:${sku}`, sku}).ok, true);
   }
   const first = classicWorkshopState(log.getState());
   assert.equal(first.reserveCapacity, 45); assert.equal(first.rechargeSeconds, 1.5);
   assert.deepEqual(first.weaponLevels, {pulse: 2, twin: 2});
-  for (const sku of ['hull-plating-ii', 'coolant-feed-ii', 'level-pulse-3', 'level-pulse-4']) {
+  // Refrigeración II es de antes del árbol nuevo: ya no se vende.
+  assert.equal(log.purchase({transactionId: 'try:coolant-feed-ii', sku: 'coolant-feed-ii'}).reason, 'retired');
+  for (const sku of ['hull-plating-ii', 'power-1', 'level-pulse-3', 'level-pulse-4']) {
     assert.equal(log.purchase({transactionId: `buy:${sku}`, sku}).ok, true);
   }
   const second = classicWorkshopState(log.getState());
-  assert.equal(second.reserveCapacity, 65); assert.equal(second.rechargeSeconds, 1);
-  assert.equal(second.defenseRank, 2); assert.equal(second.coolingRank, 2);
+  assert.equal(second.reserveCapacity, 65); assert.equal(second.rechargeSeconds, 1.5);
+  assert.equal(second.defenseRank, 2); assert.equal(second.coolingRank, 1); assert.equal(second.power, 1.1);
   assert.deepEqual(second.weaponLevels, {pulse: 4, twin: 2});
   const reload = ledger(memory(device.map)); assert.equal(reload.load().ok, true);
   assert.deepEqual(classicWorkshopState(reload.getState()), second);
-  assert.equal(reload.getBalance(), 3600 - 24 - 30 - 45 - 300 - 300 - 90 - 110 - 800 - 1800);
+  assert.equal(reload.getBalance(), 3600 - 24 - 30 - 60 - 90 - 300 - 300 - 90 - 60 - 800 - 1800);
   assert.deepEqual(Object.fromEntries(Object.entries(SCRAP_WEAPON_LEVELS).map(([sku, item]) => [sku, item.price])),
     {'level-pulse-2': 300, 'level-pulse-3': 800, 'level-pulse-4': 1800, 'level-twin-2': 300, 'level-twin-3': 800, 'level-twin-4': 1800});
 });
@@ -731,77 +734,175 @@ test('an upgrade cannot reuse the id of the last consumable', () => {
 });
 
 // Árbol ampliado de la Forja (dec-arbol-ampliado, 02/11/2026): munición 20 → 100.
-test('the ammo line has four paid ranks, 20 → 40 → 60 → 80 → 100 rounds, each needing the one before', () => {
+test('the old ammo line is no longer sold; Cargador I opens the battery branch', () => {
   const device = memory(), log = ledger(device), run = start(log); fund(log, run.runId, 120);
   assert.equal(classicWorkshopState(log.getState()).maxCharges, 20);
-  assert.equal(log.purchase({transactionId: 'try:ammo-2', sku: 'ammo-2'}).reason, 'prerequisite-required');
-  const skus = ['ammo-1', 'ammo-2', 'ammo-3', 'ammo-4'];
-  assert.deepEqual(skus.map(sku => SCRAP_UPGRADES[sku].price), [60, 140, 260, 400]);
-  for (const [index, sku] of skus.entries()) {
-    assert.equal(log.purchase({transactionId: `buy:${sku}`, sku}).ok, true);
-    const workshop = classicWorkshopState(log.getState());
-    assert.equal(workshop.maxCharges, 20 * (index + 2));
-    assert.equal(workshop.ammoRank, index + 1);
-  }
-  assert.equal(log.getBalance(), 120 * 9 - 860);
-  const reload = ledger(memory(device.map)); assert.equal(reload.load().ok, true);
-  assert.equal(classicWorkshopState(reload.getState()).maxCharges, 100);
+  assert.equal(log.purchase({transactionId: 'buy:ammo-1', sku: 'ammo-1'}).ok, true);
+  const workshop = classicWorkshopState(log.getState());
+  assert.deepEqual([workshop.maxCharges, workshop.ammoRank], [40, 1]);
+  for (const sku of ['ammo-2', 'ammo-3', 'ammo-4']) assert.equal(log.purchase({transactionId: `try:${sku}`, sku}).reason, 'retired');
+  assert.deepEqual(['ammo-2', 'ammo-3', 'ammo-4'].map(sku => SCRAP_UPGRADES[sku].price), [140, 260, 400], 'old receipts stay valid');
 });
 
-// Nodos clave (dec-nodos-clave, 02/11/2026): dos parejas; eliges una y puedes
-// cambiarla pagando 100.
-test('key nodes: each pair needs its line, is bought once with a choice and changes the workshop effects', () => {
+// Elecciones de la fila III (antes «nodos clave», dec-nodos-clave 02/11/2026):
+// eliges una de dos y puedes cambiarla pagando 100.
+const NO_NODES = {hotReload: false, magnet: false, reactiveArmor: false, wideMagazine: false, hardHull: false, seekerMissile: false, clusterMissile: false};
+test('forks: each needs its branch, is bought once with a choice and changes the workshop effects', () => {
   const device = memory(), log = ledger(device), run = start(log); fund(log, run.runId, 150);
-  assert.equal(log.purchase({transactionId: 'c9:key-1', sku: 'key-1', choice: 'magnet'}).reason, 'prerequisite-required');
-  for (const sku of ['ammo-1', 'ammo-2', 'hull-reinforcement', 'hull-plating-ii'])
+  assert.equal(log.purchase({transactionId: 'c9:fork-battery', sku: 'fork-battery', choice: 'hot-reload', tier: 3}).reason, 'prerequisite-required');
+  for (const sku of ['ammo-1', 'coolant-feed', 'hull-reinforcement', 'hull-plating-ii'])
     assert.equal(log.purchase({transactionId: `c9:${sku}`, sku}).ok, true);
-  assert.throws(() => log.purchase({transactionId: 'c9:key-1', sku: 'key-1'}), 'a key node needs a choice');
-  assert.throws(() => log.purchase({transactionId: 'c9:key-1', sku: 'key-1', choice: 'reactive-armor'}), 'that choice is from the other pair');
-  assert.deepEqual(classicWorkshopState(log.getState()).keyNodes, {hotReload: false, magnet: false, reactiveArmor: false, wideMagazine: false});
-  assert.equal(log.purchase({transactionId: 'c9:key-1', sku: 'key-1', choice: 'hot-reload'}).ok, true);
-  assert.equal(log.purchase({transactionId: 'c9:key-2', sku: 'key-2', choice: 'wide-magazine'}).ok, true);
+  assert.throws(() => log.purchase({transactionId: 'c9:fork-battery', sku: 'fork-battery', tier: 3}), 'a fork needs a choice');
+  assert.throws(() => log.purchase({transactionId: 'c9:fork-battery', sku: 'fork-battery', choice: 'reactive-armor', tier: 3}), 'that choice is from the other fork');
+  assert.deepEqual(classicWorkshopState(log.getState()).keyNodes, NO_NODES);
+  assert.equal(log.purchase({transactionId: 'c9:fork-battery', sku: 'fork-battery', choice: 'wide-magazine', tier: 3}).ok, true);
+  assert.equal(log.purchase({transactionId: 'c9:fork-armor', sku: 'fork-armor', choice: 'reactive-armor', tier: 3}).ok, true);
   const workshop = classicWorkshopState(log.getState());
-  assert.deepEqual(workshop.keyNodes, {hotReload: true, magnet: false, reactiveArmor: false, wideMagazine: true});
-  assert.equal(workshop.maxCharges, 70, 'Munición II (60) + Cargador ancho (10)');
-  assert.equal(log.getBalance(), 150 * 9 - 60 - 140 - 30 - 90 - 300 - 300);
+  assert.deepEqual(workshop.keyNodes, {...NO_NODES, reactiveArmor: true, wideMagazine: true});
+  assert.equal(workshop.maxCharges, 50, 'Cargador I (40) + Cargador ancho (10)');
+  assert.equal(log.getBalance(), 150 * 9 - 60 - 90 - 30 - 90 - 220 - 220);
   const reload = ledger(memory(device.map)); assert.equal(reload.load().ok, true);
   assert.deepEqual(classicWorkshopState(reload.getState()).keyNodes, workshop.keyNodes);
 });
 
-test('changing a key node costs 100 once per receipt, even if the write is retried or the game reloads', () => {
+test('changing a fork costs 100 once per receipt, even if the write is retried or the game reloads', () => {
   const device = memory(), log = ledger(device), run = start(log); fund(log, run.runId, 80);
-  for (const sku of ['ammo-1', 'ammo-2']) log.purchase({transactionId: `c9:${sku}`, sku});
-  log.purchase({transactionId: 'c9:key-1', sku: 'key-1', choice: 'hot-reload'});
+  for (const sku of ['ammo-1', 'coolant-feed']) log.purchase({transactionId: `c9:${sku}`, sku});
+  log.purchase({transactionId: 'c9:fork-battery', sku: 'fork-battery', choice: 'hot-reload', tier: 3});
   const before = log.getBalance();
   assert.equal(log.nextKeySwapId(), 'c9:key:1');
-  assert.equal(log.switchKeyNode({transactionId: 'c9:key:1', sku: 'key-1', choice: 'hot-reload'}).reason, 'already-chosen');
-  const swapped = log.switchKeyNode({transactionId: 'c9:key:1', sku: 'key-1', choice: 'magnet'});
+  assert.equal(log.switchKeyNode({transactionId: 'c9:key:1', sku: 'fork-battery', choice: 'hot-reload'}).reason, 'already-chosen');
+  const swapped = log.switchKeyNode({transactionId: 'c9:key:1', sku: 'fork-battery', choice: 'wide-magazine'});
   assert.equal(swapped.ok, true); assert.equal(swapped.price, 100);
   assert.equal(log.getBalance(), before - 100);
-  assert.equal(log.switchKeyNode({transactionId: 'c9:key:1', sku: 'key-1', choice: 'magnet'}).duplicate, true);
+  assert.equal(log.switchKeyNode({transactionId: 'c9:key:1', sku: 'fork-battery', choice: 'wide-magazine'}).duplicate, true);
   assert.equal(log.getBalance(), before - 100, 'a retried receipt is not charged twice');
   const reload = ledger(memory(device.map)); assert.equal(reload.load().ok, true);
   assert.equal(reload.getBalance(), before - 100);
-  assert.equal(classicWorkshopState(reload.getState()).keyNodes.magnet, true);
-  assert.equal(reload.switchKeyNode({transactionId: 'c9:key:1', sku: 'key-1', choice: 'magnet'}).duplicate, true);
-  assert.equal(reload.switchKeyNode({transactionId: 'c9:key:2', sku: 'key-2', choice: 'reactive-armor'}).reason, 'not-owned');
+  assert.equal(classicWorkshopState(reload.getState()).keyNodes.wideMagazine, true);
+  assert.equal(reload.switchKeyNode({transactionId: 'c9:key:1', sku: 'fork-battery', choice: 'wide-magazine'}).duplicate, true);
+  assert.equal(reload.switchKeyNode({transactionId: 'c9:key:2', sku: 'fork-armor', choice: 'reactive-armor'}).reason, 'not-owned');
   const poor = ledger(memory(new Map(device.map))); poor.load();
   // Sin chatarra suficiente no cambia nada.
-  while (poor.getBalance() >= 100) poor.switchKeyNode({transactionId: poor.nextKeySwapId(), sku: 'key-1',
-    choice: classicWorkshopState(poor.getState()).keyNodes.magnet ? 'hot-reload' : 'magnet'});
-  const stuck = poor.switchKeyNode({transactionId: poor.nextKeySwapId(), sku: 'key-1',
-    choice: classicWorkshopState(poor.getState()).keyNodes.magnet ? 'hot-reload' : 'magnet'});
-  assert.equal(stuck.reason, 'insufficient-funds');
+  const other = () => classicWorkshopState(poor.getState()).keyNodes.wideMagazine ? 'hot-reload' : 'wide-magazine';
+  while (poor.getBalance() >= 100) poor.switchKeyNode({transactionId: poor.nextKeySwapId(), sku: 'fork-battery', choice: other()});
+  assert.equal(poor.switchKeyNode({transactionId: poor.nextKeySwapId(), sku: 'fork-battery', choice: other()}).reason, 'insufficient-funds');
 });
 
-test('forged key-node data never passes normalization', () => {
+test('forged fork data never passes normalization', () => {
   const device = memory(), log = ledger(device), run = start(log); fund(log, run.runId, 60);
-  for (const sku of ['ammo-1', 'ammo-2']) log.purchase({transactionId: `c9:${sku}`, sku});
-  log.purchase({transactionId: 'c9:key-1', sku: 'key-1', choice: 'hot-reload'});
+  for (const sku of ['ammo-1', 'coolant-feed']) log.purchase({transactionId: `c9:${sku}`, sku});
+  log.purchase({transactionId: 'c9:fork-battery', sku: 'fork-battery', choice: 'hot-reload', tier: 3});
   const good = log.getState();
   assert.ok(normalizeScrapRecord(good));
-  for (const forged of [{...good, keyChoices: {}}, {...good, keyChoices: {'key-1': 'reactive-armor'}},
-    {...good, keyChoices: {'key-1': 'hot-reload', 'key-2': 'wide-magazine'}},
+  for (const forged of [{...good, keyChoices: {}}, {...good, keyChoices: {'fork-battery': 'reactive-armor'}},
+    {...good, keyChoices: {'fork-battery': 'hot-reload', 'fork-armor': 'hard-hull'}},
     {...good, keySwaps: 1}, {...good, keySwaps: 1, spent: good.spent + 100, balance: good.balance - 100, lastKeySwap: null}])
     assert.equal(normalizeScrapRecord(forged), null);
+});
+
+// Árbol nuevo de la Forja (propietario, 15/11/2026): 4 ramas, filas que se
+// abren al avanzar y Potencia que sube el daño poco a poco. Aquí, filas I a III.
+import {FORGE_TREE, forgeTier, missileCapacity} from '../src/game/progression/scrap-economy.js';
+function rich(count = 200) {
+  const device = memory(), log = ledger(device), runId = start(log).runId;
+  for (let k = 0; k < count; k++) log.claimDrop({runId, dropId: `drop:${k}`, enemyType: 'interceptor'});
+  return {device, log};
+}
+const buy = (log, sku, extra = {}) => log.purchase({transactionId: `c9:${sku}`, sku, ...extra});
+
+test('the forge tree has four branches and three open rows, with the agreed prices', () => {
+  assert.deepEqual(Object.keys(FORGE_TREE), ['power', 'armor', 'battery', 'systems']);
+  const price = sku => SCRAP_UPGRADES[sku].price;
+  assert.deepEqual(FORGE_TREE.power.map(price), [60, 120, 220]);
+  assert.deepEqual(FORGE_TREE.armor.map(price), [30, 90, 220]);
+  assert.deepEqual(FORGE_TREE.battery.map(price), [60, 90, 220]);
+  assert.deepEqual(FORGE_TREE.systems.map(price), [50, 120, 220]);
+  for (const branch of Object.values(FORGE_TREE)) {
+    assert.deepEqual(branch.map(sku => SCRAP_UPGRADES[sku].row), [1, 2, 3]);
+    assert.equal(SCRAP_UPGRADES[branch[2]].tier, 3, 'row III opens after Atlas');
+  }
+  const total = rows => Object.values(FORGE_TREE).flatMap(branch => branch.filter(sku => rows.includes(SCRAP_UPGRADES[sku].row))).reduce((sum, sku) => sum + price(sku), 0);
+  assert.deepEqual([total([1, 2]), total([3])], [620, 880]);
+});
+
+test('power raises damage a little per rank: x1.1, x1.2, x1.3', () => {
+  const {log} = rich();
+  assert.equal(classicWorkshopState(log.load().state).power, 1);
+  for (const [sku, power] of [['power-1', 1.1], ['power-2', 1.2], ['power-3', 1.3]]) {
+    assert.equal(buy(log, sku, {tier: 3}).ok, true, sku);
+    assert.equal(classicWorkshopState(log.load().state).power, power);
+  }
+});
+
+test('each branch is bought in order', () => {
+  const {log} = rich();
+  for (const branch of Object.values(FORGE_TREE)) {
+    const second = buy(log, branch[1], {tier: 3});
+    assert.deepEqual([second.ok, second.reason], [false, 'prerequisite-required'], branch[1]);
+  }
+});
+
+test('row III stays locked until Atlas is beaten, however much scrap you have', () => {
+  const {log} = rich();
+  for (const sku of ['power-1', 'power-2']) assert.equal(buy(log, sku, {tier: 1}).ok, true);
+  for (const tier of [undefined, 1, 2]) {
+    const locked = buy(log, 'power-3', tier === undefined ? {} : {tier});
+    assert.deepEqual([locked.ok, locked.reason, locked.tier], [false, 'tier-locked', 3]);
+  }
+  assert.equal(buy(log, 'power-3', {tier: 3}).ok, true);
+  assert.deepEqual([forgeTier({atlasBeaten: false}), forgeTier({atlasBeaten: true})], [2, 3]);
+});
+
+test('the first forge visit cannot afford everything: about 240 buys three or four nodes of eight', () => {
+  const device = memory(), log = ledger(device), runId = start(log).runId;
+  for (let k = 0; k < 16; k++) log.claimDrop({runId, dropId: `drop:${k}`, enemyType: 'interceptor'}); // 240
+  const open = Object.values(FORGE_TREE).flatMap(branch => branch.slice(0, 2)).sort((a, b) => SCRAP_UPGRADES[a].price - SCRAP_UPGRADES[b].price);
+  let bought = 0;
+  for (const sku of open) if (buy(log, sku, {tier: 2}).ok) bought++;
+  assert.ok(bought >= 3 && bought <= 4, `bought ${bought} of ${open.length}`);
+});
+
+test('the fourth missile arrives loaded and refills fill four', () => {
+  const {log} = rich();
+  assert.equal(missileCapacity(log.load().state), 3);
+  for (const sku of ['scrap-magnet', 'missile-rack']) assert.equal(buy(log, sku, {tier: 2}).ok, true, sku);
+  const state = log.load().state;
+  assert.deepEqual([missileCapacity(state), state.missileAmmo], [4, 4]);
+  for (let shot = 1; shot <= 4; shot++) assert.equal(log.spendMissile({shotId: `missile:${shot}`}).ok, true);
+  const refill = log.purchase({transactionId: 'c9:missiles:1', sku: 'missile-refill'});
+  assert.deepEqual([refill.ok, refill.amount, refill.price, refill.remaining], [true, 4, 24, 4]);
+  assert.notEqual(normalizeScrapRecord(JSON.parse(JSON.stringify(log.load().state))), null, 'the save stays valid');
+});
+
+test('the magnet is its own node now, and the row III forks pick one of two', () => {
+  const {log} = rich();
+  assert.equal(buy(log, 'scrap-magnet', {tier: 3}).ok, true);
+  assert.equal(classicWorkshopState(log.load().state).magnetRange, 1.5);
+  for (const sku of ['hull-reinforcement', 'hull-plating-ii', 'ammo-1', 'coolant-feed', 'missile-rack']) assert.equal(buy(log, sku, {tier: 3}).ok, true, sku);
+  assert.throws(() => buy(log, 'fork-armor', {tier: 3}), /choices/);
+  for (const [sku, choice] of [['fork-armor', 'hard-hull'], ['fork-battery', 'hot-reload'], ['fork-systems', 'cluster-missile']]) {
+    assert.equal(buy(log, sku, {tier: 3, choice}).ok, true, sku);
+  }
+  const workshop = classicWorkshopState(log.load().state);
+  assert.deepEqual([workshop.keyNodes.hardHull, workshop.keyNodes.hotReload, workshop.keyNodes.clusterMissile, workshop.keyNodes.seekerMissile, workshop.keyNodes.reactiveArmor],
+    [true, true, true, false, false]);
+});
+
+test('what was bought before the new tree is kept and still works', () => {
+  const old = {...createScrapRecord(), balance: 0, earned: 1479, spent: 1479,
+    upgrades: ['coolant-feed', 'coolant-feed-ii', 'hull-reinforcement', 'hull-plating-ii', 'ammo-1', 'ammo-2', 'ammo-3', 'key-1', 'key-2'],
+    purchases: [['coolant-feed', 45], ['coolant-feed-ii', 110], ['hull-reinforcement', 30], ['hull-plating-ii', 90], ['ammo-1', 60], ['ammo-2', 140], ['ammo-3', 260], ['key-1', 300], ['key-2', 300]]
+      .map(([sku, price]) => ({id: `c9:${sku}`, sku, price})),
+    keyChoices: {'key-1': 'magnet', 'key-2': 'reactive-armor'}};
+  old.earned = old.spent = old.purchases.reduce((sum, receipt) => sum + receipt.price, 0);
+  const saved = normalizeScrapRecord(old);
+  assert.notEqual(saved, null, 'an old save with Refrigeración I at 45 and no Cargador-before-Refrigeración order is still valid');
+  const workshop = classicWorkshopState(saved);
+  assert.deepEqual([workshop.maxCharges, workshop.rechargeSeconds, workshop.reserveCapacity, workshop.magnetRange, workshop.keyNodes.reactiveArmor],
+    [80, 1, 65, 2, true]);
+  assert.equal(SCRAP_UPGRADES['ammo-2'].legacy && SCRAP_UPGRADES['key-1'].legacy && SCRAP_UPGRADES['coolant-feed-ii'].legacy, true);
+  const {log} = rich();
+  assert.equal(buy(log, 'ammo-1', {tier: 3}).ok, true);
+  assert.deepEqual([buy(log, 'ammo-2', {tier: 3}).reason], ['retired'], 'legacy nodes are not sold any more');
 });

@@ -53,7 +53,13 @@
   // The old equipment record is only a replayable projection, never the money
   // transaction. A failed projection can be retried without charging again.
   // Nodos clave elegidos en la Forja: imán y blindaje reactivo se leen en vuelo.
-  let classicKeyNodes={hotReload:false,magnet:false,reactiveArmor:false,wideMagazine:false};
+  let classicKeyNodes={hotReload:false,magnet:false,reactiveArmor:false,wideMagazine:false,hardHull:false,seekerMissile:false,clusterMissile:false};
+  // Imán del árbol nuevo: ×1,5 de alcance (el nodo clave antiguo, ×2).
+  let classicMagnetRange=1;
+  // Hasta qué fila del árbol está abierta la Forja (III al vencer a Atlas).
+  function classicForgeTier() {
+    return NeonCampaign.forgeTier({atlasBeaten:loadSectorSave().sectors[1]?.completed===true||classicEquipment.unlocked.includes("twin")});
+  }
   function projectClassicSalvageUpgrades() {
     const upgrades=classicSalvageState?.upgrades||[];
     let projected=true;
@@ -61,13 +67,14 @@
       projected=persistClassicEquipment(NeonCampaign.prepareClassicTwin(classicEquipment));
     }
     const workshop=NeonCampaign.classicWorkshopState(classicSalvageState);
-    classicKeyNodes=workshop.keyNodes;
+    classicKeyNodes=workshop.keyNodes;classicMagnetRange=workshop.magnetRange;
     const equipment=NeonCampaign.syncClassicWorkshopWeapons(classicEquipment,classicSalvageState);
     if(JSON.stringify(equipment)!==JSON.stringify(classicEquipment))projected=persistClassicEquipment(equipment)&&projected;
     if(classicWeapons){
       NeonCampaign.setClassicRechargeInterval(classicWeapons,workshop.rechargeSeconds);
       NeonCampaign.setClassicMaxCharges(classicWeapons,workshop.maxCharges);
       NeonCampaign.setClassicHotReload(classicWeapons,workshop.keyNodes.hotReload);
+      NeonCampaign.setClassicPower(classicWeapons,workshop.power);
       NeonCampaign.setClassicWeaponTuning(classicWeapons,workshop.weaponRanks);
       NeonCampaign.setClassicWeaponLevels(classicWeapons,workshop.weaponLevels);
     }
@@ -104,12 +111,13 @@
     const sequence=classicSalvageState?.missileRefillSequence||0;
     const swap=Boolean(choice)&&Boolean(classicSalvageState?.upgrades.includes(sku));
     const result=swap?classicSalvageLedger.switchKeyNode({transactionId:classicSalvageLedger.nextKeySwapId(),sku,choice})
-      :classicSalvageLedger.purchase({transactionId:sku==="missile-refill"?`c9:missiles:${sequence+1}`:`c9:${sku}`,sku,...(choice?{choice}:{})});
+      :classicSalvageLedger.purchase({transactionId:sku==="missile-refill"?`c9:missiles:${sequence+1}`:`c9:${sku}`,sku,tier:classicForgeTier(),...(choice?{choice}:{})});
     if(result.state)classicSalvageState=result.state;
     if(!result.ok&&result.reason!=="already-owned") {
       if(ui.c9PurchaseStatus)ui.c9PurchaseStatus.textContent=result.reason==="insufficient-funds"
         ? `Faltan ${result.missing} de chatarra. Recupera restos de las naves enemigas.`
         : result.reason==="prerequisite-required" ? "Instala primero el módulo anterior de esta rama."
+        : result.reason==="tier-locked" ? "Esta fila del árbol se abre al vencer a Atlas."
         : "No se ha confirmado el pago. La mejora no se aplica; puedes reintentarlo.";
       updateClassicDock();return false;
     }
@@ -300,8 +308,8 @@
     const sections={};
     for(const [id,label,description] of [
       ['arsenal','01 · ARSENAL','Tu arma y su nivel. Se eligen y se mejoran en el hangar.'],
-      ['systems','02 · EVOLUCIÓN','Cada conexión requiere el módulo anterior. Tú eliges la rama.'],
-      ['supplies','03 · SUMINISTROS','Tres misiles de reserva. Pagas únicamente las unidades que faltan.']]) {
+      ['systems','02 · EVOLUCIÓN','Cuatro ramas. Cada casilla pide la anterior y la fila III se abre al vencer a Atlas.'],
+      ['supplies','03 · SUMINISTROS','Misiles de reserva. Pagas únicamente las unidades que faltan.']]) {
       const section=document.createElement('section');section.id=`c9-${id}`;section.className='c9-section cockpit-workshop-section';
       const heading=document.createElement('h3');heading.textContent=label;heading.className='cockpit-section-title';
       const help=document.createElement('p');help.className='c9-section-help';help.textContent=description;
@@ -329,7 +337,7 @@
     for(const [sku,definition] of Object.entries(NeonCampaign.SCRAP_UPGRADES)) {
       if(['twin-preparation','hull-reinforcement','coolant-feed'].includes(sku)||definition.retired||definition.choices)continue;
       const weapon=sku.startsWith('weapon-'),kind=sku.includes('scatter')?'scatter':sku.includes('needle')?'needle':sku.includes('hull')?'hull-ii'
-        :sku.startsWith('ammo-')?'ammo':'coolant-ii';
+        :sku.startsWith('ammo-')?'ammo':sku.startsWith('power-')?'power':sku==='scrap-magnet'?'magnet':sku==='missile-rack'?'rack':'coolant-ii';
       const button=document.createElement('button');button.type='button';button.className='secondary c9-tree-node';button.dataset.c9Sku=sku;
       const art=document.createElement('span');art.className='c9-upgrade-art';art.dataset.upgrade=kind;art.setAttribute('aria-hidden','true');
       const copy=document.createElement('span');copy.className='c9-upgrade-copy';
@@ -361,17 +369,30 @@
       repeat.click();toast('Guía de vuelo preparada. Aprenderás maniobrando en el viaje.');
     };
     const tree=sections.systems.grid;tree.classList.add('c9-skill-tree');
-    // Munición: línea de cuatro rangos (dec-arbol-ampliado, 02/11/2026).
-    for(const [label,first,...next] of [
-      ['BLINDAJE','hull-reinforcement','hull-plating-ii'],['REFRIGERACIÓN','coolant-feed','coolant-feed-ii'],
-      ['MUNICIÓN',null,'ammo-1','ammo-2','ammo-3','ammo-4'],
-      ['NODO CLAVE · MUNICIÓN · ELIGE UNO',null,'hot-reload','magnet'],['NODO CLAVE · BLINDAJE · ELIGE UNO',null,'reactive-armor','wide-magazine']]) {
+    // Árbol nuevo (propietario, 15/11/2026): cuatro ramas de tres filas; la
+    // tercera es una elección de dos (o Potencia III) y se abre al vencer a
+    // Atlas. Lo comprado antes del árbol nuevo va aparte y solo si lo tienes.
+    const node=id=>id==='hull-reinforcement'?ui.c9BuyShield:id==='coolant-feed'?ui.c9BuyCoolant
+      :tree.querySelector(`[data-c9-sku="${id}"],[data-c9-key="${id}"]`);
+    for(const [label,...ids] of [
+      ['POTENCIA · DAÑO','power-1','power-2','power-3'],
+      ['BLINDAJE','hull-reinforcement','hull-plating-ii',['reactive-armor','hard-hull']],
+      ['BATERÍA','ammo-1','coolant-feed',['hot-reload','wide-magazine']],
+      ['SISTEMAS','scrap-magnet','missile-rack',['seeker-missile','cluster-missile']],
+      ['DE ANTES DEL ÁRBOL NUEVO','coolant-feed-ii','ammo-2','ammo-3','ammo-4','magnet']]) {
       const branch=document.createElement('div');branch.className='c9-branch';
+      if(label.startsWith('DE ANTES'))branch.dataset.c9Legacy='';
       const name=document.createElement('h4');name.textContent=label;branch.append(name);
-      if(first)branch.append(first==='hull-reinforcement'?ui.c9BuyShield:ui.c9BuyCoolant);
-      for(const sku of next){const node=tree.querySelector(`[data-c9-sku="${sku}"],[data-c9-key="${sku}"]`);if(node)branch.append(node);}
-      // Pareja de nodos clave: una «O» entre las dos opciones (auditoría 03/11, A11).
-      if(next[0]==='hot-reload'||next[0]==='reactive-armor'){const or=document.createElement('p');or.className='c9-or';or.textContent='O';or.setAttribute('aria-hidden','true');branch.children[1]?.after(or);}
+      for(const [index,id] of ids.entries()) {
+        if(index===2&&!branch.hasAttribute('data-c9-legacy')){
+          const tier=document.createElement('p');tier.className='c9-tier';tier.dataset.c9Tier='3';tier.textContent='FILA III';branch.append(tier);
+        }
+        if(Array.isArray(id)){
+          // Elección: una «O» entre las dos opciones (auditoría 03/11, A11).
+          const or=document.createElement('p');or.className='c9-or';or.textContent='O';or.setAttribute('aria-hidden','true');
+          branch.append(node(id[0]),or,node(id[1]));
+        } else if(node(id))branch.append(node(id));
+      }
       tree.append(branch);
     }
     // El marco pintado no se desplaza: todo menos los botones finales va en una
@@ -659,39 +680,51 @@
     ui.c9BuyShield.disabled=!classicSalvageState||balance<30||upgrades.includes("hull-reinforcement");
     setC9Label(ui.c9BuyShield,upgrades.includes("hull-reinforcement")?"REFUERZO DE 45 INSTALADO":"AMPLIAR REFUERZO A 45 · 30 CHATARRA");
     ui.c9BuyShield.title="Añade 15 puntos de placas de casco. El refuerzo se consume por impactos, sin temporizador.";
-    const missingMissiles=Math.max(0,3-(classicSalvageState?.missileAmmo??0)),missilePrice=missingMissiles*6;
+    const missileMax=NeonCampaign.missileCapacity(classicSalvageState);
+    const missingMissiles=Math.max(0,missileMax-(classicSalvageState?.missileAmmo??0)),missilePrice=missingMissiles*6;
     ui.c9BuyMissiles.disabled=!classicSalvageState||!missingMissiles||balance<missilePrice;
-    setC9Label(ui.c9BuyMissiles,missingMissiles?`REPONER ${missingMissiles} MISIL${missingMissiles>1?"ES":""} · ${missilePrice} CHATARRA`:"TRES MISILES CARGADOS");
+    setC9Label(ui.c9BuyMissiles,missingMissiles?`REPONER ${missingMissiles} MISIL${missingMissiles>1?"ES":""} · ${missilePrice} CHATARRA`:missileMax>3?"CUATRO MISILES CARGADOS":"TRES MISILES CARGADOS");
     ui.c9BuyMissiles.title="Cada misil repuesto cuesta 6 de chatarra. No se cobra una carga que ya tienes.";
-    ui.c9BuyCoolant.disabled=!classicSalvageState||balance<45||upgrades.includes("coolant-feed");
-    setC9Label(ui.c9BuyCoolant,upgrades.includes("coolant-feed")?"REFRIGERACIÓN INSTALADA":"REFRIGERACIÓN · 45 CHATARRA");
+    const coolantPrice=NeonCampaign.SCRAP_UPGRADES["coolant-feed"].price,coolantReady=upgrades.includes("ammo-1");
+    ui.c9BuyCoolant.disabled=!classicSalvageState||balance<coolantPrice||upgrades.includes("coolant-feed")||!coolantReady;
+    setC9Label(ui.c9BuyCoolant,upgrades.includes("coolant-feed")?"REFRIGERACIÓN INSTALADA":coolantReady?`REFRIGERACIÓN I · ${coolantPrice} CHATARRA`:"REFRIGERACIÓN I · REQUIERE Cargador I");
+    // Fila III del árbol: cerrada hasta vencer a Atlas, haya la chatarra que haya.
+    const forgeTier=classicForgeTier();
+    for(const label of ui.flightDock.querySelectorAll('[data-c9-tier]'))
+      label.textContent=forgeTier>=Number(label.dataset.c9Tier)?'FILA III':'FILA III · SE ABRE AL VENCER A ATLAS';
     ui.c9BuyCoolant.title="Recupera un proyectil cada 1,5 segundos; no cambia el daño ni la cadencia.";
     ui.flightCalibrateLance.classList.toggle("hidden",!classicEquipment.unlocked.includes("lance"));
     ui.flightCalibrateLance.disabled=classicEquipment.selected==="lance";
     ui.flightCalibrateLance.textContent="EQUIPAR LANZA ×3 CONSERVADA";
     for(const button of ui.flightDock.querySelectorAll('[data-c9-sku]')) {
       const sku=button.dataset.c9Sku,definition=NeonCampaign.SCRAP_UPGRADES[sku],owned=upgrades.includes(sku);
-      const required=definition.requires||[];
-      const requirements=Array.isArray(required)?required:[required];
-      const missing=requirements.filter(id=>!upgrades.includes(id));
-      button.disabled=!classicSalvageState||owned||missing.length>0||balance<definition.price||!classicEquipmentWritable;
-      button.dataset.nodeState=owned?'installed':missing.length?'locked':'available';
+      const missing=[...definition.requires,...definition.after].filter(id=>!upgrades.includes(id));
+      const closed=Boolean(definition.tier)&&forgeTier<definition.tier;
+      // Lo de antes del árbol nuevo ya no se vende: solo se ve si lo tienes.
+      button.classList.toggle('hidden',Boolean(definition.legacy)&&!owned);
+      button.disabled=!classicSalvageState||owned||closed||missing.length>0||balance<definition.price||!classicEquipmentWritable;
+      button.dataset.nodeState=owned?'installed':closed||missing.length?'locked':'available';
       setC9Label(button,definition.label.toUpperCase());
-      button.querySelector('[data-c9-state]').textContent=owned?'INSTALADO':missing.length
+      button.querySelector('[data-c9-state]').textContent=owned?'INSTALADO':closed?'SE ABRE AL VENCER A ATLAS':missing.length
         ?`REQUIERE ${missing.map(id=>NeonCampaign.SCRAP_UPGRADES[id]?.label||id).join(' + ')}`:`${definition.price} CHATARRA`;
     }
     for(const button of ui.flightDock.querySelectorAll('[data-c9-key]')) {
       const choice=button.dataset.c9Key,slot=NeonCampaign.KEY_NODES[choice].slot,definition=NeonCampaign.SCRAP_UPGRADES[slot];
-      const owned=upgrades.includes(slot),chosen=classicSalvageState?.keyChoices?.[slot]===choice;
+      // Elegido también si viene de un nodo clave de antes del árbol nuevo.
+      const owned=upgrades.includes(slot),chosen=Object.values(classicSalvageState?.keyChoices||{}).includes(choice);
       const missing=definition.requires.filter(id=>!upgrades.includes(id));
+      const closed=Boolean(definition.tier)&&forgeTier<definition.tier;
       const price=owned?NeonCampaign.SCRAP_ECONOMY_RULES.keySwapPrice:definition.price;
-      button.disabled=!classicSalvageState||chosen||missing.length>0||balance<price||!classicEquipmentWritable;
-      button.dataset.nodeState=chosen?'installed':missing.length?'locked':'available';
+      button.classList.toggle('hidden',Boolean(definition.legacy)&&!chosen);
+      button.disabled=!classicSalvageState||chosen||closed||missing.length>0||balance<price||!classicEquipmentWritable;
+      button.dataset.nodeState=chosen?'installed':closed||missing.length?'locked':'available';
       setC9Label(button,NeonCampaign.KEY_NODES[choice].label.toUpperCase());
-      button.querySelector('[data-c9-state]').textContent=chosen?'ELEGIDO':missing.length
+      button.querySelector('[data-c9-state]').textContent=chosen?'ELEGIDO':closed?'SE ABRE AL VENCER A ATLAS':missing.length
         ?`REQUIERE ${missing.map(id=>NeonCampaign.SCRAP_UPGRADES[id]?.label||id).join(' + ')}`
         :owned?`CAMBIAR · ${price} CHATARRA`:`${price} CHATARRA · ELIGE 1 DE 2`;
     }
+    for(const branch of ui.flightDock.querySelectorAll('[data-c9-legacy]'))
+      branch.classList.toggle('hidden',![...branch.querySelectorAll('button')].some(button=>!button.classList.contains('hidden')));
     syncSectorBeaconButton();
     // Desde el menú las dos salidas llevaban al menú: queda una sola (A4).
     const fromMenu=!["voyage","hud"].includes(flightDockReturn);
@@ -1238,6 +1271,13 @@
   function advanceClassicWeaponField(dt) {
     if(!classicWeapons)return;
     for(const shot of classicWeapons.projectiles){shot.previousX=shot.x;shot.previousY=shot.y;}
+    // Misil buscador (fila III del árbol): gira hacia el enemigo más cercano.
+    if(classicKeyNodes.seekerMissile&&classicWeapons.projectiles.some(shot=>shot.missile)) {
+      const targets=items.filter(item=>isThreat(item)&&!item.classicScoutProjectile&&!item.gaiaMine);
+      if(subBoss&&subBoss.state!=="defeated")targets.push(subBoss);
+      if(atlasBoss&&!atlasBoss.disabled)targets.push(atlasBoss);
+      NeonCampaign.steerClassicMissiles(classicWeapons,targets,dt);
+    }
     const events=NeonCampaign.advanceClassicWeapons(classicWeapons,dt);
     ammo=classicWeapons.charges;
     if(atlasBoss && !atlasBoss.disabled) {
@@ -1286,7 +1326,11 @@
       item.hp=Math.max(0,(item.hp??1)-impact.damage);
       const destroyed=item.hp<=1e-8;
       animateScoutHit(item,destroyed);
-      if(shot.weapon==="missile")addMissileImpact(item.x,item.y);
+      if(shot.weapon==="missile"){
+        addMissileImpact(item.x,item.y);
+        // Misil de racimo (fila III del árbol): tres fragmentos desde el impacto.
+        if(classicKeyNodes.clusterMissile)NeonCampaign.spawnClassicShards(classicWeapons,{x:item.x,y:item.y-(item.r||30)});
+      }
       // El golpe grande es para enemigos y rocas; las balas, minas y bombas
       // derribadas guardan el chispazo pequeño (revisión del PR #74).
       else if((shot.weapon==="pulse"||shot.weapon==="twin")&&!item.classicScoutProjectile&&!item.gaiaMine&&!item.gaiaBomb)addPulseImpact(item,shot);

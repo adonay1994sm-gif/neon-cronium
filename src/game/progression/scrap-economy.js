@@ -15,35 +15,58 @@ import {SHIP_ROSTER} from '../ship/ship-roster.js';
 export const SCRAP_REWARDS = Object.freeze({raider: 6, scout: 9, interceptor: 15, atlas: 600, debris: 6, satellite: 18, ch03: 120});
 const upgrade = definition => Object.freeze({...definition,
   requires: Object.freeze([...(definition.requires || [])]),
+  after: Object.freeze([...(definition.after || [])]),
   receiptPrices: Object.freeze([...(definition.receiptPrices || [definition.price])])});
+// Árbol de la Forja (propietario, 15/11/2026): 4 ramas y filas que se abren al
+// avanzar (`tier`), para que no se compre todo de golpe. `row` es la fila del
+// árbol; `after` ordena la rama solo al comprar (los guardados antiguos no
+// tenían ese orden); `legacy` = ya no se vende, pero quien lo tiene lo conserva.
 export const SCRAP_UPGRADES = Object.freeze({
   'twin-preparation': upgrade({id: 'twin-preparation', price: 24,
     label: 'Preparar emisor', description: 'Prepara la pieza recuperada; Gemelo sigue requiriendo vencer a Atlas.'}),
+  // Potencia: el daño sube un poco por rango (×1,1 · ×1,2 · ×1,3).
+  'power-1': upgrade({id: 'power-1', price: 60, branch: 'power', row: 1, rank: 1, label: 'Potencia I',
+    description: 'Todas tus armas hacen un 10 % más de daño.'}),
+  'power-2': upgrade({id: 'power-2', price: 120, branch: 'power', row: 2, rank: 2, requires: ['power-1'], label: 'Potencia II',
+    description: 'El daño de tus armas sube al +20 %.'}),
+  'power-3': upgrade({id: 'power-3', price: 220, branch: 'power', row: 3, rank: 3, tier: 3, requires: ['power-2'], label: 'Potencia III',
+    description: 'El daño de tus armas sube al +30 %.'}),
   'hull-reinforcement': upgrade({id: 'hull-reinforcement', price: 30,
-    label: 'Blindaje I', branch: 'defense', rank: 1, description: 'Amplía la reserva de integridad de 30 a 45; absorbe daño sin temporizador.'}),
-  'coolant-feed': upgrade({id: 'coolant-feed', price: 45,
-    label: 'Refrigeración I', branch: 'cooling', rank: 1, description: 'Recupera un proyectil cada 1,5 segundos en lugar de cada dos.'}),
-  'hull-plating-ii': upgrade({id: 'hull-plating-ii', price: 90, branch: 'defense', rank: 2,
+    label: 'Blindaje I', branch: 'defense', row: 1, rank: 1, description: 'Amplía la reserva de integridad de 30 a 45; absorbe daño sin temporizador.'}),
+  'hull-plating-ii': upgrade({id: 'hull-plating-ii', price: 90, branch: 'defense', row: 2, rank: 2,
     requires: ['hull-reinforcement'], label: 'Blindaje II',
     description: 'Amplía la reserva de casco de 45 a 65. No repara la reserva ya consumida.'}),
-  'coolant-feed-ii': upgrade({id: 'coolant-feed-ii', price: 110, branch: 'cooling', rank: 2,
+  'fork-armor': upgrade({id: 'fork-armor', price: 220, branch: 'defense', row: 3, rank: 3, tier: 3, requires: ['hull-plating-ii'],
+    label: 'Blindaje · elige una', choices: Object.freeze(['reactive-armor', 'hard-hull']),
+    description: 'Eliges una: Blindaje reactivo o Casco duro.'}),
+  'ammo-1': upgrade({id: 'ammo-1', price: 60, branch: 'ammo', row: 1, rank: 1, label: 'Cargador I',
+    description: 'El cargador pasa de 20 a 40 disparos. Llegan cargados al instalarlo.'}),
+  // Antes costaba 45 e iba suelta: los recibos antiguos siguen valiendo.
+  'coolant-feed': upgrade({id: 'coolant-feed', price: 90, receiptPrices: [45, 90], after: ['ammo-1'],
+    label: 'Refrigeración I', branch: 'cooling', row: 2, rank: 1, description: 'Recupera un proyectil cada 1,5 segundos en lugar de cada dos.'}),
+  'fork-battery': upgrade({id: 'fork-battery', price: 220, branch: 'ammo', row: 3, rank: 3, tier: 3, requires: ['coolant-feed'],
+    label: 'Batería · elige una', choices: Object.freeze(['hot-reload', 'wide-magazine']),
+    description: 'Eliges una: Recarga en caliente o Cargador ancho.'}),
+  'scrap-magnet': upgrade({id: 'scrap-magnet', price: 50, branch: 'systems', row: 1, rank: 1, label: 'Imán',
+    description: 'Atraes la chatarra desde un 50 % más lejos.'}),
+  'missile-rack': upgrade({id: 'missile-rack', price: 120, branch: 'systems', row: 2, rank: 2, requires: ['scrap-magnet'],
+    label: 'Cuarto misil', description: 'Llevas 4 misiles en vez de 3. El cuarto llega cargado.'}),
+  'fork-systems': upgrade({id: 'fork-systems', price: 220, branch: 'systems', row: 3, rank: 3, tier: 3, requires: ['missile-rack'],
+    label: 'Misiles · elige una', choices: Object.freeze(['seeker-missile', 'cluster-missile']),
+    description: 'Eliges una: Misil buscador o Misil de racimo.'}),
+  // De antes del árbol nuevo: ya no se venden; quien los tiene los conserva.
+  'coolant-feed-ii': upgrade({id: 'coolant-feed-ii', legacy: true, price: 110, branch: 'cooling', rank: 2,
     requires: ['coolant-feed'], label: 'Refrigeración II',
     description: 'Recupera un proyectil cada segundo de vuelo; conserva la carga y recuperación en curso.'}),
-  // Línea de munición (dec-arbol-ampliado, 02/11/2026): 20 → 100 cargas en
-  // cuatro rangos. Precios: decisión técnica; se ajustan jugando.
-  'ammo-1': upgrade({id: 'ammo-1', price: 60, branch: 'ammo', rank: 1, label: 'Munición I',
-    description: 'El cargador pasa de 20 a 40 disparos. Llegan cargados al instalarlo.'}),
-  'ammo-2': upgrade({id: 'ammo-2', price: 140, branch: 'ammo', rank: 2, requires: ['ammo-1'], label: 'Munición II',
+  'ammo-2': upgrade({id: 'ammo-2', legacy: true, price: 140, branch: 'ammo', rank: 2, requires: ['ammo-1'], label: 'Munición II',
     description: 'El cargador pasa de 40 a 60 disparos.'}),
-  'ammo-3': upgrade({id: 'ammo-3', price: 260, branch: 'ammo', rank: 3, requires: ['ammo-2'], label: 'Munición III',
+  'ammo-3': upgrade({id: 'ammo-3', legacy: true, price: 260, branch: 'ammo', rank: 3, requires: ['ammo-2'], label: 'Munición III',
     description: 'El cargador pasa de 60 a 80 disparos.'}),
-  'ammo-4': upgrade({id: 'ammo-4', price: 400, branch: 'ammo', rank: 4, requires: ['ammo-3'], label: 'Munición IV',
+  'ammo-4': upgrade({id: 'ammo-4', legacy: true, price: 400, branch: 'ammo', rank: 4, requires: ['ammo-3'], label: 'Munición IV',
     description: 'El cargador pasa de 80 a 100 disparos.'}),
-  // Nodos clave (dec-nodos-clave, 02/11/2026): cada pareja se compra una vez
-  // eligiendo una opción; cambiarla cuesta keySwapPrice (switchKeyNode).
-  'key-1': upgrade({id: 'key-1', price: 300, branch: 'key', rank: 1, requires: ['ammo-2'], label: 'Nodo clave · munición',
+  'key-1': upgrade({id: 'key-1', legacy: true, price: 300, branch: 'key', rank: 1, requires: ['ammo-2'], label: 'Nodo clave · munición',
     choices: Object.freeze(['hot-reload', 'magnet']), description: 'Eliges una: Recarga en caliente o Imán de chatarra.'}),
-  'key-2': upgrade({id: 'key-2', price: 300, branch: 'key', rank: 2, requires: ['hull-plating-ii'], label: 'Nodo clave · blindaje',
+  'key-2': upgrade({id: 'key-2', legacy: true, price: 300, branch: 'key', rank: 2, requires: ['hull-plating-ii'], label: 'Nodo clave · blindaje',
     choices: Object.freeze(['reactive-armor', 'wide-magazine']), description: 'Eliges una: Blindaje reactivo o Cargador ancho.'}),
   'weapon-scatter': upgrade({id: 'weapon-scatter', retired: true, price: 70, weaponId: 'scatter', branch: 'scatter', rank: 1,
     requires: ['twin-preparation'], label: 'Abanico I',
@@ -64,6 +87,19 @@ export const SCRAP_UPGRADES = Object.freeze({
 });
 // Abanico y Aguja salieron de la Forja (dec-armas-plan, 01/11/2026): siguen
 // aquí solo para leer guardados antiguos; al cargar se devuelve su chatarra.
+// Las cuatro ramas del árbol, de la fila I a la III. Las filas IV y V llegan
+// con los sectores 2 y 3.
+export const FORGE_TREE = Object.freeze({
+  power: Object.freeze(['power-1', 'power-2', 'power-3']),
+  armor: Object.freeze(['hull-reinforcement', 'hull-plating-ii', 'fork-armor']),
+  battery: Object.freeze(['ammo-1', 'coolant-feed', 'fork-battery']),
+  systems: Object.freeze(['scrap-magnet', 'missile-rack', 'fork-systems'])
+});
+/** Hasta qué fila está abierta la Forja: I y II desde la primera visita, III
+ * al vencer a Atlas. */
+export const forgeTier = ({atlasBeaten = false} = {}) => atlasBeaten ? 3 : 2;
+export const missileCapacity = record => SCRAP_ECONOMY_RULES.maxMissiles +
+  (Array.isArray(record?.upgrades) && record.upgrades.includes('missile-rack') ? 1 : 0);
 export const RETIRED_UPGRADES = Object.freeze(Object.keys(SCRAP_UPGRADES).filter(sku => SCRAP_UPGRADES[sku].retired));
 // Niveles 2 a 4 de Pulso y Gemelo, comprados en el hangar (dec-armas-plan).
 export const SCRAP_WEAPON_LEVELS = Object.freeze(Object.fromEntries(['pulse', 'twin'].flatMap(weaponId =>
@@ -81,10 +117,13 @@ const inCatalogue = sku => has(SCRAP_UPGRADES, sku) || has(SCRAP_SHIPS, sku) || 
 // misiles), y acepta el precio que se pagó aunque luego cambie.
 // Opciones de los nodos clave, con su texto para la Forja.
 export const KEY_NODES = Object.freeze({
-  'hot-reload': Object.freeze({slot: 'key-1', label: 'Recarga en caliente', description: 'Si vacías el cargador, se recarga al doble de velocidad hasta llenarse.'}),
+  'hot-reload': Object.freeze({slot: 'fork-battery', label: 'Recarga en caliente', description: 'Si vacías el cargador, se recarga al doble de velocidad hasta llenarse.'}),
   magnet: Object.freeze({slot: 'key-1', label: 'Imán de chatarra', description: 'Atraes la chatarra desde el doble de distancia.'}),
-  'reactive-armor': Object.freeze({slot: 'key-2', label: 'Blindaje reactivo', description: 'Tras un golpe, 1 segundo más sin recibir daño.'}),
-  'wide-magazine': Object.freeze({slot: 'key-2', label: 'Cargador ancho', description: '10 disparos más en el cargador.'})
+  'reactive-armor': Object.freeze({slot: 'fork-armor', label: 'Blindaje reactivo', description: 'Tras un golpe, 1 segundo más sin recibir daño.'}),
+  'wide-magazine': Object.freeze({slot: 'fork-battery', label: 'Cargador ancho', description: '10 disparos más en el cargador.'}),
+  'hard-hull': Object.freeze({slot: 'fork-armor', label: 'Casco duro', description: 'Recibes un 15 % menos de todo el daño.'}),
+  'seeker-missile': Object.freeze({slot: 'fork-systems', label: 'Misil buscador', description: 'El misil gira hacia el enemigo más cercano.'}),
+  'cluster-missile': Object.freeze({slot: 'fork-systems', label: 'Misil de racimo', description: 'Al impactar se abre en tres fragmentos.'})
 });
 export const SCRAP_CONSUMABLES = Object.freeze({'sector-beacon': Object.freeze({price: 40})});
 
@@ -125,7 +164,13 @@ export function classicWorkshopState(record) {
     defenseRank: owns('hull-plating-ii') ? 2 : owns('hull-reinforcement') ? 1 : 0,
     coolingRank: owns('coolant-feed-ii') ? 2 : owns('coolant-feed') ? 1 : 0,
     ammoRank,
-    keyNodes: {hotReload: choice('hot-reload'), magnet: choice('magnet'), reactiveArmor: choice('reactive-armor'), wideMagazine: choice('wide-magazine')},
+    power: owns('power-3') ? 1.3 : owns('power-2') ? 1.2 : owns('power-1') ? 1.1 : 1,
+    // El imán del árbol nuevo llega a ×1,5; el nodo clave antiguo, a ×2.
+    magnetRange: choice('magnet') ? 2 : owns('scrap-magnet') ? 1.5 : 1,
+    missileCapacity: missileCapacity(saved),
+    keyNodes: {hotReload: choice('hot-reload'), magnet: choice('magnet'), reactiveArmor: choice('reactive-armor'),
+      wideMagazine: choice('wide-magazine'), hardHull: choice('hard-hull'), seekerMissile: choice('seeker-missile'),
+      clusterMissile: choice('cluster-missile')},
     weaponIds: [],
     weaponLevels: Object.fromEntries(['pulse', 'twin'].map(id => [id, owns(`level-${id}-4`) ? 4 : owns(`level-${id}-3`) ? 3 : owns(`level-${id}-2`) ? 2 : 1])),
     weaponRanks: {scatter: owns('scatter-focus') ? 2 : owns('weapon-scatter') ? 1 : 0,
@@ -187,17 +232,19 @@ export function normalizeScrapRecord(value) {
   const missileRoundsPurchased=legacy?0:value.missileRoundsPurchased;
   const missileRefillSequence=legacy?0:value.missileRefillSequence;
   const lastMissileRefill=legacy?null:value.lastMissileRefill;
+  // Con el cuarto misil del árbol la reserva es de 4 (llega cargado al comprarlo).
+  const missileMax=missileCapacity({upgrades});
   if(![missileAmmo,missileShotsSpent,missileRoundsPurchased,missileRefillSequence].every(integer)||
-    missileAmmo>SCRAP_ECONOMY_RULES.maxMissiles||
+    missileAmmo>missileMax||
     !Number.isSafeInteger(missileRoundsPurchased*SCRAP_ECONOMY_RULES.missileUnitPrice)||
-    !Number.isSafeInteger(SCRAP_ECONOMY_RULES.maxMissiles+missileRoundsPurchased)||
-    SCRAP_ECONOMY_RULES.maxMissiles+missileRoundsPurchased-missileShotsSpent!==missileAmmo||
-    missileRoundsPurchased<missileRefillSequence||missileRoundsPurchased>missileRefillSequence*3)return null;
+    !Number.isSafeInteger(missileMax+missileRoundsPurchased)||
+    missileMax+missileRoundsPurchased-missileShotsSpent!==missileAmmo||
+    missileRoundsPurchased<missileRefillSequence||missileRoundsPurchased>missileRefillSequence*missileMax)return null;
   if(missileRefillSequence===0) {
     if(lastMissileRefill!==null)return null;
   } else if(!object(lastMissileRefill)||lastMissileRefill.sequence!==missileRefillSequence||
     lastMissileRefill.id!==`c9:missiles:${missileRefillSequence}`||!integer(lastMissileRefill.amount)||
-    lastMissileRefill.amount<1||lastMissileRefill.amount>3||
+    lastMissileRefill.amount<1||lastMissileRefill.amount>missileMax||
     lastMissileRefill.price!==lastMissileRefill.amount*SCRAP_ECONOMY_RULES.missileUnitPrice)return null;
   // Guardados anteriores a la baliza no tienen estos campos.
   const consumableSpent=has(value,'consumableSpent')?value.consumableSpent:0;
@@ -412,7 +459,7 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
     if(sequence<=current.missileRefillSequence)return success('duplicate',{duplicate:true,
       sku:'missile-refill',price:0,amount:0,remaining:current.missileAmmo});
     if(sequence!==current.missileRefillSequence+1)return blocked('refill-sequence-conflict');
-    const amount=SCRAP_ECONOMY_RULES.maxMissiles-current.missileAmmo;
+    const amount=missileCapacity(current)-current.missileAmmo;
     if(amount===0)return {ok:false,status:'unavailable',reason:'missiles-full',state:copy(current)};
     const price=amount*SCRAP_ECONOMY_RULES.missileUnitPrice;
     if(current.balance<price)return {ok:false,status:'unavailable',reason:'insufficient-funds',price,
@@ -439,7 +486,7 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
     next.missileAmmo--;next.missileShotsSpent=sequence;
     return commit(next,loaded.raw,{duplicate:false,shotId,remaining:next.missileAmmo});
   }
-  function purchase({transactionId, sku:requestedSku, choice} = {}) {
+  function purchase({transactionId, sku:requestedSku, choice, tier} = {}) {
     const sku=upgradeName(requestedSku);
     if (!identifier(transactionId) || typeof sku !== 'string' ||
       (!inCatalogue(sku)&&sku!=='missile-refill')) throw new TypeError('A stable transaction ID and catalogue SKU are required');
@@ -454,9 +501,12 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
       : blocked('transaction-id-conflict');
     if (current.lastConsumable?.id === transactionId) return blocked('transaction-id-conflict');
     if (current.upgrades.includes(sku)) return {ok: false, status: 'unavailable', reason: 'already-owned', state: copy(current)};
-    if (catalogue(sku).retired) return {ok: false, status: 'unavailable', reason: 'retired', state: copy(current)};
+    if (catalogue(sku).retired || catalogue(sku).legacy) return {ok: false, status: 'unavailable', reason: 'retired', state: copy(current)};
     if (current.purchases.length >= SCRAP_ECONOMY_RULES.maxPurchaseReceipts) return blocked('purchase-receipt-capacity');
-    const requires = catalogue(sku).requires.filter(required => !current.upgrades.includes(required));
+    // La fila del árbol se abre al avanzar en la campaña, no con chatarra.
+    if (catalogue(sku).tier && !(tier >= catalogue(sku).tier)) return {ok: false, status: 'unavailable', reason: 'tier-locked',
+      tier: catalogue(sku).tier, state: copy(current)};
+    const requires = [...catalogue(sku).requires, ...(catalogue(sku).after || [])].filter(required => !current.upgrades.includes(required));
     if (requires.length) return {ok: false, status: 'unavailable', reason: 'prerequisite-required',
       requires, state: copy(current)};
     const price = catalogue(sku).price;
@@ -466,6 +516,7 @@ export function createScrapLedger({storage, key = SCRAP_ECONOMY_KEY} = {}) {
     next.balance -= price; next.spent += price; next.upgrades.push(sku);
     next.purchases.push({id: transactionId, sku, price});
     if (catalogue(sku).choices) next.keyChoices = {...next.keyChoices, [sku]: choice};
+    if (sku === 'missile-rack') next.missileAmmo++;
     return commit(next, loaded.raw, {sku, price, duplicate: false});
   }
   /** Cambiar la elección de un nodo clave cuesta keySwapPrice. Recibos

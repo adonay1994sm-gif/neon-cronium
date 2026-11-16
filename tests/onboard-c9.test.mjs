@@ -277,11 +277,13 @@ test('the actual onboard purchase commits price, entitlement and receipt once wh
   const h = harness(t); h.api.prepare(); h.api.seedCombatResources(); h.node('classicC9').click();
   const before = h.snapshot();
   const previousLedgerWrites = h.writes.filter(write => write.key === SALVAGE_KEY).length;
-  h.node('c9BuyCoolant').click(); const bought = h.snapshot(), raw = h.stored(SALVAGE_KEY);
+  // Potencia I es la primera casilla del árbol nuevo (15/11/2026); antes se probaba con Refrigeración.
+  const power = h.document.querySelector('[data-c9-sku="power-1"]');
+  power.click(); const bought = h.snapshot(), raw = h.stored(SALVAGE_KEY);
   const ledger = JSON.parse(raw); assert.ok(normalizeScrapRecord(ledger));
-  assert.equal(ledger.balance, 55); assert.equal(ledger.spent, 45);
-  assert.deepEqual(ledger.upgrades, ['coolant-feed']);
-  assert.deepEqual(ledger.purchases, [{id: 'c9:coolant-feed', sku: 'coolant-feed', price: 45}]);
+  assert.equal(ledger.balance, 40); assert.equal(ledger.spent, 60);
+  assert.deepEqual(ledger.upgrades, ['power-1']);
+  assert.deepEqual(ledger.purchases, [{id: 'c9:power-1', sku: 'power-1', price: 60}]);
   assert.equal(h.writes.filter(write => write.key === SALVAGE_KEY).length, previousLedgerWrites + 1,
     'the money/entitlement/receipt share one actual localStorage commit');
   assert.equal(bought.state, 'paused'); assert.deepEqual(bought.route, before.route);
@@ -289,9 +291,9 @@ test('the actual onboard purchase commits price, entitlement and receipt once wh
   assert.equal(bought.weapons.charges, before.weapons.charges);
   assert.equal(bought.weapons.recharge, before.weapons.recharge);
   assert.equal(bought.weapons.cooldown, before.weapons.cooldown);
-  assert.equal(bought.weapons.rechargeSeconds, 1.5);
+  assert.equal(bought.weapons.power, 1.1);
   assert.deepEqual(bought.items, before.items);
-  h.node('c9BuyCoolant').click(); assert.equal(h.stored(SALVAGE_KEY), raw, 'a repeated disabled purchase cannot charge twice');
+  power.click(); assert.equal(h.stored(SALVAGE_KEY), raw, 'a repeated disabled purchase cannot charge twice');
   h.node('flightDockContinue').click();
   assert.equal(h.document.activeElement,h.node('classicC9'),'purchase must restore focus to the enabled HUD opener');
   assert.equal(h.node('classicC9').disabled,false);h.node('classicC9').click();
@@ -303,16 +305,17 @@ test('the actual onboard purchase commits price, entitlement and receipt once wh
 test('an interrupted onboard monetary write grants no upgrade and a retry charges one coherent transaction', t => {
   const h = harness(t); h.api.prepare(); h.node('classicC9').click();
   const before = h.snapshot(), raw = h.stored(SALVAGE_KEY);
-  h.setSalvageBlocked(true); h.node('c9BuyCoolant').click();
+  const power = h.document.querySelector('[data-c9-sku="power-1"]');
+  h.setSalvageBlocked(true); power.click();
   assert.equal(h.stored(SALVAGE_KEY), raw);
   assert.deepEqual(h.snapshot().salvage, before.salvage);
-  assert.equal(h.snapshot().weapons.rechargeSeconds, 2);
+  assert.ok(!(h.snapshot().weapons.power > 1));
   assert.match(h.node('c9PurchaseStatus').textContent, /confirmado|reintent|guardad|pago/i);
   assert.equal(h.snapshot().state, 'paused'); assert.deepEqual(h.snapshot().route, before.route);
-  h.setSalvageBlocked(false); h.node('c9BuyCoolant').click();
+  h.setSalvageBlocked(false); power.click();
   const ledger = JSON.parse(h.stored(SALVAGE_KEY));
-  assert.equal(ledger.balance, 55); assert.equal(ledger.purchases.length, 1);
-  assert.deepEqual(ledger.upgrades, ['coolant-feed']); assert.equal(h.snapshot().weapons.rechargeSeconds, 1.5);
+  assert.equal(ledger.balance, 40); assert.equal(ledger.purchases.length, 1);
+  assert.deepEqual(ledger.upgrades, ['power-1']); assert.equal(h.snapshot().weapons.power, 1.1);
 });
 
 test('stage 1.6 resolves emergency service in flight once without a forced orbital station or modal', t => {
@@ -399,62 +402,84 @@ test('Forja keeps hull and cooling ranks, no longer sells weapons and preserves 
   assert.equal(h.document.querySelector('[data-flight-loadout="twin"]').disabled,true,'Gemelo still belongs to Atlas');
   h.node('flightInstallTwin').click();
   h.node('c9BuyShield').click();sku('hull-plating-ii').click();
-  h.node('c9BuyCoolant').click();sku('coolant-feed-ii').click();
-  const q=h.snapshot();assert.equal(q.reserveCapacity,65);assert.equal(q.weapons.rechargeSeconds,1);
-  const raw=h.stored(SALVAGE_KEY);sku('coolant-feed-ii').click();assert.equal(h.stored(SALVAGE_KEY),raw);
+  sku('ammo-1').click();h.node('c9BuyCoolant').click();
+  assert.equal(sku('coolant-feed-ii').classList.contains('hidden'),true,'Refrigeración II is from before the new tree: no longer sold');
+  const q=h.snapshot();assert.equal(q.reserveCapacity,65);assert.equal(q.weapons.rechargeSeconds,1.5);
+  const raw=h.stored(SALVAGE_KEY);h.node('c9BuyCoolant').click();assert.equal(h.stored(SALVAGE_KEY),raw);
   const resumed=harness(t,{salvage:JSON.parse(raw),equipment:JSON.parse(h.stored('neonCronium.flightEquipment.v1'))});
   resumed.api.prepare();assert.equal(resumed.snapshot().weapons.selected,'pulse');
-  assert.equal(resumed.snapshot().reserveCapacity,65);assert.equal(resumed.snapshot().weapons.rechargeSeconds,1);
+  assert.equal(resumed.snapshot().reserveCapacity,65);assert.equal(resumed.snapshot().weapons.rechargeSeconds,1.5);
   assert.equal(resumed.snapshot().salvage.balance,q.salvage.balance);
 });
 
-// dec-arbol-ampliado (02/11/2026): rama MUNICIÓN de cuatro rangos en la Forja.
-test('Forja ammo branch: Munición I gives a 40-round magazine now and after a reload; later ranks wait for the one before', t => {
+// Árbol nuevo (propietario, 15/11/2026): rama BATERÍA = Cargador I → Refrigeración I → elección.
+test('Forja battery branch: Cargador I gives a 40-round magazine now and after a reload, and opens Refrigeración I', t => {
   const equipment={version:1,recoveredTwin:false,unlocked:['pulse'],selected:'pulse'};
   const h=harness(t,{salvage:fundedRecord(250),equipment});h.api.prepare();h.node('classicC9').click();
   const sku=id=>h.document.querySelector(`[data-c9-sku="${id}"]`);
-  assert.deepEqual([...sku('ammo-1').closest('.c9-branch').querySelectorAll('[data-c9-sku]')].map(node=>node.dataset.c9Sku),
-    ['ammo-1','ammo-2','ammo-3','ammo-4']);
-  assert.equal(sku('ammo-2').disabled,true,'Munición II needs Munición I');
+  const branch=sku('ammo-1').closest('.c9-branch');
+  assert.equal(branch.querySelector('h4').textContent,'BATERÍA');
+  assert.deepEqual([...branch.querySelectorAll('button')].map(node=>node.dataset.c9Sku||node.dataset.c9Key||node.id),
+    ['ammo-1','c9BuyCoolant','hot-reload','wide-magazine']);
+  assert.equal(h.node('c9BuyCoolant').disabled,true,'Refrigeración I needs Cargador I');
   assert.equal(h.snapshot().weapons.maxCharges,20);
   sku('ammo-1').click();
   const bought=h.snapshot();
   assert.equal(bought.weapons.maxCharges,40);assert.equal(bought.weapons.charges,40,'the new rounds arrive loaded');
   assert.equal(bought.salvage.balance,190);assert.equal(sku('ammo-1').dataset.nodeState,'installed');
-  assert.equal(sku('ammo-2').disabled,false);
+  assert.equal(h.node('c9BuyCoolant').disabled,false);
+  for(const old of ['ammo-2','ammo-3','ammo-4'])assert.equal(sku(old).classList.contains('hidden'),true,`${old} is no longer sold`);
   const resumed=harness(t,{salvage:JSON.parse(h.stored(SALVAGE_KEY)),equipment});
   resumed.api.prepare();assert.equal(resumed.snapshot().weapons.maxCharges,40);
 });
 
-// dec-nodos-clave (02/11/2026): parejas «elige 1 de 2» en la Forja.
-test('Forja key nodes: one choice per pair, the other one changes it for 100, and the choice survives a reload', t => {
+test('Forja rows: the four branches show three rows and row III stays shut until Atlas is beaten', t => {
   const equipment={version:1,recoveredTwin:false,unlocked:['pulse'],selected:'pulse'};
-  const h=harness(t,{salvage:fundedRecord(700),equipment});h.api.prepare();h.node('classicC9').click();
-  const key=id=>h.document.querySelector(`[data-c9-key="${id}"]`),sku=id=>h.document.querySelector(`[data-c9-sku="${id}"]`);
-  assert.deepEqual([...key('hot-reload').closest('.c9-branch').querySelectorAll('[data-c9-key]')].map(node=>node.dataset.c9Key),['hot-reload','magnet']);
-  assert.equal(key('hot-reload').disabled,true,'the pair needs Munición II');
-  sku('ammo-1').click();sku('ammo-2').click();
-  assert.equal(key('magnet').querySelector('[data-c9-state]').textContent,'300 CHATARRA · ELIGE 1 DE 2');
-  key('hot-reload').click();
-  assert.equal(h.snapshot().weapons.hotReload,true);assert.equal(h.snapshot().salvage.balance,200);
-  assert.equal(key('hot-reload').dataset.nodeState,'installed');
-  assert.equal(key('magnet').querySelector('[data-c9-state]').textContent,'CAMBIAR · 100 CHATARRA');
-  key('magnet').click();
-  const changed=h.snapshot();
-  assert.equal(changed.weapons.hotReload,false);assert.equal(changed.salvage.balance,100);
-  assert.deepEqual(changed.salvage.keyChoices,{'key-1':'magnet'});
-  const resumed=harness(t,{salvage:JSON.parse(h.stored(SALVAGE_KEY)),equipment});resumed.api.prepare();
-  assert.deepEqual(resumed.snapshot().salvage.keyChoices,{'key-1':'magnet'});
-  assert.equal(resumed.snapshot().salvage.balance,100);
+  const h=harness(t,{salvage:fundedRecord(5000),equipment});h.api.prepare();h.node('classicC9').click();
+  const sku=id=>h.document.querySelector(`[data-c9-sku="${id}"]`),key=id=>h.document.querySelector(`[data-c9-key="${id}"]`);
+  assert.deepEqual([...h.document.querySelectorAll('#c9-systems .c9-branch:not(.hidden) h4')].map(node=>node.textContent),
+    ['POTENCIA · DAÑO','BLINDAJE','BATERÍA','SISTEMAS']);
+  for(const id of ['power-1','power-2','scrap-magnet','missile-rack'])sku(id).click();
+  assert.equal(h.snapshot().weapons.power,1.2);
+  assert.equal(sku('power-3').disabled,true,'plenty of scrap, but row III is shut');
+  assert.equal(sku('power-3').querySelector('[data-c9-state]').textContent,'SE ABRE AL VENCER A ATLAS');
+  assert.equal(key('seeker-missile').disabled,true);
+  assert.match(h.document.querySelector('[data-c9-tier]').textContent,/SE ABRE AL VENCER A ATLAS/);
+  const raw=h.stored(SALVAGE_KEY);sku('power-3').click();key('seeker-missile').click();
+  assert.equal(h.stored(SALVAGE_KEY),raw,'nothing is charged for a shut row');
+  assert.equal(h.node('c9BuyMissiles').querySelector('[data-c9-label]').textContent,'CUATRO MISILES CARGADOS');
 });
 
-// Auditoría 03/11 (A11): la pareja de nodos clave se lee como una elección.
-test('each key-node pair says «choose one» and has an «O» between its two options', t => {
+// Elecciones de la fila III (antes nodos clave, dec-nodos-clave 02/11/2026).
+test('Forja forks: one choice of two, the other one changes it for 100, and the choice survives a reload', t => {
+  const equipment={version:1,recoveredTwin:true,unlocked:['pulse','twin'],selected:'pulse'};
+  const h=harness(t,{salvage:fundedRecord(700),equipment});h.api.prepare();h.node('classicC9').click();
+  const key=id=>h.document.querySelector(`[data-c9-key="${id}"]`),sku=id=>h.document.querySelector(`[data-c9-sku="${id}"]`);
+  assert.deepEqual([...key('hot-reload').closest('.c9-branch').querySelectorAll('[data-c9-key]')].map(node=>node.dataset.c9Key),['hot-reload','wide-magazine']);
+  assert.equal(key('hot-reload').disabled,true,'the fork needs Refrigeración I');
+  sku('ammo-1').click();h.node('c9BuyCoolant').click();
+  assert.equal(key('wide-magazine').querySelector('[data-c9-state]').textContent,'220 CHATARRA · ELIGE 1 DE 2');
+  key('hot-reload').click();
+  assert.equal(h.snapshot().weapons.hotReload,true);assert.equal(h.snapshot().salvage.balance,330);
+  assert.equal(key('hot-reload').dataset.nodeState,'installed');
+  assert.equal(key('wide-magazine').querySelector('[data-c9-state]').textContent,'CAMBIAR · 100 CHATARRA');
+  key('wide-magazine').click();
+  const changed=h.snapshot();
+  assert.equal(changed.weapons.hotReload,false);assert.equal(changed.salvage.balance,230);
+  assert.equal(changed.weapons.maxCharges,50);
+  assert.deepEqual(changed.salvage.keyChoices,{'fork-battery':'wide-magazine'});
+  const resumed=harness(t,{salvage:JSON.parse(h.stored(SALVAGE_KEY)),equipment});resumed.api.prepare();
+  assert.deepEqual(resumed.snapshot().salvage.keyChoices,{'fork-battery':'wide-magazine'});
+  assert.equal(resumed.snapshot().salvage.balance,230);
+});
+
+// Auditoría 03/11 (A11): cada elección se lee como una elección.
+test('each fork sits under its «FILA III» label and has an «O» between its two options', t => {
   const h=harness(t,{salvage:fundedRecord(10)});h.api.prepare();h.node('classicC9').click();
-  for(const first of ['hot-reload','reactive-armor']) {
+  for(const first of ['hot-reload','reactive-armor','seeker-missile']) {
     const branch=h.document.querySelector(`[data-c9-key="${first}"]`).closest('.c9-branch');
-    assert.match(branch.querySelector('h4').textContent,/ELIGE UNO/);
     const kids=[...branch.children].map(node=>node.dataset?.c9Key||node.className);
+    assert.equal(kids.indexOf('c9-tier'),kids.indexOf(first)-1,'the row label sits right above the fork');
     assert.equal(kids.indexOf('c9-or'),kids.indexOf(first)+1,'the «O» sits between the two options');
     assert.equal(branch.querySelector('.c9-or').textContent,'O');
   }

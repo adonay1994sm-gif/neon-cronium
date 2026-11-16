@@ -104,6 +104,10 @@
         // row travels with this physical projectile, including its first frame.
         const frame=Math.floor(age*14)%4,size=54;
         ctx.drawImage(atlas,frame*cell,0,cell,cell,-size/2,-size/2,size,size);
+      } else if(shot.weapon==="shard"&&spriteReady(SPRITES.weaponBolts)) {
+        // Fragmento del misil de racimo: el pulso pintado, pequeño.
+        const atlas=SPRITES.weaponBolts,width=atlas.naturalWidth/4,height=atlas.naturalHeight/2;
+        ctx.drawImage(atlas,0,0,width,height,-14,-17,28,56);
       } else if((shot.weapon==="pulse"||shot.weapon==="twin")&&spriteReady(SPRITES.weaponBolts)) {
         // Armas por niveles (dec-armas-plan): el disparo pintado de su nivel,
         // con la cabeza en la posición física del proyectil.
