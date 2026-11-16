@@ -1,7 +1,16 @@
 {
   "proyecto": "NEON CRONIUM",
-  "actualizado": "2026-11-02",
+  "actualizado": "2026-11-16",
   "baul": "https://neon-cronium-video-referencia.chictide18.chatgpt.site",
   "instrucciones": "Antes de nada lee GUIA_GPT.md (misma carpeta): explica el juego, los modelos de referencia y las reglas. Genera cada encargo por orden de prioridad (1 primero), súbelo al baúl con el nombre de \"archivo\" en la carpeta encargos/ y añádelo a catalog.json con el campo \"encargo\" igual a su id. Si un encargo pide varias imágenes, numéralas: encargo-<id>-v1-1.png, -2.png… No cambies medidas, rejilla ni el fondo que pide cada prompt. Revisa esta lista cada 10 minutos y no repitas un encargo que ya esté en catalog.json del baúl.",
-  "encargos": []
+  "encargos": [
+    {
+      "id": "art-ui-arbol-iconos",
+      "titulo": "Arte · Iconos de las casillas nuevas del árbol de la Forja",
+      "prioridad": 2,
+      "archivo": "encargo-art-ui-arbol-iconos-v1.png",
+      "prompt": "Antes de empezar lee https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/GUIA_GPT.md (sección 7, «Interfaz: pintada, nunca con código»).\n\nESTILO OBLIGATORIO: el de los iconos de habilidad que ya entregaste (medallón redondo de metal oscuro con remaches naranjas y símbolo cian en el centro): https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/art-source/ui/habilidades-v1/habilidad_01_v1.webp . Así se ven hoy dentro de la Forja: https://raw.githubusercontent.com/adonay1994sm-gif/neon-cronium/claude/preparar-publicacion-rtfl9q/docs/art/capturas-interfaz/forja_arbol_v1.jpg . Metal oscuro pintado, cian #a1eee8, luces naranjas pequeñas. Mismo medallón, misma luz y mismo tamaño en los 12.\n\nQUÉ ES: 12 iconos para las casillas nuevas del árbol de mejoras de la nave. Cada icono debe leerse a 64 px en un móvil: un solo símbolo claro, sin letras ni números.\n\nENTREGA: UNA hoja PNG con fondo transparente real (canal alfa), de 768 × 256 px, rejilla exacta de 6 columnas × 2 filas, celdas de 128 × 128 px, un icono centrado por celda con 8 px de margen, sin bordes entre celdas y sin texto.\n\nFILA 1 (de izquierda a derecha):\n1. POTENCIA: un rayo dentro de un núcleo de energía, con flecha hacia arriba.\n2. CUARTO MISIL: cuatro misiles en fila dentro del medallón.\n3. CASCO DURO: placa de blindaje gruesa con tres remaches, más maciza que un escudo.\n4. MISIL BUSCADOR: un misil con una retícula de puntería delante.\n5. MISIL DE RACIMO: un misil que se abre en tres fragmentos en abanico.\n6. IMÁN: imán en herradura atrayendo dos trozos pequeños de chatarra.\n\nFILA 2:\n7. ESCUDO DE ARRANQUE: una nave pequeña dentro de una burbuja hexagonal.\n8. SEGUNDA OPORTUNIDAD: un núcleo partido que vuelve a encenderse (chispa de reinicio).\n9. REPARACIÓN LENTA: una llave inglesa con una gota de luz.\n10. RÁFAGA: tres pulsos seguidos, el último doble.\n11. DRON DE APOYO: un dron pequeño con un cañón.\n12. CHATARRA +: un montón de piezas de chatarra con un destello.\n\nNO: no pintes texto, números, marcos cuadrados ni fondo. No cambies el estilo del medallón entre iconos.",
+      "nota": "El árbol nuevo (PR #79) usa de momento el icono más parecido de assets/skill_tree_icons_v1.webp (6×2 celdas de 128 px). Faltan 12 iconos: 6 para las casillas que ya se juegan y 6 para las filas IV y V. Al llegar: guardarlos en art-source/ui/arbol-forja-v1/, montar la hoja y cambiar las posiciones en styles.css (#c9-systems .c9-upgrade-art)."
+    }
+  ]
 }
