@@ -795,3 +795,25 @@ test('a cluster missile opens into three short-lived shards that share a third o
   assert.ok(shards[0].vx < 0 && shards[1].vx === 0 && shards[2].vx > 0, 'they fan out');
   assert.equal(state.projectiles.length, 3);
 });
+
+// Revisión del PR #79 (16/11/2026).
+test('cluster shards never hit the enemy the missile already hit, and respect the projectile cap', () => {
+  const state = createClassicWeapons({width: 720, height: 1280});
+  const shards = spawnClassicShards(state, {x: 300, y: 400, exclude: 'target'});
+  for (const shard of shards) {
+    assert.equal(hitClassicProjectile(state, shard.id, 'target').reason, 'duplicate');
+    assert.equal(hitClassicProjectile(state, shard.id, 'other').accepted, true);
+  }
+  const full = createClassicWeapons({width: 720, height: 1280});
+  setClassicUnlimitedFire(full, true);
+  while (full.projectiles.length < CLASSIC_WEAPON_RULES.maxProjectiles - 1) { triggerClassicWeapon(full, origin); full.cooldown = 0; }
+  assert.equal(spawnClassicShards(full, {x: 300, y: 400}).length, 1, 'only as many shards as fit');
+  assert.equal(full.projectiles.length, CLASSIC_WEAPON_RULES.maxProjectiles);
+});
+
+test('a seeker missile ignores targets that are off the top of the screen', () => {
+  const state = createClassicWeapons({width: 720, height: 1280});
+  const missile = triggerClassicMissile(state, {x: 360, y: 300, shotId: 'missile:1'}).projectiles[0];
+  steerClassicMissiles(state, [{x: 600, y: -80}], 1 / 60);
+  assert.ok(Math.abs(missile.vx) < 1e-6);
+});

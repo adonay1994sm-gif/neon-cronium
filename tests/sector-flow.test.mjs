@@ -1659,3 +1659,27 @@ test('a cluster missile that hits an enemy opens into three shards; a normal mis
     assert.equal(shards, cluster ? 3 : 0);
   }
 });
+
+// Revisión del PR #79: el racimo no duplica el daño sobre el enemigo alcanzado
+// y el buscador, con Atlas en pantalla, solo va a por lo que puede derribar.
+test('a cluster missile deals its damage once to the enemy it hits', () => {
+  const left = cluster => {
+    const {T} = harness({query: '?dev=1'});
+    startAt(T, 3); T.ev('DEV.invulnerable=true');
+    T.ev(`classicVoyageHazardTimer=999;classicPatrolTimer=999;classicHordeTimer=999;items.length=0;classicKeyNodes={...classicKeyNodes,clusterMissile:${cluster}}`);
+    T.ev("window.__t=createThreat('scout',level());Object.assign(window.__t,{id:'target',classicScout:null,x:player.x,baseX:player.x,y:player.y-300,s:0,rot:0,rs:0,amp:0,hp:99,maxHp:99,r:34});items.push(window.__t)");
+    T.ev(`NeonCampaign.triggerClassicMissile(classicWeapons,{x:player.x,y:player.y-60,shotId:'missile:'+((classicSalvageState?.missileShotsSpent||0)+1)})`);
+    for (let k = 0; k < 120; k++) { T.ev('classicPatrolTimer=999;classicHordeTimer=999'); T.adv(1 / 60); }
+    return T.ev('window.__t.hp');
+  };
+  assert.equal(left(true), left(false));
+});
+
+test('seeker targets: everything that can be shot down, and only drones and escorts while Atlas is there', () => {
+  const {T} = harness({query: '?dev=1'});
+  startAt(T, 3); T.ev('DEV.invulnerable=true;items.length=0');
+  T.ev("items.push({id:'rock',type:'meteor',x:100,y:300,r:30,hp:2},{id:'drone',type:'meteor',atlasDrone:true,x:500,y:300,r:20,hp:1},{id:'bullet',type:'meteor',classicScoutProjectile:true,x:300,y:300,r:9,hp:1})");
+  assert.deepEqual(JSON.parse(T.ev('JSON.stringify(classicSeekerTargets().map(t=>t.id))')), ['rock', 'drone']);
+  T.ev('atlasBoss={x:360,y:200,r:120,disabled:false}');
+  assert.deepEqual(JSON.parse(T.ev('JSON.stringify(classicSeekerTargets().map(t=>t.id||"atlas"))')), ['drone', 'atlas']);
+});

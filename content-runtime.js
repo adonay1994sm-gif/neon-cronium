@@ -8392,7 +8392,7 @@ var NeonCampaign = (() => {
       if (!shot.missile) continue;
       let best = null;
       for (const target of targets) {
-        if (target.y >= shot.y) continue;
+        if (target.y >= shot.y || target.y < 0) continue;
         const distance2 = Math.hypot(target.x - shot.x, target.y - shot.y);
         if (distance2 <= 520 && (!best || distance2 < best.distance)) best = { distance: distance2, target };
       }
@@ -8405,11 +8405,13 @@ var NeonCampaign = (() => {
       shot.vy = Math.sin(next) * speed;
     }
   }
-  function spawnClassicShards(state, { x, y }) {
+  function spawnClassicShards(state, { x, y, exclude = null }) {
     finite7(x, "shard x");
     finite7(y, "shard y");
     const damage = CLASSIC_WEAPON_RULES.missile.damage / 3 * (state.power ?? 1);
-    const shards = [-0.6, 0, 0.6].map((spread3, barrel) => ({
+    const room = Math.max(0, CLASSIC_WEAPON_RULES.maxProjectiles - state.projectiles.length);
+    const spared = exclude === null ? [] : [`${typeof exclude}:${exclude}`];
+    const shards = [-0.6, 0, 0.6].slice(0, room).map((spread3, barrel) => ({
       id: `${state.version}:projectile:${++state.projectileSequence}`,
       shotId: `${state.version}:shard:${state.projectileSequence}`,
       weapon: "shard",
@@ -8424,7 +8426,7 @@ var NeonCampaign = (() => {
       pierce: 1,
       duration: 0.4,
       life: 0.4,
-      hitTargets: []
+      hitTargets: [...spared]
     }));
     state.projectiles.push(...shards);
     return shards;
