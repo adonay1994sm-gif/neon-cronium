@@ -145,6 +145,48 @@ export function setClassicHotReload(state, enabled) {
   return enabled;
 }
 
+/** Potencia de la Forja (propietario, 15/11/2026): multiplica el daño de los
+ * disparos y misiles que salgan desde ahora; nunca el de los que ya vuelan. */
+export function setClassicPower(state, multiplier) {
+  if (typeof multiplier !== 'number' || !(multiplier >= 1 && multiplier <= 2)) throw new RangeError('Power must be between 1 and 2');
+  state.power = multiplier;
+  return multiplier;
+}
+
+/** Misil buscador (fila III del árbol): cada misil gira hacia el blanco más
+ * cercano que tenga por delante, sin cambiar su velocidad. `targets = [{x, y}]`. */
+export function steerClassicMissiles(state, targets, delta, turnRate = 3.2) {
+  for (const shot of state.projectiles) {
+    if (!shot.missile) continue;
+    let best = null;
+    for (const target of targets) {
+      if (target.y >= shot.y) continue;
+      const distance = Math.hypot(target.x - shot.x, target.y - shot.y);
+      if (distance <= 520 && (!best || distance < best.distance)) best = {distance, target};
+    }
+    if (!best) continue;
+    const speed = Math.hypot(shot.vx, shot.vy), heading = Math.atan2(shot.vy, shot.vx);
+    let turn = Math.atan2(best.target.y - shot.y, best.target.x - shot.x) - heading;
+    turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+    const next = heading + Math.max(-turnRate * delta, Math.min(turnRate * delta, turn));
+    shot.vx = Math.cos(next) * speed; shot.vy = Math.sin(next) * speed;
+  }
+}
+
+/** Misil de racimo (fila III del árbol): al impactar suelta tres fragmentos
+ * cortos en abanico; cada uno hace un tercio del daño del misil. */
+export function spawnClassicShards(state, {x, y}) {
+  finite(x, 'shard x'); finite(y, 'shard y');
+  const damage = CLASSIC_WEAPON_RULES.missile.damage / 3 * (state.power ?? 1);
+  const shards = [-.6, 0, .6].map((spread, barrel) => ({
+    id: `${state.version}:projectile:${++state.projectileSequence}`, shotId: `${state.version}:shard:${state.projectileSequence}`,
+    weapon: 'shard', barrel, level: 1, x, y,
+    vx: spread === 0 ? 0 : Math.sin(spread) * 700, vy: -Math.cos(spread) * 700,
+    damage, radius: 8, pierce: 1, duration: .4, life: .4, hitTargets: []}));
+  state.projectiles.push(...shards);
+  return shards;
+}
+
 /** Installing a paid rank affects future shots, never live bolts or a cooldown. */
 export function setClassicWeaponTuning(state, ranks = {}) {
   if (!ranks || typeof ranks !== 'object' || Array.isArray(ranks) ||
@@ -226,7 +268,7 @@ export function triggerClassicMissile(state, {x, y, angle = -Math.PI / 2, shotId
   const projectile={id:`${state.version}:projectile:${++state.projectileSequence}`,shotId,
     weapon:'missile',special:true,missile:true,barrel:0,x,y,
     vx:Math.cos(angle)*definition.speed,vy:Math.sin(angle)*definition.speed,
-    damage:definition.damage,radius:definition.radius,pierce:1,
+    damage:definition.damage*(state.power??1),radius:definition.radius,pierce:1,
     duration:definition.duration,life:definition.duration,hitTargets:[]};
   state.missileSequence=receipt;state.missileCooldown=definition.cooldown;
   state.projectiles.push(projectile);
@@ -287,7 +329,7 @@ export function triggerClassicWeapon(state, {x, y, angle = -Math.PI / 2} = {}) {
       y: y + Math.cos(angle) * barrel.offset,
       vx: Math.cos(direction) * definition.speed,
       vy: Math.sin(direction) * definition.speed,
-      damage: barrel.damage ?? definition.damage, radius: definition.radius, pierce: definition.pierce || 1,
+      damage: (barrel.damage ?? definition.damage) * (state.power ?? 1), radius: definition.radius, pierce: definition.pierce || 1,
       duration: definition.duration, life: definition.duration,
       hitTargets: []
     };

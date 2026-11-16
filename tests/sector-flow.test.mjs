@@ -1005,18 +1005,23 @@ test('leaving HARDCORE in Ajustes goes back to the normal save', () => {
 });
 
 // Nodos clave (dec-nodos-clave, 02/11/2026) en vuelo real.
-test('key nodes in flight: reactive armour gives 1.3 s of grace after a hit and the magnet pulls scrap from twice as far', () => {
+test('tree effects in flight: reactive armour, the magnet at ×1.5 and ×2, and the hard hull', () => {
   const {T} = harness({query: '?dev=1'});
   startAt(T, 2); T.ev('DEV.invulnerable=false'); T.adv(1);
   T.ev("classicHullReserve=0;hullGrace=0;damageShip(5)");
   assert.equal(T.ev('hullGrace'), .3, 'normal grace');
   T.ev("classicKeyNodes={...classicKeyNodes,reactiveArmor:true};hullGrace=0;damageShip(5)");
   assert.equal(T.ev('hullGrace'), 1.3, 'reactive armour');
-  const pulled = magnet => T.ev(`(()=>{classicKeyNodes={...classicKeyNodes,magnet:${magnet}};
-    const item={salvagePickup:true,x:player.x,y:player.y-220,vx:0,vy:0,life:10};const before=item.y;
+  const pulled = (range, distance) => T.ev(`(()=>{classicMagnetRange=${range};
+    const item={salvagePickup:true,x:player.x,y:player.y-${distance},vx:0,vy:0,life:10};const before=item.y;
     advanceClassicSalvagePickup(item,.1);return item.y-before;})()`);
-  assert.ok(pulled(true) > 20, 'at 220 px the magnet pulls the scrap towards the ship');
-  assert.ok(pulled(false) < 20, 'without the magnet it only drifts');
+  assert.ok(pulled(1.5, 200) > 20, 'the tree magnet (×1.5) pulls scrap from 200 px');
+  assert.ok(pulled(1.5, 260) < 20, 'but not from 260 px');
+  assert.ok(pulled(2, 260) > 20, 'the old key-node magnet (×2) still reaches 260 px');
+  assert.ok(pulled(1, 200) < 20, 'without a magnet it only drifts');
+  // Casco duro (fila III): un 15 % menos de todo el daño.
+  const hurt = hard => T.ev(`(()=>{classicKeyNodes={...classicKeyNodes,reactiveArmor:false,hardHull:${hard}};classicHullReserve=0;hullGrace=0;hull=100;damageShip(20);return 100-hull;})()`);
+  assert.ok(Math.abs(hurt(true) / hurt(false) - .85) < 1e-9, `hard hull takes ${hurt(true)} of ${hurt(false)}`);
 });
 
 // Auditoría 03/11 (A01): Escape con la Forja de la parada abierta dejaba C9
@@ -1636,4 +1641,21 @@ test('the battery is quietly refilled when Atlas arrives', () => {
   for (let k = 0; k < 200 && !T.ev('Boolean(atlasBoss)'); k++) { T.ev('if(!atlasBoss)classicWeapons.charges=1'); T.adv(1 / 30); }
   assert.ok(T.ev('Boolean(atlasBoss)'), 'Atlas arrived');
   assert.equal(T.ev('classicWeapons.charges'), T.ev('classicWeapons.maxCharges'));
+});
+
+// Fila III del árbol (propietario, 15/11/2026): misil de racimo dentro del juego.
+test('a cluster missile that hits an enemy opens into three shards; a normal missile does not', () => {
+  for (const cluster of [false, true]) {
+    const {T} = harness({query: '?dev=1'});
+    startAt(T, 3); T.ev('DEV.invulnerable=true');
+    T.ev(`classicVoyageHazardTimer=999;classicPatrolTimer=999;classicHordeTimer=999;items.length=0;classicKeyNodes={...classicKeyNodes,clusterMissile:${cluster}}`);
+    T.ev("window.__t=createThreat('scout',level());Object.assign(window.__t,{id:'target',classicScout:null,x:player.x,baseX:player.x,y:player.y-300,s:0,rot:0,rs:0,amp:0,hp:99,maxHp:99,r:34});items.push(window.__t)");
+    const shot = `missile:${T.ev('(classicSalvageState?.missileShotsSpent||0)+1')}`;
+    T.ev(`NeonCampaign.triggerClassicMissile(classicWeapons,{x:player.x,y:player.y-60,shotId:'${shot}'})`);
+    let shards = 0;
+    for (let k = 0; k < 90 && T.ev('window.__t.hp') === 99; k++) T.adv(1 / 60);
+    assert.ok(T.ev('window.__t.hp') < 99, 'the missile hit');
+    shards = T.ev("classicWeapons.projectiles.filter(shot=>shot.weapon==='shard').length");
+    assert.equal(shards, cluster ? 3 : 0);
+  }
 });
