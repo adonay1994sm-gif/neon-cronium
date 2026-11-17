@@ -443,6 +443,26 @@
     impactEffects.push({ x, y, scale, angle, life: duration, duration, variant: (Math.random() * SPRITE_GROUPS.impact.length) | 0 });
   }
 
+  // Más boom (propietario, 17/11/2026): al destruir una nave, además de la bola
+  // de fuego, una onda de choque y una sacudida corta. `size` 1 = enemigo normal.
+  // «Reducir efectos» quita la sacudida y el destello; la onda se queda.
+  function addDestructionBlast(x, y, size = 1) {
+    if (impactEffects.length >= EFFECT_LIMITS.impacts) impactEffects.shift();
+    impactEffects.push({ x, y, scale: size, angle: 0, life: 0.5, duration: 0.5, shockwave: true });
+    if (!settings.reduceEffects) shake = Math.max(shake, size >= 2 ? 10 : 3.5);
+  }
+
+  // Jefe destruido: bola enorme, onda doble, destello blanco, sacudida fuerte y su sonido.
+  function addBossDestruction(x, y) {
+    addExplosion(x, y, 2.6, 1.1);
+    addDestructionBlast(x, y, 2.4);
+    if (!settings.reduceEffects) {
+      if (impactEffects.length >= EFFECT_LIMITS.impacts) impactEffects.shift();
+      impactEffects.push({ x, y, scale: 1, angle: 0, life: 0.35, duration: 0.35, flash: true });
+    }
+    combatSound("atlas-collapse", x);
+  }
+
   // Disparo con golpe (propietario, 15/11/2026): el pulso estalla en el lado
   // por el que llega, suelta chispas hacia quien disparó y el objetivo destella.
   // Solo presentación: el daño lo decide quien llama.

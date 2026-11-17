@@ -6,7 +6,7 @@
  */
 export const COMBAT_SFX_VERSION = 3;
 export const COMBAT_SFX_SRC = 'assets/combat_sfx_atlas_v3.m4a';
-export const COMBAT_SFX_DURATION = 11.95;
+export const COMBAT_SFX_DURATION = 13.25;
 export const COMBAT_SFX_VOICE_LIMIT = 8;
 export const COMBAT_SFX_GAIN_BUDGET = .95;
 
@@ -19,17 +19,17 @@ const cue = (offsets, duration, gain, priority, cooldown, polyphony) => Object.f
 // exactos del maestro de 48 kHz con 120 ms de silencio entre sonidos; salen de
 // scripts/build-combat-sfx-v3.py y assets/combat_sfx_atlas_v3.json los repite.
 export const COMBAT_SFX_CUES = Object.freeze({
-  'phaser': cue([0], 0.3, 0.15, 1, 0.045, 3),
+  'phaser': cue([0.0], 0.3, 0.15, 1, 0.045, 3),
   'missile-launch': cue([0.42], 0.6, 0.31, 5, 0.25, 2),
   'impact-metal': cue([1.14], 0.4, 0.2, 3, 0.04, 3),
   'impact-plasma': cue([1.66], 0.45, 0.22, 3, 0.04, 3),
-  'hull-hit': cue([2.23], 0.6, 0.29, 6, 0.12, 2),
-  'enemy-break': cue([2.95], 1, 0.31, 5, 0.1, 2),
-  'atlas-charge': cue([4.07], 0.95, 0.26, 7, 0.3, 1),
-  'atlas-collapse': cue([5.14], 3, 0.4, 9, 1, 1),
-  'enemy-phaser': cue([8.26], 0.25, 0.17, 2, 0.055, 3),
-  'enemy-heavy': cue([8.63], 0.6, 0.26, 5, 0.16, 2),
-  'boss-laser': cue([9.35], 2.6, 0.32, 8, 1, 1)
+  'hull-hit': cue([2.23], 0.7, 0.29, 6, 0.12, 2),
+  'enemy-break': cue([3.05], 1.6, 0.31, 5, 0.1, 2),
+  'atlas-charge': cue([4.77], 0.95, 0.26, 7, 0.3, 1),
+  'atlas-collapse': cue([5.84], 3.6, 0.4, 9, 1, 1),
+  'enemy-phaser': cue([9.56], 0.25, 0.17, 2, 0.055, 3),
+  'enemy-heavy': cue([9.93], 0.6, 0.26, 5, 0.16, 2),
+  'boss-laser': cue([10.65], 2.6, 0.32, 8, 1, 1)
 });
 
 // El banco de interfaz (ui-sfx.js) reutiliza este reproductor con su propio atlas.

@@ -26,6 +26,8 @@ SOURCE = ROOT / 'art-source' / 'audio' / 'combat-sfx-v3'
 OUT = ROOT / 'assets'
 MANIFEST = ROOT / 'ASSET_MANIFEST.json'
 RATE, GAP, PEAK, FADE = 48000, .12, .70, .06
+# Los «boom» sintetizados son densos y el AAC se pasaba de 0 dB con pico 0,70.
+PEAK_BOOM = .60
 
 # evento: (capas [(archivo, inicio s, largo s, ganancia de la capa)], ganancia, prioridad, espera mínima s, voces)
 # Las capas de un mismo evento se mezclan en un solo sonido.
@@ -34,12 +36,14 @@ CUES = {
     'missile-launch': ([('kenney_thrusterFire_000.ogg', 0, .60, 1)], .31, 5, .25, 2),
     'impact-metal': ([('kenney_impactMetal_002.ogg', 0, .40, 1)], .20, 3, .04, 3),
     'impact-plasma': ([('kenney_forceField_000.ogg', 0, .45, 1)], .22, 3, .04, 3),
-    'hull-hit': ([('starninjas_impact_3.ogg', 0, .60, 1)], .29, 6, .12, 2),
-    'enemy-break': ([('kenney_lowFrequency_explosion_000.ogg', 0, 1.0, 1)], .31, 5, .10, 2),
+    # Más boom (propietario, 17/11/2026): golpe, enemigo y jefe son sintetizados con código
+    # (scripts/make-neon-boom-sfx.py); el resto del banco sigue siendo CC0.
+    'hull-hit': ([('neon_boom_golpe.wav', 0, .70, 1)], .29, 6, .12, 2),
+    'enemy-break': ([('neon_boom_enemigo.wav', 0, 1.6, 1)], .31, 5, .10, 2),
     'atlas-charge': ([('blacklodge_beam_02.wav', 0, .95, 1)], .26, 7, .30, 1),
     # Jefe destruido: el cañonazo que eligió el propietario con una cola grave
     # debajo para que dure y pese más (su nota: «hay que darle más vueltas»).
-    'atlas-collapse': ([('rubberduck_cannon_01.ogg', 0, 1.24, 1), ('nenadsimic_muffled_distant_explosion.wav', 0, 3.0, .8)], .40, 9, 1, 1),
+    'atlas-collapse': ([('neon_boom_jefe.wav', 0, 3.6, 1)], .40, 9, 1, 1),
     'enemy-phaser': ([('rubberduck_shoot_01.ogg', 0, .25, 1)], .17, 2, .055, 3),
     'enemy-heavy': ([('kenney_laserLarge_000.ogg', 0, .60, 1)], .26, 5, .16, 2),
     # Láser grande del subguardián (antes sonaba la explosión del jefe).
@@ -60,7 +64,8 @@ def render(layers):
         mixed[:len(part)] += part
     fade = min(len(mixed), round(FADE * RATE))
     mixed[len(mixed) - fade:] *= np.linspace(1, 0, fade)
-    return mixed * (PEAK / max(np.abs(mixed).max(), 1e-9))
+    peak = PEAK_BOOM if any(name.startswith('neon_boom') for name, *_ in layers) else PEAK
+    return mixed * (peak / max(np.abs(mixed).max(), 1e-9))
 
 
 def build():

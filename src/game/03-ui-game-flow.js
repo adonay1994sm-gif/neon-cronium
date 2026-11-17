@@ -1108,7 +1108,7 @@
       if(event.type==="fire")combatSound(event.attack==="laser"?"boss-laser":"enemy-heavy",subBoss.x);
       if(event.type==="fire"&&event.attack==="laser"){shake=Math.max(shake,5);cameraKickY=Math.max(cameraKickY,4);}
       if(event.type==="defeated") {
-        subBossBeaten=true;addExplosion(subBoss.x,subBoss.y,1.6,1);
+        subBossBeaten=true;addBossDestruction(subBoss.x,subBoss.y);
         // Las escoltas caen con él.
         for(const escort of items.filter(item=>item.gaia?.kind==="atlasEscort"))addExplosion(escort.x,escort.y,.6,.4);
         items=items.filter(item=>item.gaia?.kind!=="atlasEscort");
@@ -1345,7 +1345,11 @@
       score+=item.classicScoutProjectile?0:(destroyed?10:3);combatSound(destroyed?"enemy-break":"impact-metal",item.x);
       hudScoreTarget=score;
       if(destroyed){
-        if(!item.classicScout?.tacticsVersion)addExplosion(item.x,item.y,.7,.5);
+        // Más boom: bola doble que antes (los perseguidores ya llevan la suya) y onda de choque.
+        // Las balas, minas y bombas derribadas conservan su estallido pequeño de siempre.
+        if(item.classicScoutProjectile||item.gaiaMine||item.gaiaBomb){addExplosion(item.x,item.y,.7,.5);return true;}
+        addExplosion(item.x,item.y,item.classicScout?.tacticsVersion?1:1.4,.55);
+        addDestructionBlast(item.x,item.y,(item.r||34)>=50?1.6:1);
         return true;
       }
     }
@@ -1708,7 +1712,7 @@
       // Las escoltas caen con Atlas.
       for(const escort of items.filter(item=>item.gaia?.kind==="atlasEscort"))addExplosion(escort.x,escort.y,.6,.4);
       items=items.filter(item=>item.gaia?.kind!=="atlasEscort");
-      score += 250;combatSound("atlas-collapse",atlasBoss.x);
+      score += 250;addBossDestruction(atlasBoss.x,atlasBoss.y);
       // Explosión del baúl durante el apagado (1,55 s): el completado llega
       // como siempre, ~0,75 s después de que se apague. Sin imagen, como antes.
       if(spriteReady(SPRITES.atlasExplosion))addAtlasExplosion(atlasBoss);

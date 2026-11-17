@@ -1050,6 +1050,18 @@
         ctx.drawImage(atlas,frame*cell,row*cell,cell,cell,-size/2,-size/2,size,size);
         ctx.restore();continue;
       }
+      if (effect.shockwave) {
+        // Onda de choque: un anillo claro que se abre desde la explosión.
+        const radius = (24 + progress * 120) * effect.scale;
+        ctx.save(); ctx.translate(effect.x, effect.y); ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = (1 - progress) * .8; ctx.lineWidth = Math.max(1.5, 9 * (1 - progress)) * Math.min(1.6, effect.scale);
+        ctx.strokeStyle = "#ffd9a8"; ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore(); continue;
+      }
+      if (effect.flash) {
+        // Destello blanco de un instante en las explosiones de jefe (no con «Reducir efectos»).
+        ctx.save(); ctx.fillStyle = `rgba(255,244,230,${(.4 * (1 - progress)).toFixed(3)})`; ctx.fillRect(0, 0, W, H); ctx.restore(); continue;
+      }
       if (effect.plasmaBlast && spriteReady(SPRITES.lavaCoreMine)) {
         // Estallido de la mina: último fotograma de la fila 2, crece y se apaga.
         const atlas = SPRITES.lavaCoreMine, cell = atlas.naturalWidth / 4, size = 110 + 70 * progress;
