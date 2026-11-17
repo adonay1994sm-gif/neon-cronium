@@ -871,6 +871,8 @@
   function ensureAudio() {
     if (audioCtx) return audioCtx;
     try {
+      // iPhone: sin esto, el interruptor de silencio apaga todo el sonido del juego.
+      try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch { /* no disponible */ }
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       // Bus maestro con limitador: música, efectos y tonos pasan por aquí y
       // no saturan cuando coinciden (revisión de audio 22/10, paso 1).
