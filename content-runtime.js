@@ -7511,7 +7511,7 @@ var NeonCampaign = (() => {
     bus.connect(output);
     const active = /* @__PURE__ */ new Set(), lastPlayed = /* @__PURE__ */ new Map(), variants = /* @__PURE__ */ new Map(), recentIds = /* @__PURE__ */ new Set(), playedByCue = /* @__PURE__ */ new Map();
     let buffer = null, loading = null, disposed = false, paused = true, enabled = true;
-    let generation = 0, volume = 1, played = 0, dropped = 0, stolen = 0, failed = false;
+    let generation = 0, volume = 1, played = 0, dropped = 0, stolen = 0, failed = false, lastError = "";
     function release(record) {
       if (!active.delete(record)) return;
       record.source.onended = null;
@@ -7555,6 +7555,7 @@ var NeonCampaign = (() => {
             throw new Error("combat-sfx asset size invalid");
           }
           const decoded = await context.decodeAudioData(bytes);
+          lastError = `duraci\xF3n ${Number(decoded?.duration).toFixed(2)}`;
           if (disposed || generation !== attempt) return false;
           if (!Number.isFinite(decoded?.duration) || decoded.duration < bank.duration - 0.12 || decoded.duration > bank.duration + 0.4) {
             throw new Error("combat-sfx atlas duration invalid");
@@ -7562,7 +7563,8 @@ var NeonCampaign = (() => {
           buffer = decoded;
           failed = false;
           return true;
-        } catch {
+        } catch (error) {
+          lastError = String(error?.message || error?.name || error).slice(0, 80);
           if (!disposed && generation === attempt) failed = true;
           return false;
         } finally {
@@ -7673,6 +7675,7 @@ var NeonCampaign = (() => {
         ready: Boolean(buffer),
         loading: Boolean(loading),
         failed,
+        lastError,
         disposed,
         paused,
         enabled,

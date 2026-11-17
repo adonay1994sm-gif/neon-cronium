@@ -45,7 +45,7 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
   bus.gain.value = 1; bus.connect(output);
   const active = new Set(), lastPlayed = new Map(), variants = new Map(), recentIds = new Set(), playedByCue = new Map();
   let buffer = null, loading = null, disposed = false, paused = true, enabled = true;
-  let generation = 0, volume = 1, played = 0, dropped = 0, stolen = 0, failed = false;
+  let generation = 0, volume = 1, played = 0, dropped = 0, stolen = 0, failed = false, lastError = '';
 
   function release(record) {
     if (!active.delete(record)) return;
@@ -91,6 +91,7 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
           throw new Error('combat-sfx asset size invalid');
         }
         const decoded = await context.decodeAudioData(bytes);
+        lastError = `duración ${Number(decoded?.duration).toFixed(2)}`;
         if (disposed || generation !== attempt) return false;
         // Allow encoder padding, but never accept the old bank: otherwise an
         // offline mismatch would silently cut off the appended enemy weapons.
@@ -100,7 +101,8 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
         }
         buffer = decoded; failed = false;
         return true;
-      } catch {
+      } catch (error) {
+        lastError = String(error?.message || error?.name || error).slice(0, 80);
         if (!disposed && generation === attempt) failed = true;
         return false;
       } finally {
@@ -169,7 +171,7 @@ export function createCombatSfx({context, output, fetchAsset = (...args) => fetc
       if (volume === 0) stopAll();
     },
     snapshot: () => Object.freeze({version: bank.version, ready: Boolean(buffer), loading: Boolean(loading),
-      failed, disposed, paused, enabled, volume, activeVoices: active.size,
+      failed, lastError, disposed, paused, enabled, volume, activeVoices: active.size,
       activeGain: [...active].reduce((sum, record) => sum + record.level, 0),
       played, playedByCue: Object.freeze(Object.fromEntries(playedByCue)), dropped, stolen,
       decodedBytes: buffer ? buffer.length * buffer.numberOfChannels * 4 : 0}),
