@@ -160,7 +160,8 @@ export function steerClassicMissiles(state, targets, delta, turnRate = 3.2) {
     if (!shot.missile) continue;
     let best = null;
     for (const target of targets) {
-      if (target.y >= shot.y) continue;
+      // Solo blancos por delante y a la vista: nada de perseguir lo que aún no ha entrado.
+      if (target.y >= shot.y || target.y < 0) continue;
       const distance = Math.hypot(target.x - shot.x, target.y - shot.y);
       if (distance <= 520 && (!best || distance < best.distance)) best = {distance, target};
     }
@@ -174,15 +175,19 @@ export function steerClassicMissiles(state, targets, delta, turnRate = 3.2) {
 }
 
 /** Misil de racimo (fila III del árbol): al impactar suelta tres fragmentos
- * cortos en abanico; cada uno hace un tercio del daño del misil. */
-export function spawnClassicShards(state, {x, y}) {
+ * cortos en abanico; cada uno hace un tercio del daño del misil. `exclude` es
+ * el objetivo que ya recibió el misil: los fragmentos no vuelven a golpearlo.
+ * Nunca se pasa del tope de proyectiles. */
+export function spawnClassicShards(state, {x, y, exclude = null}) {
   finite(x, 'shard x'); finite(y, 'shard y');
   const damage = CLASSIC_WEAPON_RULES.missile.damage / 3 * (state.power ?? 1);
-  const shards = [-.6, 0, .6].map((spread, barrel) => ({
+  const room = Math.max(0, CLASSIC_WEAPON_RULES.maxProjectiles - state.projectiles.length);
+  const spared = exclude === null ? [] : [`${typeof exclude}:${exclude}`];
+  const shards = [-.6, 0, .6].slice(0, room).map((spread, barrel) => ({
     id: `${state.version}:projectile:${++state.projectileSequence}`, shotId: `${state.version}:shard:${state.projectileSequence}`,
     weapon: 'shard', barrel, level: 1, x, y,
     vx: spread === 0 ? 0 : Math.sin(spread) * 700, vy: -Math.cos(spread) * 700,
-    damage, radius: 8, pierce: 1, duration: .4, life: .4, hitTargets: []}));
+    damage, radius: 8, pierce: 1, duration: .4, life: .4, hitTargets: [...spared]}));
   state.projectiles.push(...shards);
   return shards;
 }

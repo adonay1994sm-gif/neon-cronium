@@ -715,7 +715,8 @@
       const missing=definition.requires.filter(id=>!upgrades.includes(id));
       const closed=Boolean(definition.tier)&&forgeTier<definition.tier;
       const price=owned?NeonCampaign.SCRAP_ECONOMY_RULES.keySwapPrice:definition.price;
-      button.classList.toggle('hidden',Boolean(definition.legacy)&&!chosen);
+      // Un nodo clave de antes del árbol se sigue viendo (y se puede cambiar por 100) si tienes su pareja.
+      button.classList.toggle('hidden',Boolean(definition.legacy)&&!owned);
       button.disabled=!classicSalvageState||chosen||closed||missing.length>0||balance<price||!classicEquipmentWritable;
       button.dataset.nodeState=chosen?'installed':closed||missing.length?'locked':'available';
       setC9Label(button,NeonCampaign.KEY_NODES[choice].label.toUpperCase());
@@ -1268,16 +1269,22 @@
     return true;
   }
 
+  // Blancos del misil buscador: solo lo que el misil puede derribar. Con Atlas
+  // en pantalla los disparos solo tocan a sus drones y escoltas (revisión del PR #79).
+  function classicSeekerTargets() {
+    const boss=Boolean(atlasBoss);
+    const targets=items.filter(item=>isThreat(item)&&!item.classicScoutProjectile&&!item.gaiaMine&&!item.gaiaBomb&&
+      (!boss||item.atlasDrone||item.gaia?.kind==="atlasEscort"));
+    if(subBoss&&subBoss.state!=="defeated")targets.push(subBoss);
+    if(atlasBoss&&!atlasBoss.disabled)targets.push(atlasBoss);
+    return targets;
+  }
   function advanceClassicWeaponField(dt) {
     if(!classicWeapons)return;
     for(const shot of classicWeapons.projectiles){shot.previousX=shot.x;shot.previousY=shot.y;}
     // Misil buscador (fila III del árbol): gira hacia el enemigo más cercano.
-    if(classicKeyNodes.seekerMissile&&classicWeapons.projectiles.some(shot=>shot.missile)) {
-      const targets=items.filter(item=>isThreat(item)&&!item.classicScoutProjectile&&!item.gaiaMine);
-      if(subBoss&&subBoss.state!=="defeated")targets.push(subBoss);
-      if(atlasBoss&&!atlasBoss.disabled)targets.push(atlasBoss);
-      NeonCampaign.steerClassicMissiles(classicWeapons,targets,dt);
-    }
+    if(classicKeyNodes.seekerMissile&&classicWeapons.projectiles.some(shot=>shot.missile))
+      NeonCampaign.steerClassicMissiles(classicWeapons,classicSeekerTargets(),dt);
     const events=NeonCampaign.advanceClassicWeapons(classicWeapons,dt);
     ammo=classicWeapons.charges;
     if(atlasBoss && !atlasBoss.disabled) {
@@ -1329,7 +1336,7 @@
       if(shot.weapon==="missile"){
         addMissileImpact(item.x,item.y);
         // Misil de racimo (fila III del árbol): tres fragmentos desde el impacto.
-        if(classicKeyNodes.clusterMissile)NeonCampaign.spawnClassicShards(classicWeapons,{x:item.x,y:item.y-(item.r||30)});
+        if(classicKeyNodes.clusterMissile)NeonCampaign.spawnClassicShards(classicWeapons,{x:item.x,y:item.y-(item.r||30),exclude:item.id});
       }
       // El golpe grande es para enemigos y rocas; las balas, minas y bombas
       // derribadas guardan el chispazo pequeño (revisión del PR #74).
