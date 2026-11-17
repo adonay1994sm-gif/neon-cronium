@@ -2231,7 +2231,7 @@
       if(event.type==="fire")combatSound(event.attack==="laser"?"boss-laser":"enemy-heavy",subBoss.x);
       if(event.type==="fire"&&event.attack==="laser"){shake=Math.max(shake,5);cameraKickY=Math.max(cameraKickY,4);}
       if(event.type==="defeated") {
-        subBossBeaten=true;addExplosion(subBoss.x,subBoss.y,1.6,1);
+        subBossBeaten=true;addBossDestruction(subBoss.x,subBoss.y);
         // Las escoltas caen con él.
         for(const escort of items.filter(item=>item.gaia?.kind==="atlasEscort"))addExplosion(escort.x,escort.y,.6,.4);
         items=items.filter(item=>item.gaia?.kind!=="atlasEscort");
@@ -2468,7 +2468,11 @@
       score+=item.classicScoutProjectile?0:(destroyed?10:3);combatSound(destroyed?"enemy-break":"impact-metal",item.x);
       hudScoreTarget=score;
       if(destroyed){
-        if(!item.classicScout?.tacticsVersion)addExplosion(item.x,item.y,.7,.5);
+        // Más boom: bola doble que antes (los perseguidores ya llevan la suya) y onda de choque.
+        // Las balas, minas y bombas derribadas conservan su estallido pequeño de siempre.
+        if(item.classicScoutProjectile||item.gaiaMine||item.gaiaBomb){addExplosion(item.x,item.y,.7,.5);return true;}
+        addExplosion(item.x,item.y,item.classicScout?.tacticsVersion?1:1.4,.55);
+        addDestructionBlast(item.x,item.y,(item.r||34)>=50?1.6:1);
         return true;
       }
     }
@@ -2831,7 +2835,7 @@
       // Las escoltas caen con Atlas.
       for(const escort of items.filter(item=>item.gaia?.kind==="atlasEscort"))addExplosion(escort.x,escort.y,.6,.4);
       items=items.filter(item=>item.gaia?.kind!=="atlasEscort");
-      score += 250;combatSound("atlas-collapse",atlasBoss.x);
+      score += 250;addBossDestruction(atlasBoss.x,atlasBoss.y);
       // Explosión del baúl durante el apagado (1,55 s): el completado llega
       // como siempre, ~0,75 s después de que se apague. Sin imagen, como antes.
       if(spriteReady(SPRITES.atlasExplosion))addAtlasExplosion(atlasBoss);
@@ -4501,6 +4505,26 @@
   function addImpactEffect(x, y, scale = 1, angle = 0, duration = 0.24) {
     if (impactEffects.length >= EFFECT_LIMITS.impacts) impactEffects.shift();
     impactEffects.push({ x, y, scale, angle, life: duration, duration, variant: (Math.random() * SPRITE_GROUPS.impact.length) | 0 });
+  }
+
+  // Más boom (propietario, 17/11/2026): al destruir una nave, además de la bola
+  // de fuego, una onda de choque y una sacudida corta. `size` 1 = enemigo normal.
+  // «Reducir efectos» quita la sacudida y el destello; la onda se queda.
+  function addDestructionBlast(x, y, size = 1) {
+    if (impactEffects.length >= EFFECT_LIMITS.impacts) impactEffects.shift();
+    impactEffects.push({ x, y, scale: size, angle: 0, life: 0.5, duration: 0.5, shockwave: true });
+    if (!settings.reduceEffects) shake = Math.max(shake, size >= 2 ? 10 : 3.5);
+  }
+
+  // Jefe destruido: bola enorme, onda doble, destello blanco, sacudida fuerte y su sonido.
+  function addBossDestruction(x, y) {
+    addExplosion(x, y, 2.6, 1.1);
+    addDestructionBlast(x, y, 2.4);
+    if (!settings.reduceEffects) {
+      if (impactEffects.length >= EFFECT_LIMITS.impacts) impactEffects.shift();
+      impactEffects.push({ x, y, scale: 1, angle: 0, life: 0.35, duration: 0.35, flash: true });
+    }
+    combatSound("atlas-collapse", x);
   }
 
   // Disparo con golpe (propietario, 15/11/2026): el pulso estalla en el lado
@@ -7412,6 +7436,18 @@
         ctx.save();ctx.translate(effect.x,effect.y);ctx.globalAlpha*=row===3?Math.max(0,1-(age-.25)/.4):1;
         ctx.drawImage(atlas,frame*cell,row*cell,cell,cell,-size/2,-size/2,size,size);
         ctx.restore();continue;
+      }
+      if (effect.shockwave) {
+        // Onda de choque: un anillo claro que se abre desde la explosión.
+        const radius = (24 + progress * 120) * effect.scale;
+        ctx.save(); ctx.translate(effect.x, effect.y); ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = (1 - progress) * .8; ctx.lineWidth = Math.max(1.5, 9 * (1 - progress)) * Math.min(1.6, effect.scale);
+        ctx.strokeStyle = "#ffd9a8"; ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore(); continue;
+      }
+      if (effect.flash) {
+        // Destello blanco de un instante en las explosiones de jefe (no con «Reducir efectos»).
+        ctx.save(); ctx.fillStyle = `rgba(255,244,230,${(.4 * (1 - progress)).toFixed(3)})`; ctx.fillRect(0, 0, W, H); ctx.restore(); continue;
       }
       if (effect.plasmaBlast && spriteReady(SPRITES.lavaCoreMine)) {
         // Estallido de la mina: último fotograma de la fila 2, crece y se apaga.

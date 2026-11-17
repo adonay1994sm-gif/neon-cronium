@@ -22,3 +22,15 @@ OpenGameArt.org el 02/11/2026 y copiados sin cambios. El banco se monta con
 | kenney_laserLarge_000.ogg | disparo enemigo pesado (decisión técnica) | Kenney · Sci-Fi Sounds | https://opengameart.org/content/sci-fi-sounds |
 
 `combat_sfx_atlas_v3.wav` es el maestro que genera el script (no es un original).
+
+## Añadidos del 17/11/2026 (más boom)
+
+Sintetizados con código (`scripts/make-neon-boom-sfx.py`), sin muestras de terceros: no llevan licencia ajena.
+Elegidos por el propietario en la sala de escucha del 17/11/2026 (opciones C, B y B). Sustituyen a los CC0 de
+esos tres eventos; los CC0 sustituidos quedan en esta carpeta por si se quiere volver atrás.
+
+| Archivo | Evento del juego |
+|---|---|
+| neon_boom_enemigo.wav | enemigo derribado |
+| neon_boom_jefe.wav | jefe destruido |
+| neon_boom_golpe.wav | golpe a tu casco |

@@ -98,6 +98,8 @@ Si algo falla por el cambio, se deshace ese commit y se anota.
   empezar cada trabajo y usar lo nuevo.
 - **Tras cada actualización de la rama** (PR fusionado), pasar una revisión
   de `auditor-codigo` sobre ese cambio y llevar sus hallazgos al tablero.
+  Desde el 17/11/2026 solo en cambios de riesgo (guardados, economía,
+  dificultad, combate, pausa), para gastar menos.
 
 ## Última auditoría (22/10/2026)
 

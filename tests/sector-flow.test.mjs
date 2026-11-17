@@ -1683,3 +1683,44 @@ test('seeker targets: everything that can be shot down, and only drones and esco
   T.ev('atlasBoss={x:360,y:200,r:120,disabled:false}');
   assert.deepEqual(JSON.parse(T.ev('JSON.stringify(classicSeekerTargets().map(t=>t.id||"atlas"))')), ['drone', 'atlas']);
 });
+
+// Más boom (propietario, 17/11/2026): destruir una nave suelta fireball doble,
+// onda de choque y sacudida; un jefe, además, destello y su sonido. «Reducir
+// efectos» quita la sacudida y el destello.
+function destroyTarget(T, before = '') {
+  startAt(T, 3);
+  T.ev(`classicVoyageHazardTimer=999;classicPatrolTimer=999;classicHordeTimer=999;items.length=0;explosions.length=0;impactEffects.length=0;shake=0;${before}`);
+  T.ev("window.__t=createThreat('scout',level());Object.assign(window.__t,{id:'target',classicScout:null,x:player.x,baseX:player.x,y:player.y-260,s:0,rot:0,rs:0,amp:0,hp:1,maxHp:1,r:34});items.push(window.__t)");
+  T.ev("window.__sounds=[];const original=combatSound;combatSound=(cue,...rest)=>{window.__sounds.push(cue);original(cue,...rest);}");
+  T.ev('classicWeapons.charges=Math.max(classicWeapons.charges,1);classicWeapons.cooldown=0;manualShotCooldown=0;fireManualShot()');
+  for (let k = 0; k < 60 && T.ev('items.includes(window.__t)'); k++) T.adv(1 / 60);
+  assert.equal(T.ev('items.includes(window.__t)'), false, 'the target was destroyed');
+  return JSON.parse(T.ev('JSON.stringify({scales:explosions.map(e=>e.scale),waves:impactEffects.filter(e=>e.shockwave).length,flashes:impactEffects.filter(e=>e.flash).length,shake,sounds:window.__sounds})'));
+}
+
+test('destroying an enemy: a bigger fireball, a shockwave, a short shake and the break sound', () => {
+  const {scales, waves, flashes, shake, sounds} = destroyTarget(harness().T);
+  assert.ok(Math.max(...scales) >= 1.4, `fireball ${scales}`);
+  assert.equal(waves, 1);
+  assert.equal(flashes, 0, 'no flash for an ordinary enemy');
+  assert.ok(shake >= 2 && shake <= 5, `shake ${shake}`);
+  assert.ok(sounds.includes('enemy-break'));
+});
+
+test('with reduced effects an explosion has no shake and no flash, but keeps the shockwave', () => {
+  const {waves, flashes, shake} = destroyTarget(harness().T, 'settings.reduceEffects=true;');
+  assert.deepEqual([waves, flashes, shake], [1, 0, 0]);
+});
+
+test('a boss going down: a huge fireball, a flash, a heavy shake and the boss sound', () => {
+  const {T} = harness();
+  startAt(T, 5); T.ev('explosions.length=0;impactEffects.length=0;shake=0;window.__sounds=[];const original=combatSound;combatSound=(cue,...rest)=>{window.__sounds.push(cue);original(cue,...rest);}');
+  T.ev('addBossDestruction(360,400)');
+  const result = JSON.parse(T.ev('JSON.stringify({scales:explosions.map(e=>e.scale),flash:impactEffects.filter(e=>e.flash).length,shake,sounds:window.__sounds})'));
+  assert.ok(Math.max(...result.scales) >= 2.4);
+  assert.equal(result.flash, 1);
+  assert.ok(result.shake >= 9);
+  assert.ok(result.sounds.includes('atlas-collapse'));
+  T.ev('explosions.length=0;impactEffects.length=0;shake=0;settings.reduceEffects=true;addBossDestruction(360,400)');
+  assert.deepEqual(JSON.parse(T.ev('JSON.stringify([impactEffects.filter(e=>e.flash).length,shake])')), [0, 0]);
+});

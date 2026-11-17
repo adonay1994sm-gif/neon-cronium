@@ -3,7 +3,7 @@
   "src": "assets/combat_sfx_atlas_v3.m4a",
   "sampleRate": 48000,
   "channels": 1,
-  "duration": 11.95,
+  "duration": 13.25,
   "gap": 0.12,
   "cues": {
     "phaser": {
@@ -58,7 +58,7 @@
       "variants": [
         {
           "offset": 2.23,
-          "duration": 0.6
+          "duration": 0.7
         }
       ],
       "gain": 0.29,
@@ -69,8 +69,8 @@
     "enemy-break": {
       "variants": [
         {
-          "offset": 2.95,
-          "duration": 1.0
+          "offset": 3.05,
+          "duration": 1.6
         }
       ],
       "gain": 0.31,
@@ -81,7 +81,7 @@
     "atlas-charge": {
       "variants": [
         {
-          "offset": 4.07,
+          "offset": 4.77,
           "duration": 0.95
         }
       ],
@@ -93,8 +93,8 @@
     "atlas-collapse": {
       "variants": [
         {
-          "offset": 5.14,
-          "duration": 3.0
+          "offset": 5.84,
+          "duration": 3.6
         }
       ],
       "gain": 0.4,
@@ -105,7 +105,7 @@
     "enemy-phaser": {
       "variants": [
         {
-          "offset": 8.26,
+          "offset": 9.56,
           "duration": 0.25
         }
       ],
@@ -117,7 +117,7 @@
     "enemy-heavy": {
       "variants": [
         {
-          "offset": 8.63,
+          "offset": 9.93,
           "duration": 0.6
         }
       ],
@@ -129,7 +129,7 @@
     "boss-laser": {
       "variants": [
         {
-          "offset": 9.35,
+          "offset": 10.65,
           "duration": 2.6
         }
       ],

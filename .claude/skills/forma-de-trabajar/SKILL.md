@@ -161,8 +161,11 @@ mensaje nuevo suyo, manda el mensaje nuevo; anótalo en «Aprendizajes».
   escucha, aunque la del PC también ha subido arreglos y PRs. Antes de
   trabajar y antes de subir, `git fetch` y une lo nuevo con merge; mira el
   tablero, porque la otra sesión también escribe en él.
-- **Tras cada PR fusionado,** una revisión de `auditor-codigo`, y sus
-  hallazgos al tablero. Una sola revisión por cambio.
+- **Revisión de `auditor-codigo` solo en cambios de riesgo** (guardados,
+  economía, dificultad, combate, pausa), y sus hallazgos al tablero. Los
+  arreglos pequeños, textos y estilos no la llevan (propietario, 17/11/2026,
+  para gastar menos). Una sola revisión por cambio, con un modelo más barato
+  y un alcance estrecho.
 - **Autonomía:**
   - puede dejarte trabajando de noche;
   - prográmate tareas para no parar y fusiona tú los PR si la CI está en
@@ -253,6 +256,13 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 17/11/2026: se le gasta muy rápido el uso del plan y lo notó él. Reglas
+  para gastar menos (aprobadas por él): revisión solo en cambios de riesgo;
+  menos PR (juntar los del mismo tema); mediciones y páginas solo si hay algo
+  que decidir; no escribir el PR dos veces ni pasar las 6 suites más de una
+  vez por cambio; respuestas cortas (qué cambió y qué falta); no volcar el
+  tablero entero (consultar por campo); proponer sesión nueva con resumen
+  cuando la conversación se alargue mucho.
 - 15/11/2026: le dije que poner dos Alfas lado a lado «no cambia la
   dificultad» sin medirlo, y sí la cambiaba (lo encontró la revisión). Antes
   de prometer que algo no toca la dificultad, mira cómo dispara ese enemigo y
