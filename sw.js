@@ -1,4 +1,4 @@
-const CACHE = "neon-cronium-pre-release-7-2-0-orbital-hud-3";
+const CACHE = "neon-cronium-pre-release-7-2-0-orbital-hud-4";
 const CORE = [
   "assets/menu_hangar_bg_v1.webp",
   "assets/menu_frame_v1.webp",
