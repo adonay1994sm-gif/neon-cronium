@@ -242,6 +242,12 @@
   // de viaje y a las pistas del capítulo, que ya no se crean.
   let moodMusic = null;
   let masterBus = null;
+  // Registro de fallos (17/11): guarda los últimos errores de la app y se lee
+  // en Ajustes de la app de iPhone. Nada sale del móvil.
+  const errorLog = [];
+  const logError = text => { errorLog.push(`${new Date().toISOString().slice(11, 19)} ${String(text).slice(0, 140)}`); if (errorLog.length > 12) errorLog.shift(); };
+  typeof window !== "undefined" && window.addEventListener?.("error", e => logError(`${e.message || "error"} @${String(e.filename || "").split("/").pop()}:${e.lineno || 0}`));
+  typeof window !== "undefined" && window.addEventListener?.("unhandledrejection", e => logError(`promesa: ${e.reason?.message || e.reason}`));
   let combatSfx = null;
   let uiSfx = null;
   let musicDuck = null;
@@ -490,14 +496,15 @@
   // Diagnóstico temporal (30/10): con #audio en la dirección, Ajustes dice si
   // los bancos de sonido cargaron o si suenan los pitidos de respaldo.
   function showAudioDiagnostics() {
-    if (location.hash !== "#audio" || !ui.settingsPanel) return;
+    if ((location.hash !== "#audio" && !window.Capacitor?.isNativePlatform?.()) || !ui.settingsPanel) return;
     let line = document.getElementById("audioDiagnostics");
     if (!line) {
       line = document.createElement("p"); line.id = "audioDiagnostics"; line.setAttribute("role", "status");
       ui.settingsPanel.querySelector(".settings-panel")?.prepend(line);
     }
     const bank = sfx => !sfx ? "sin crear" : sfx.snapshot().ready ? "cargado" : sfx.snapshot().failed ? "FALLÓ" : "cargando";
-    line.textContent = `AUDIO · contexto ${audioCtx?.state || "sin crear"} · combate ${bank(combatSfx)} · interfaz ${bank(uiSfx)} · pitidos de respaldo ${fallbackTones}`;
+    line.textContent = `AUDIO · contexto ${audioCtx?.state || "sin crear"} · combate ${bank(combatSfx)} · interfaz ${bank(uiSfx)} · pitidos de respaldo ${fallbackTones} · ${combatSfx?.snapshot().lastError || "-"}\nFALLOS (${errorLog.length}): ${errorLog.join(" | ") || "ninguno"}`;
+    line.style.whiteSpace = "pre-wrap"; line.style.userSelect = "text";
   }
 
   function closeSettings() {
