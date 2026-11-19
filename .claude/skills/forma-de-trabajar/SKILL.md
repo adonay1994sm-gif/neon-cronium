@@ -256,6 +256,16 @@ Se añaden cada 3 días (tarea programada) y cuando él corrige algo. Va una
 línea por aprendizaje, con fecha, y lo más nuevo arriba. Si un aprendizaje
 cambia una regla de arriba, se edita la regla y aquí se deja constancia.
 
+- 17-18/11/2026: prueba en la **app de TestFlight**, no en el enlace web.
+  Antes de diagnosticar un fallo, pregunta dónde lo vio. Mis pruebas en
+  Chromium no reproducen el audio del iPhone (no decodifica AAC): no des un
+  sonido por arreglado sin su confirmación en el móvil.
+- 17/11/2026: «sonido» para él es **sonido propio por cosa**: cada arma, cada
+  tipo de destrucción (nave, roca, objeto), impacto en escudos y disparo
+  enemigo. Pitidos genéricos cuentan como «no suena».
+- 17/11/2026: quiere un **registro de fallos dentro de la app** (en Ajustes,
+  sin enviar datos fuera) para ver errores del iPhone; eligió eso frente a un
+  servidor externo.
 - 17/11/2026: se le gasta muy rápido el uso del plan y lo notó él. Reglas
   para gastar menos (aprobadas por él): revisión solo en cambios de riesgo;
   menos PR (juntar los del mismo tema); mediciones y páginas solo si hay algo
